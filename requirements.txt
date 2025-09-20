@@ -1,0 +1,23 @@
+# Core dependencies
+fastmcp>=2.10.0
+python-ring-doorbell>=0.8.0
+httpx>=0.25.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+asyncio-throttle>=1.0.0
+python-jose[cryptography]>=3.3.0
+aiocache>=0.12.0
+tenacity>=8.2.0
+uvicorn>=0.23.0
+
+# Development dependencies
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.5.0
+respx>=0.20.0
+types-requests>=2.31.0
+types-python-dateutil>=2.8.0

@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  ring-mcp:
+    build: .
+    container_name: ring-mcp
+    restart: unless-stopped
+    environment:
+      - RING_USERNAME=${RING_USERNAME:-}
+      - RING_PASSWORD=${RING_PASSWORD:-}
+      - RING_TOKEN=${RING_TOKEN:-}
+      - HOST=0.0.0.0
+      - PORT=8123
+      - LOG_LEVEL=INFO
+      - CACHE_TTL=300
+      - RATE_LIMIT=10
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ring-mcp-net
+
+  # Add Redis for distributed caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: ring-mcp-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ring-mcp-net
+
+  # Add Prometheus for monitoring (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ring-mcp-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9002:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    networks:
+      - ring-mcp-net
+
+  # Add Loki for log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: ring-mcp-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    networks:
+      - ring-mcp-net
+
+  # Add Promtail for log shipping
+  promtail:
+    image: grafana/promtail:latest
+    container_name: ring-mcp-promtail
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - ./logs:/var/log/ring-mcp:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - ring-mcp-net
+
+  # Add Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ring-mcp-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "9001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - ring-mcp-net
+
+  # Add Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ring-mcp-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - ring-mcp-net
+
+networks:
+  ring-mcp-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+    driver: local

@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ring-mcp"
+version = "1.0.0"
+description = "Ring Security Ecosystem MCP - Universal control for Ring doorbell, burglar alarm, fire alarm, and cameras"
+authors = [
+    {name = "Sandra", email = "sandra@example.com"}
+]
+dependencies = [
+    "fastmcp>=2.12.0",
+    "python-ring-doorbell>=0.8.0",  # Real Ring integration
+    "httpx>=0.25.0",                # Modern HTTP client
+    "pydantic>=2.0.0",              # Data validation
+    "python-dotenv>=1.0.0",         # Environment management
+    "asyncio-throttle>=1.0.0",      # Rate limiting
+    "python-jose[cryptography]>=3.3.0",  # JWT handling
+    "aiocache>=0.12.0",             # Async caching
+    "tenacity>=8.2.0",              # Retry logic
+    "prometheus-client>=0.20.0",    # Prometheus metrics
+    "structlog>=23.0.0",            # Structured logging
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.0",
+    "respx>=0.20.0",           # HTTP mocking for tests
+    "fastmcp[test]>=2.12.0",   # FastMCP testing tools
+    "types-requests>=2.31.0",  # Type stubs for requests
+    "types-python-dateutil>=2.8.0"  # Type stubs for dateutil
+]
+
+[project.scripts]
+ring-mcp = "ring_mcp:main"
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

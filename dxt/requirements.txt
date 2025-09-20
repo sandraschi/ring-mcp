@@ -1,0 +1,17 @@
+# DXT Runtime Dependencies - FastMCP 2.12.0+
+# These dependencies are bundled into the DXT package
+fastmcp>=2.12.0,<3.0.0
+pydantic>=2.0.0,<3.0.0
+httpx>=0.24.0
+python-dotenv>=1.0.0
+prometheus-client>=0.17.0
+structlog>=23.1.0
+typing-extensions>=4.5.0
+python-dateutil>=2.8.2
+
+# Ring API dependencies
+requests>=2.31.0
+aiofiles>=23.1.0
+
+# Optional monitoring dependencies
+psutil>=5.9.0

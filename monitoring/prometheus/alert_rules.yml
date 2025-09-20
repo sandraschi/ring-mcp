@@ -1,0 +1,68 @@
+groups:
+  - name: ring_security_alerts
+    rules:
+      # Security system disarmed during expected armed hours
+      - alert: SecuritySystemDisarmed
+        expr: ring_security_armed == 0
+        for: 10m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Security system has been disarmed"
+          description: "The Ring security system has been disarmed. Please check if this was intentional."
+
+      # Device battery low
+      - alert: DeviceBatteryLow
+        expr: ring_device_battery_percent < 20
+        for: 5m
+        labels:
+          severity: warning
+          category: maintenance
+        annotations:
+          summary: "Ring device battery low"
+          description: "Device {{ $labels.device_id }} ({{ $labels.device_type }}) has battery level below 20%"
+
+      # Device offline
+      - alert: DeviceOffline
+        expr: ring_device_online == 0
+        for: 5m
+        labels:
+          severity: warning
+          category: connectivity
+        annotations:
+          summary: "Ring device offline"
+          description: "Device {{ $labels.device_id }} ({{ $labels.device_type }}) has been offline for more than 5 minutes"
+
+      # High API error rate
+      - alert: HighAPIErrorRate
+        expr: rate(ring_api_calls_total{status="error"}[5m]) / rate(ring_api_calls_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "High Ring API error rate"
+          description: "Ring API error rate is above 10% for the last 2 minutes"
+
+      # API response time too high
+      - alert: SlowAPIResponse
+        expr: histogram_quantile(0.95, sum(rate(ring_api_duration_seconds_bucket[5m])) by (le)) > 5
+        for: 2m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow Ring API response"
+          description: "Ring API 95th percentile response time is above 5 seconds"
+
+      # No recent API activity (system might be down)
+      - alert: RingAPIDown
+        expr: rate(ring_api_calls_total[5m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "Ring API appears to be down"
+          description: "No Ring API calls detected in the last 10 minutes. The system may be offline."

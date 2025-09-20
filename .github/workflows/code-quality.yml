@@ -1,0 +1,150 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort mypy flake8 bandit safety pre-commit
+    
+    - name: Run Black (code formatter)
+      run: |
+        black --check ring_mcp tests
+    
+    - name: Run isort (import sorter)
+      run: |
+        isort --check-only ring_mcp tests
+    
+    - name: Run MyPy (static type checker)
+      run: |
+        mypy ring_mcp
+    
+    - name: Run Flake8 (linter)
+      run: |
+        flake8 ring_mcp tests
+    
+    - name: Run Bandit (security linter)
+      run: |
+        bandit -r ring_mcp -c pyproject.toml
+    
+    - name: Check for vulnerable dependencies
+      run: |
+        pip freeze > requirements.txt
+        safety check -r requirements.txt --full-report
+    
+    - name: Run pre-commit hooks
+      run: |
+        pre-commit run --all-files
+
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install documentation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[docs]
+    
+    - name: Build documentation
+      run: |
+        cd docs
+        make html
+    
+    - name: Check for broken links
+      uses: peter-evans/link-checker@v1
+      with:
+        args: -r -x "http://localhost"
+    
+    - name: Upload documentation artifact
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: docs/_build/html
+        retention-days: 5
+
+  dependency-updates:
+    name: Dependency Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-tools
+    
+    - name: Check for outdated dependencies
+      run: |
+        pip list --outdated --format=json | jq '.[].name' > outdated.txt
+        if [ -s outdated.txt ]; then
+          echo "The following dependencies have updates available:"
+          cat outdated.txt
+          echo "\nConsider updating these dependencies."
+          exit 1
+        fi
+    
+    - name: Check for security vulnerabilities
+      run: |
+        pip freeze > requirements.txt
+        safety check -r requirements.txt --full-report
+    
+    - name: Create Dependabot PR if needed
+      if: github.ref == 'refs/heads/main' && failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { data: pulls } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            head: 'dependabot/npm_and_yarn/ring-mcp',
+            base: 'main'
+          });
+          
+          if (pulls.length === 0) {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Dependency updates available',
+              body: 'The following dependencies have updates available:\n' + 
+                    require('fs').readFileSync('outdated.txt', 'utf8') + 
+                    '\nPlease update these dependencies.',
+              labels: ['dependencies']
+            });
+          }
