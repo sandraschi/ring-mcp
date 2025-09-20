@@ -30,7 +30,37 @@
 
 ### Installation
 
-#### Using Docker (Recommended)
+#### Using DXT Extension (Claude Desktop Integration)
+
+The easiest way to use Ring MCP with Claude Desktop is through our DXT extension:
+
+1. **Build the DXT package**:
+   ```bash
+   # Option 1: Python script (recommended)
+   cd dxt
+   python dxt_build.py
+
+   # Option 2: PowerShell (Windows)
+   .\scripts\build-dxt.ps1
+
+   # Option 3: Bash (Cross-platform)
+   ./scripts/build-dxt.sh
+   ```
+
+2. **Install in Claude Desktop**:
+   - Locate the built package: `dist/ring-mcp-server.dxt`
+   - Drag and drop the `.dxt` file into Claude Desktop
+   - Follow the configuration prompts for your Ring credentials
+   - Restart Claude Desktop
+
+3. **Start using Ring tools**:
+   ```
+   ring.get_devices        # List all devices
+   ring.health_check       # Check system status
+   ring.get_live_stream_url --device_id <camera_id>
+   ```
+
+#### Using Docker (Recommended for Server Deployment)
 
 1. Clone the repository:
    ```bash
@@ -273,6 +303,62 @@ ring-mcp/
 - **Comprehensive Documentation** - Detailed tool descriptions
 - **Error Resilience** - Graceful degradation
 - **Performance Optimized** - Efficient API usage
+
+## 📦 DXT Extension Packaging
+
+Ring MCP includes full DXT (Deployment eXtension Toolkit) support for easy Claude Desktop integration.
+
+### Building DXT Extensions
+
+#### Prerequisites
+- Python 3.9+
+- FastMCP 2.12.0+
+- Git repository (for version control)
+
+#### Build Commands
+
+```bash
+# Option 1: Python script (recommended)
+cd dxt
+python dxt_build.py
+
+# Option 2: PowerShell script (Windows)
+.\scripts\build-dxt.ps1
+
+# Option 3: Bash script (cross-platform)
+./scripts/build-dxt.sh
+```
+
+#### Package Contents
+- **Source code**: All Python modules properly structured
+- **Dependencies**: All runtime dependencies bundled in `lib/` directory
+- **Manifest**: Complete configuration for Claude Desktop
+- **Entry point**: Proper main.py with sys.path configuration
+
+#### Installation in Claude Desktop
+1. Build the package: `python dxt/dxt_build.py`
+2. Locate: `dist/ring-mcp-server.dxt`
+3. Drag & drop into Claude Desktop
+4. Configure Ring credentials
+5. Restart Claude Desktop
+
+### DXT Configuration
+
+The DXT extension includes:
+
+- **20+ Ring tools** - Complete device management
+- **Real-time monitoring** - Live device status
+- **Secure authentication** - Ring API integration
+- **User configuration** - Easy setup prompts
+- **Error handling** - Graceful failure recovery
+
+### CI/CD Integration
+
+DXT packaging is fully integrated into the GitHub Actions workflow:
+- Automatic DXT package building
+- Dependency validation
+- Multi-platform testing
+- Artifact upload for releases
 
 ## 📊 Usage Examples
 
