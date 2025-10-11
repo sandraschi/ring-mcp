@@ -1,0 +1,47 @@
+{
+  "name": "device-troubleshooting",
+  "description": "Step-by-step troubleshooting guide for Ring device issues",
+  "version": "1.0.0",
+  "parameters": {
+    "device_type": {
+      "type": "string",
+      "description": "Type of Ring device (camera, doorbell, alarm)",
+      "enum": ["camera", "doorbell", "alarm", "sensor"],
+      "required": true
+    },
+    "device_name": {
+      "type": "string",
+      "description": "Specific device name or identifier",
+      "required": false
+    },
+    "problem_type": {
+      "type": "string",
+      "description": "Type of problem (connectivity, battery, alerts, recording)",
+      "enum": ["connectivity", "battery", "alerts", "recording", "power", "other"],
+      "required": true
+    },
+    "symptoms": {
+      "type": "string",
+      "description": "Description of symptoms or error messages",
+      "required": false
+    }
+  },
+  "prompt": "Troubleshoot a {{device_type}} device issue. Device: {{device_name}}. Problem type: {{problem_type}}. Symptoms: {{symptoms}}.\n\nFollow this systematic troubleshooting approach:\n\n1. **Gather Information**\n   - Get device details and current status\n   - Check connectivity and signal strength\n   - Review recent events and error logs\n   - Verify battery level (if applicable)\n\n2. **Common Issues & Solutions**\n   - **Connectivity Issues**: Check WiFi signal, router settings, device placement\n   - **Battery Problems**: Check battery level, replace if <20%, clean contacts\n   - **Alert Failures**: Verify notification settings, check app permissions\n   - **Recording Issues**: Check storage space, internet speed, device firmware\n   - **Power Problems**: Verify power source, check wiring, replace power adapter\n\n3. **Diagnostic Steps**\n   - Test device connectivity\n   - Verify account permissions\n   - Check for firmware updates\n   - Test with Ring app directly\n\n4. **Advanced Troubleshooting**\n   - Reset device to factory settings\n   - Re-pair device with account\n   - Check Ring service status\n   - Contact Ring support if needed\n\n5. **Preventive Measures**\n   - Regular battery checks\n   - Firmware updates\n   - Optimal device placement\n   - Network optimization\n\nProvide specific, actionable steps with expected outcomes at each stage.",
+  "examples": [
+    {
+      "input": {
+        "device_type": "camera",
+        "device_name": "Front Door Camera",
+        "problem_type": "connectivity",
+        "symptoms": "Camera shows offline intermittently"
+      },
+      "output": "## Front Door Camera Connectivity Troubleshooting\n\n### Step 1: Check Basic Connectivity\n- **Action**: Use Ring app to test connection\n- **Expected**: Device should respond within 10 seconds\n- **Status**: ✅ Camera responds to ping\n\n### Step 2: WiFi Signal Strength\n- **Action**: Check WiFi signal at camera location\n- **Expected**: Signal strength > -60dBm\n- **Result**: Signal is -45dBm (good)\n\n### Step 3: Network Configuration\n- **Action**: Verify router settings allow device connection\n- **Expected**: No port blocking or MAC filtering\n- **Status**: ✅ Router configuration correct\n\n### Solution: Camera placement issue - moved 2 feet closer to router"
+    }
+  ],
+  "metadata": {
+    "category": "troubleshooting",
+    "complexity": "medium",
+    "estimated_duration": "3-7 minutes",
+    "requires_auth": true
+  }
+}

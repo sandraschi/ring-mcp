@@ -12,6 +12,10 @@ import sys
 import time
 from typing import Optional, Tuple
 
+import structlog
+
+logger = structlog.get_logger(__name__)
+
 # Use non-standard port to avoid conflicts
 DEFAULT_RING_MCP_PORT = 8123
 PORT_RANGE_START = 8100
@@ -175,23 +179,23 @@ def handle_port_conflict(port: int) -> Tuple[int, bool]:
         return new_port, False
 
     # We found a process using our port - likely a previous instance
-    print(f"🔄 Found previous Ring MCP instance (PID {pid}) using port {port}")
-    print("   Attempting graceful termination...")
+    logger.info(f"Found previous Ring MCP instance (PID {pid}) using port {port}")
+    logger.info("Attempting graceful termination...")
 
     if gracefully_terminate_process(pid):
-        print(f"✅ Successfully terminated previous instance (PID {pid})")
+        logger.info(f"Successfully terminated previous instance (PID {pid})")
         # Wait a moment for port to be released
         time.sleep(1)
         if is_port_free(port):
-            print(f"✅ Port {port} is now available")
+            logger.info(f"Port {port} is now available")
             return port, True
         else:
-            print(f"⚠️ Port {port} still occupied, finding alternative...")
+            logger.warning(f"Port {port} still occupied, finding alternative...")
             new_port = find_free_port(port + 1)
             return new_port, True
     else:
-        print(f"❌ Failed to terminate previous instance (PID {pid})")
-        print("   Finding alternative port...")
+        logger.error(f"Failed to terminate previous instance (PID {pid})")
+        logger.info("Finding alternative port...")
         new_port = find_free_port(port + 1)
         return new_port, False
 
@@ -208,7 +212,7 @@ def get_ring_mcp_port() -> int:
         try:
             port = int(port_env)
         except ValueError:
-            print(f"⚠️ Invalid PORT value '{port_env}', using default {DEFAULT_RING_MCP_PORT}")
+            logger.warning(f"Invalid PORT value '{port_env}', using default {DEFAULT_RING_MCP_PORT}")
             port = DEFAULT_RING_MCP_PORT
     else:
         port = DEFAULT_RING_MCP_PORT
@@ -216,23 +220,23 @@ def get_ring_mcp_port() -> int:
     final_port, was_terminated = handle_port_conflict(port)
 
     if was_terminated:
-        print(f"🚀 Using port {final_port} (terminated previous instance)")
+        logger.info(f"Using port {final_port} (terminated previous instance)")
     elif final_port != port:
-        print(f"🚀 Port {port} was taken, using alternative port {final_port}")
+        logger.info(f"Port {port} was taken, using alternative port {final_port}")
     else:
-        print(f"🚀 Using port {final_port}")
+        logger.info(f"Using port {final_port}")
 
     return final_port
 
 
 def print_port_info(port: int) -> None:
-    """Print information about the port being used."""
-    print("📡 Ring MCP Port Configuration:")
-    print(f"   Default Port: {DEFAULT_RING_MCP_PORT}")
-    print(f"   Port Range: {PORT_RANGE_START}-{PORT_RANGE_END}")
-    print(f"   Current Port: {port}")
-    print(f"   Health Check: http://localhost:{port}/health")
-    print(f"   API Access: http://localhost:{port}")
+    """Log information about the port being used."""
+    logger.info("Ring MCP Port Configuration:")
+    logger.info(f"   Default Port: {DEFAULT_RING_MCP_PORT}")
+    logger.info(f"   Port Range: {PORT_RANGE_START}-{PORT_RANGE_END}")
+    logger.info(f"   Current Port: {port}")
+    logger.info(f"   Health Check: http://localhost:{port}/health")
+    logger.info(f"   API Access: http://localhost:{port}")
 
 
 if __name__ == "__main__":

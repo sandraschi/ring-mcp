@@ -15,7 +15,9 @@ scrape_configs:
           - localhost
         labels:
           job: ring-mcp
-          __path__: /var/log/ring-mcp/*.log
+          service: ring-mcp-server
+          log_type: application
+          __path__: ./logs/ring_mcp_*.log
     pipeline_stages:
       - json:
           expressions:

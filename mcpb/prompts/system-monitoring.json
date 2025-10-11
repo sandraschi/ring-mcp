@@ -1,0 +1,43 @@
+{
+  "name": "system-monitoring",
+  "description": "Continuous system health monitoring and performance tracking",
+  "version": "1.0.0",
+  "parameters": {
+    "monitoring_type": {
+      "type": "string",
+      "description": "Type of monitoring to perform",
+      "enum": ["health_check", "performance", "security", "comprehensive"],
+      "default": "comprehensive"
+    },
+    "time_range": {
+      "type": "string",
+      "description": "Time range for analysis (1h, 24h, 7d)",
+      "enum": ["1h", "24h", "7d", "30d"],
+      "default": "24h"
+    },
+    "alert_threshold": {
+      "type": "string",
+      "description": "Alert sensitivity level",
+      "enum": ["low", "medium", "high"],
+      "default": "medium"
+    }
+  },
+  "prompt": "Perform {{monitoring_type}} monitoring of the Ring security system for the past {{time_range}} with {{alert_threshold}} sensitivity.\n\n**System Monitoring Dashboard:**\n\n1. **System Health Metrics**\n   - Overall system uptime\n   - Device connectivity status\n   - Response times and latency\n   - Error rates and warnings\n\n2. **Device Performance**\n   - Individual device health scores\n   - Battery life projections\n   - Signal strength trends\n   - Firmware update status\n\n3. **Security Events**\n   - Motion detection patterns\n   - Access and authentication logs\n   - Failed connection attempts\n   - Unusual activity detection\n\n4. **Network & Connectivity**\n   - Internet connectivity stability\n   - WiFi signal strength\n   - Data usage patterns\n   - Bandwidth utilization\n\n5. **Alert Analysis**\n   - Current active alerts\n   - Alert frequency and patterns\n   - False positive identification\n   - Alert response effectiveness\n\n6. **Predictive Insights**\n   - Battery replacement predictions\n   - Maintenance recommendations\n   - Performance optimization suggestions\n   - Security enhancement opportunities\n\nGenerate a comprehensive monitoring report with clear status indicators and prioritized action items.",
+  "examples": [
+    {
+      "input": {
+        "monitoring_type": "comprehensive",
+        "time_range": "24h",
+        "alert_threshold": "medium"
+      },
+      "output": "## 📊 System Monitoring Report (Last 24 Hours)\n\n### 🟢 System Health: Excellent (98.5% uptime)\n\n#### Device Status\n- **Cameras**: 3/3 online (Front Door, Backyard, Garage)\n- **Doorbells**: 1/1 online (Front Door)\n- **Alarms**: 1/1 online (Security System)\n- **Sensors**: 2/2 online (Motion sensors)\n\n#### Performance Metrics\n- **Average Response Time**: 245ms\n- **Error Rate**: 0.02%\n- **Data Usage**: 2.3 GB\n- **Battery Health**: All >75%\n\n#### Security Events\n- **Motion Events**: 12 (8 valid, 4 false positives)\n- **Doorbell Rings**: 3\n- **Security Alerts**: 0\n- **Failed Auth Attempts**: 0\n\n#### Network Performance\n- **WiFi Stability**: 99.9%\n- **Average Signal**: -45dBm\n- **Upload Speed**: 8.5 Mbps\n- **Download Speed**: 42.1 Mbps\n\n#### 🔶 Alerts & Recommendations\n- **Medium Priority**: Clean garage camera lens (dust detected)\n- **Low Priority**: Review backyard motion zones (2 false positives)\n- **Info**: All systems operating within normal parameters\n\n#### 📈 Predictive Insights\n- **Battery Replacement**: Front doorbell in 2 months\n- **Maintenance**: Camera firmware update available\n- **Optimization**: Consider reducing motion sensitivity for backyard"
+    }
+  ],
+  "metadata": {
+    "category": "monitoring",
+    "complexity": "medium",
+    "estimated_duration": "3-5 minutes",
+    "requires_auth": true,
+    "continuous_monitoring": true
+  }
+}

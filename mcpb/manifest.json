@@ -1,0 +1,160 @@
+{
+  "manifest_version": "0.2",
+  "name": "ring-mcp",
+  "version": "1.0.1",
+  "description": "Ring Security Ecosystem MCP - Universal control for Ring doorbell, burglar alarm, fire alarm, and cameras",
+  "long_description": "Ring MCP Server provides complete integration with Ring security devices including cameras, doorbells, security systems, and fire safety devices. Features real-time device monitoring, live streaming, alarm control, and comprehensive system management using FastMCP 2.12.0.",
+  "author": {
+    "name": "Sandra",
+    "email": "sandra@example.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ring-mcp/ring-mcp"
+  },
+  "homepage": "https://github.com/ring-mcp/ring-mcp",
+  "documentation": "https://github.com/ring-mcp/ring-mcp/blob/main/README.md",
+  "support": "https://github.com/ring-mcp/ring-mcp/issues",
+  "license": "MIT",
+  "keywords": [
+    "ring",
+    "security",
+    "cameras",
+    "doorbells",
+    "mcp",
+    "fastmcp",
+    "monitoring",
+    "automation",
+    "home-security"
+  ],
+  "server": {
+    "type": "python",
+    "entry_point": "ring_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "ring_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "RING_USERNAME": "${user_config.ring_username}",
+        "RING_PASSWORD": "${user_config.ring_password}",
+        "RING_TOKEN": "${user_config.ring_token}",
+        "LOG_LEVEL": "${user_config.log_level}",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "user_config": {
+    "ring_username": {
+      "type": "string",
+      "title": "Ring Username",
+      "description": "Your Ring account email address",
+      "required": false,
+      "sensitive": false
+    },
+    "ring_password": {
+      "type": "string",
+      "title": "Ring Password",
+      "description": "Your Ring account password (stored securely)",
+      "required": false,
+      "sensitive": true
+    },
+    "ring_token": {
+      "type": "string",
+      "title": "Ring API Token",
+      "description": "Ring API token (optional - will be generated from username/password if not provided)",
+      "required": false,
+      "sensitive": true
+    },
+    "log_level": {
+      "type": "string",
+      "title": "Log Level",
+      "description": "Logging level (DEBUG, INFO, WARNING, ERROR)",
+      "required": false,
+      "default": "INFO"
+    }
+  },
+  "tools": [
+    {
+      "name": "get_devices",
+      "description": "Get a list of all Ring devices connected to your account"
+    },
+    {
+      "name": "get_device_details",
+      "description": "Get detailed information about a specific Ring device"
+    },
+    {
+      "name": "get_device_events",
+      "description": "Get recent events for a specific Ring device (motion, doorbell, etc.)"
+    },
+    {
+      "name": "get_live_stream_url",
+      "description": "Get a live stream URL for a Ring camera device"
+    },
+    {
+      "name": "set_arm_status",
+      "description": "Arm or disarm a Ring security system"
+    },
+    {
+      "name": "trigger_chime",
+      "description": "Trigger a Ring doorbell chime manually"
+    },
+    {
+      "name": "health_check",
+      "description": "Check the health and connectivity of the Ring MCP service"
+    },
+    {
+      "name": "get_system_status",
+      "description": "Get overall status of all Ring devices and systems"
+    },
+    {
+      "name": "get_recent_events",
+      "description": "Get recent events across all Ring devices"
+    },
+    {
+      "name": "get_battery_levels",
+      "description": "Check battery levels for all battery-powered Ring devices"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "security-system-analysis",
+      "description": "Comprehensive analysis of Ring security system status and recommendations",
+      "arguments": ["analysis_type", "focus_area", "time_period"],
+      "text": "Perform a comprehensive analysis of the Ring security system. Include device status, event analysis, system health assessment, and actionable recommendations. Use the security-system-analysis.json template for detailed guidance."
+    },
+    {
+      "name": "device-troubleshooting",
+      "description": "Step-by-step troubleshooting guide for Ring device issues",
+      "arguments": ["device_type", "device_name", "problem_type", "symptoms"],
+      "text": "Troubleshoot a Ring device issue with systematic diagnosis. Follow the device-troubleshooting.json template for comprehensive problem resolution steps."
+    },
+    {
+      "name": "morning-security-check",
+      "description": "Daily morning security system status check and briefing",
+      "arguments": ["check_type", "include_events", "include_forecast"],
+      "text": "Perform a morning security briefing for the Ring system. Check all device statuses, review overnight activity, and provide security recommendations. Follow the morning-security-check.json template."
+    },
+    {
+      "name": "emergency-response",
+      "description": "Emergency response protocol activation and coordination",
+      "arguments": ["emergency_type", "location", "severity"],
+      "text": "Activate emergency response protocol for Ring security system. Coordinate immediate security actions, evidence collection, and emergency notifications. Use the emergency-response.json template for critical incident response."
+    },
+    {
+      "name": "camera-management",
+      "description": "Comprehensive camera system management and optimization",
+      "arguments": ["action_type", "camera_focus", "include_recommendations"],
+      "text": "Manage and optimize Ring camera systems. Perform status checks, maintenance, and configuration optimization. Follow the camera-management.json template for comprehensive camera management."
+    },
+    {
+      "name": "system-monitoring",
+      "description": "Continuous system health monitoring and performance tracking",
+      "arguments": ["monitoring_type", "time_range", "alert_threshold"],
+      "text": "Monitor Ring security system health and performance continuously. Track system metrics, security events, and predictive maintenance needs. Use the system-monitoring.json template for detailed monitoring analysis."
+    }
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "python_version": ">=3.9"
+  }
+}

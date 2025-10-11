@@ -1,0 +1,48 @@
+{
+  "name": "emergency-response",
+  "description": "Emergency response protocol activation and coordination",
+  "version": "1.0.0",
+  "parameters": {
+    "emergency_type": {
+      "type": "string",
+      "description": "Type of emergency (burglary, fire, medical, panic)",
+      "enum": ["burglary", "fire", "medical", "panic", "intrusion", "other"],
+      "required": true
+    },
+    "location": {
+      "type": "string",
+      "description": "Location of emergency or affected area",
+      "required": false
+    },
+    "severity": {
+      "type": "string",
+      "description": "Emergency severity level",
+      "enum": ["low", "medium", "high", "critical"],
+      "default": "high"
+    },
+    "response_required": {
+      "type": "boolean",
+      "description": "Whether immediate response actions are needed",
+      "default": true
+    }
+  },
+  "prompt": "Activate emergency response protocol for {{emergency_type}} emergency at {{location}}. Severity: {{severity}}.\n\n**EMERGENCY RESPONSE PROTOCOL ACTIVATION**\n\n1. **Immediate Security Actions**\n   - Arm all security systems to maximum\n   - Activate all cameras and start recording\n   - Trigger audible alarms if appropriate\n   - Lock all smart locks immediately\n\n2. **Evidence Collection**\n   - Capture current camera feeds\n   - Record all device statuses\n   - Log timestamp and conditions\n   - Preserve recent event history\n\n3. **Communication & Alerts**\n   - Notify emergency contacts\n   - Send alerts to authorities if needed\n   - Provide situation updates\n   - Coordinate response teams\n\n4. **System Protection**\n   - Isolate compromised devices\n   - Secure network access\n   - Backup critical data\n   - Prepare system recovery\n\n5. **Post-Incident Actions**\n   - Document incident details\n   - Review security footage\n   - Update security protocols\n   - Schedule system maintenance\n\nExecute all appropriate security measures while maintaining system integrity and evidence preservation.",
+  "examples": [
+    {
+      "input": {
+        "emergency_type": "burglary",
+        "location": "Living Room",
+        "severity": "high",
+        "response_required": true
+      },
+      "output": "## 🚨 EMERGENCY RESPONSE ACTIVATED\n\n**Incident**: Burglary in Living Room  \n**Severity**: High  \n**Time**: 2025-01-15 14:30:22\n\n### 🔒 Security Actions Taken\n- ✅ All cameras activated and recording\n- ✅ Security system armed to maximum\n- ✅ All smart locks secured\n- ✅ Emergency contacts notified\n- ✅ Authorities alerted (Police en route)\n\n### 📹 Evidence Collection\n- 📸 Living room camera feed captured\n- 📸 Front/backyard cameras monitoring\n- 📋 All device statuses logged\n- 📋 Event history preserved\n\n### 📞 Communication Status\n- 📱 Emergency contacts: Notified (3/3)\n- 🚔 Authorities: Dispatched (ETA 8 minutes)\n- 👥 Neighbors: Alerted via Ring network\n\n### 🛡️ System Protection\n- 🔐 Network security protocols activated\n- 💾 Critical data backed up\n- 🚫 Suspicious devices isolated\n\n**REMAIN CALM. AUTHORITIES EN ROUTE. SYSTEM SECURED.**"
+    }
+  ],
+  "metadata": {
+    "category": "emergency",
+    "complexity": "high",
+    "estimated_duration": "1-3 minutes",
+    "requires_auth": true,
+    "critical_system": true
+  }
+}

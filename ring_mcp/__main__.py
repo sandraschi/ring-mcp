@@ -3,10 +3,13 @@ Ring MCP - Main entry point.
 
 This module provides the main entry point for the Ring MCP server.
 """
+import asyncio
 import logging
 import os
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Add the project root to the Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -22,59 +25,39 @@ from ring_mcp.server import create_app  # noqa: E402
 
 def prompt_for_2fa_code() -> str:
     """Prompt the user to enter their 2FA code."""
-    print("\n2FA verification code required.")
-    print("Check your authenticator app or SMS for the code.")
+    logging.info("\n2FA verification code required.")
+    logging.info("Check your authenticator app or SMS for the code.")
     while True:
         code = input("Enter 2FA code: ").strip()
         if code:
             return code
-        print("Error: 2FA code cannot be empty")
+        logging.error("Error: 2FA code cannot be empty")
 
 async def initialize_ring_client():
-    """Initialize the Ring client with 2FA support if needed."""
+    """Initialize the Ring client with lazy authentication."""
     # Load environment variables from .env file if it exists
     from dotenv import load_dotenv
     load_dotenv()
 
-    # Check for required environment variables
-    required_vars = ["RING_USERNAME", "RING_PASSWORD"]
-    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    # For MCP server mode, we initialize the client but don't authenticate yet
+    # Authentication will happen lazily when tools are actually called
+    from ring_mcp.core.ring_client_modern import RingClient
 
-    if missing_vars and not os.getenv("RING_TOKEN"):
-        print("Error: Missing required environment variables:")
-        for var in missing_vars:
-            print(f"- {var}")
-        print("\nPlease set these variables in a .env file or in your environment.")
-        print("See .env.example for an example configuration.")
-        sys.exit(1)
+    logging.info("Initializing Ring client (lazy authentication)...")
+    client = RingClient()
 
-    # Initialize the Ring client with 2FA support if needed
-    if not os.getenv("RING_TOKEN"):
-        from ring_mcp.core.ring_client_modern import RingClient
+    # Check if we have credentials available
+    has_credentials = (
+        (os.getenv("RING_USERNAME") and os.getenv("RING_PASSWORD")) or
+        os.getenv("RING_TOKEN")
+    )
 
-        print("Initializing Ring client...")
-        client = RingClient()
+    if has_credentials:
+        logging.info("Ring credentials found - authentication will happen on first API call")
+    else:
+        logging.info("No Ring credentials found - tools will require manual authentication")
 
-        try:
-            # Try to connect with 2FA support
-            await client.connect(two_factor_callback=prompt_for_2fa_code)
-            print("Successfully authenticated with Ring API")
-
-            # Save the token for future use
-            if client.token:
-                print("\nAuthentication successful!")
-                print("You can add the following to your .env file to avoid 2FA in the future:")
-                print(f"RING_TOKEN={client.token}")
-
-            return client
-
-        except Exception as e:
-            logger.error("Failed to initialize Ring client: %s", str(e))
-            print(f"\nError: {str(e)}")
-            print("Please check your credentials and try again.")
-            sys.exit(1)
-
-    return None
+    return client
 
 def main():
     """Run the Ring MCP server."""
@@ -91,32 +74,28 @@ def main():
     host = os.getenv("HOST", "0.0.0.0")
     port = get_ring_mcp_port()
 
-    print(f"\nStarting Ring MCP server on http://{host}:{port}")
-    print("Press Ctrl+C to stop")
+    logging.info(f"\nStarting Ring MCP server on http://{host}:{port}")
+    logging.info("Press Ctrl+C to stop")
     print_port_info(port)
 
     try:
-        # Run the server with both stdio and HTTP transports
-        # FastMCP's app.run() handles its own event loop
-        app.run(
-            host=host,
-            port=port,
-            log_level=os.getenv("LOG_LEVEL", "info").lower()
-        )
+        # Run the server with stdio transport for Claude Desktop
+        # FastMCP 2.12 stdio mode - no parameters needed
+        app.run()
     except KeyboardInterrupt:
-        print("\nShutting down Ring MCP server...")
+        logging.info("\nShutting down Ring MCP server...")
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+        logging.error(f"Error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
     if sys.version_info < (3, 7):
-        print("Error: Python 3.7 or later is required")
+        logging.error("Error: Python 3.7 or later is required")
         sys.exit(1)
 
     # Run the main function (now synchronous)
     try:
         main()
     except KeyboardInterrupt:
-        print("\nShutting down...")
+        logging.info("\nShutting down...")
         sys.exit(0)

@@ -15,6 +15,7 @@ from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 from prometheus_client import Counter, Histogram, Gauge, start_http_server
 import structlog
+import pythonjsonlogger
 
 from .core.ring_client_modern import RingClient
 
@@ -38,7 +39,91 @@ from .core.exceptions import (
 )
 from .composition import create_composed_app
 
-# Configure structured logging
+# Configure structured logging with file output for monitoring
+import logging.config
+from pathlib import Path
+
+# Create log directory
+log_dir = Path("logs")
+log_dir.mkdir(exist_ok=True)
+
+# Logging configuration for file output
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
+        },
+        "detailed": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        },
+    },
+    "handlers": {
+        "file_info": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "INFO",
+            "formatter": "json",
+            "filename": log_dir / "ring_mcp_info.log",
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 5,
+        },
+        "file_error": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "ERROR",
+            "formatter": "detailed",
+            "filename": log_dir / "ring_mcp_error.log",
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 5,
+        },
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "detailed",
+            "stream": "ext://sys.stderr",  # Use stderr for console output
+        },
+    },
+    "root": {
+        "level": "INFO",
+        "handlers": ["file_info", "file_error", "console"],
+    },
+    "loggers": {
+        "ring_mcp": {
+            "level": "INFO",
+            "handlers": ["file_info", "file_error", "console"],
+            "propagate": False,
+        },
+        "uvicorn": {
+            "level": "INFO",
+            "handlers": ["file_info", "console"],
+            "propagate": False,
+        },
+    },
+}
+
+# Apply logging configuration
+logging.config.dictConfig(LOGGING_CONFIG)
+
+# Configure structlog to use the configured loggers
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
+
 logger = structlog.get_logger(__name__)
 
 # Port management with graceful termination of previous instances
@@ -426,16 +511,9 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
             )
 
 # Register all tools on the global app instance
-def register_all_tools():
-    """Register all Ring MCP tools on the global app instance."""
+def register_all_tools_on_app(app: FastMCP, ring_client: Optional[RingClient] = None):
+    """Register all Ring MCP tools on a specific app instance."""
     try:
-        # Initialize Ring client
-        ring_client = RingClient()
-
-        # Register core Ring tools
-        register_ring_tools(app, ring_client)
-
-        # Import and register tools from all modules
         from .tools import (
             automation_tools,
             camera_tools,
@@ -457,15 +535,17 @@ def register_all_tools():
         security_system_tools.register_tools(app)
         status_tool.register_tools(app)
 
-        logger.info("All Ring MCP tools registered successfully")
+        logger.info("All Ring MCP tools registered successfully on app instance")
 
     except Exception as e:
-        logger.error("Failed to register tools: %s", str(e))
+        logger.error("Failed to register tools on app: %s", str(e))
         # Don't crash the server if tool registration fails
-        logger.warning("Server will start with limited functionality")
+        logger.warning("App will start with limited functionality")
 
-# Register all tools immediately when the module is imported
-register_all_tools()
+
+def register_all_tools():
+    """Register all Ring MCP tools on the global app instance (for backward compatibility)."""
+    register_all_tools_on_app(app)
 
 def create_app(ring_client: Optional[RingClient] = None) -> FastMCP:
     """Create and configure the FastMCP application with composition support.
@@ -480,8 +560,21 @@ def create_app(ring_client: Optional[RingClient] = None) -> FastMCP:
     Returns:
         Configured FastMCP application with Ring MCP and composition support
     """
-    # Tools are already registered on the global app instance
-    return app
+    # Create a new FastMCP app instance
+    new_app = FastMCP(
+        name="Ring MCP Server",
+        instructions="Comprehensive Ring Security System Management with FastMCP 2.12"
+    )
+
+    # Register all tools on the new app instance
+    try:
+        register_all_tools_on_app(new_app, ring_client)
+        logger.info("All Ring MCP tools registered successfully on new app instance")
+    except Exception as e:
+        logger.error("Failed to register tools on new app: %s", str(e))
+        logger.warning("New app will start with limited functionality")
+
+    return new_app
 
 if __name__ == "__main__":
     # Configure structured logging for FastMCP 2.12

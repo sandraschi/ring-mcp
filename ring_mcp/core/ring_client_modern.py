@@ -106,16 +106,11 @@ class RingClient:
                 return False
                 
             # Use the token to authenticate
-            self.token = token_data['access_token']
-            self._auth = await asyncio.to_thread(
-                Auth,
-                "ring_mcp/1.0",
-                {"token": self.token},
-                token_updated_cb=self._on_token_updated
-            )
-            
+            self.token = token_data  # Store the full token data dict
+            self._auth = Auth("ring_mcp/1.0", self.token, token_updater=self._on_token_updated)
+
             # Initialize Ring with the auth
-            self._ring = await asyncio.to_thread(Ring, self._auth)
+            self._ring = Ring(self._auth)
             
             # Verify the token is still valid by making a simple API call
             await asyncio.to_thread(self._ring.devices)
@@ -212,64 +207,37 @@ class RingClient:
 
             # If we have a token, try to use it directly
             if self.token:
-                self._auth = await asyncio.to_thread(
-                    Auth,
-                    "ring_mcp/1.0",
-                    {"token": self.token},
-                    token_updated_cb=self._on_token_updated
-                )
+                self._auth = Auth("ring_mcp/1.0", self.token, token_updater=self._on_token_updated)
             # Fall back to username/password
             elif self.username and self.password:
-                # Create a function to handle 2FA if needed
-                def auth_factory():
-                    return Auth(
-                        "ring_mcp/1.0",
-                        None,
-                        token_updater=self._save_token,
-                        username=self.username,
-                        password=self.password,
-                    )
-                
+                # Create Auth object
+                self._auth = Auth("ring_mcp/1.0", token_updater=self._on_token_updated)
+
                 try:
                     # First try without 2FA
-                    self._auth = await asyncio.to_thread(auth_factory)
+                    token = await self._auth.async_fetch_token(self.username, self.password)
+                    logger.info("Successfully authenticated with Ring API")
                 except Exception as e:
                     # Check if 2FA is required
-                    if "Verification Code" in str(e):
+                    if "Verification Code" in str(e) or "2FA" in str(e) or "verification" in str(e).lower():
                         logger.info("2FA verification code required")
                         if two_factor_callback and asyncio.iscoroutinefunction(two_factor_callback):
                             # Get 2FA code from callback
                             two_factor_code = await two_factor_callback()
                             if not two_factor_code:
                                 raise AuthenticationError("2FA code is required but not provided")
-                            
+
                             # Retry with 2FA code
-                            def auth_with_2fa():
-                                auth = Auth(
-                                    "ring_mcp/1.0",
-                                    None,
-                                    token_updater=self._save_token,
-                                    username=self.username,
-                                    password=self.password,
-                                    auth_callback=lambda: two_factor_code
-                            )
-                            return future.result()
-                        return Auth.new_auth_for_user(
-                            self.username,
-                            self.password,
-                            "ring_mcp/1.0",
-                            two_factor_callback=wrapped_2fa_callback
-                        )
+                            token = await self._auth.async_fetch_token(self.username, self.password, two_factor_code)
+                            logger.info("Successfully authenticated with Ring API (with 2FA)")
+                        else:
+                            raise AuthenticationError("2FA is required but no callback provided")
                     else:
-                        return Auth.new_auth_for_user(
-                            self.username,
-                            self.password,
-                            "ring_mcp/1.0"
-                        )
-                
-                self._auth = await asyncio.to_thread(auth_factory)
-                self.token = self._auth.token
-                
+                        raise AuthenticationError(f"Authentication failed: {e}")
+
+                # Extract token from auth object
+                self.token = self._auth._token
+
                 # Save the new token
                 if self.username and self.token:
                     await self._token_manager.save_token(
@@ -283,12 +251,8 @@ class RingClient:
                     "Either a valid token or username/password is required"
                 )
             
-            # Initialize the Ring API client with token update callback
-            self._ring = await asyncio.to_thread(
-                Ring, 
-                self._auth,
-                token_updated_cb=self._on_token_updated
-            )
+            # Initialize the Ring API client
+            self._ring = Ring(self._auth)
             
             # Update device cache
             await self._update_devices()

@@ -18,6 +18,20 @@ The Ring MCP Server provides comprehensive integration with Ring security device
 - **Security System Management** - Arm/disarm, status monitoring, alerts
 - **Health Monitoring** - Device connectivity, battery levels, maintenance alerts
 - **Event History** - Comprehensive activity logs and visitor tracking
+
+### 🐍 **Python Snippets Usage Guide**
+
+**📖 Complete Guide**: [PYTHON_SNIPPETS_USAGE_GUIDE.md](PYTHON_SNIPPETS_USAGE_GUIDE.md)
+- **How to use Python snippets** from this documentation
+- **Step-by-step instructions** for creating MCP servers
+- **Common issues and solutions** for debugging
+- **Best practices** for FastMCP 2.12 development
+
+**Quick Reference:**
+- **Copy snippets** to `.py` files
+- **Install dependencies**: `pip install fastmcp pydantic`
+- **Test with MCPJam**: `mcpjam test --server "python my_server.py"`
+- **Debug issues** using comprehensive troubleshooting guide
 - **Multi-Transport Support** - Both stdio and HTTP transport options
 
 ---

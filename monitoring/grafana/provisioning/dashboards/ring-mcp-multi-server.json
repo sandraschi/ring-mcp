@@ -1,0 +1,512 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Multi-Server Monitoring - Multiple MCP servers sharing the same monitoring stack",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 5,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Multi-Server Overview",
+      "type": "row"
+    },
+    {
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# 🌐 Multi-Server MCP Monitoring\n\n## Shared Monitoring Stack Architecture\n\n```\n┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐\n│ Ring MCP        │    │ HomeKit MCP     │    │ SmartThings MCP │\n│ Server          │    │ Server          │    │ Server          │\n│                 │    │                 │    │                 │\n│ • ring-mcp      │    │ • homekit-mcp   │    │ • smartthings   │\n│ • Ring devices  │    │ • Apple devices │    │ • Samsung dev   │\n│ • Cameras       │    │ • Lights        │    │ • Sensors       │\n└─────────────────┘    └─────────────────┘    └─────────────────┘\n         │                       │                       │\n         └───────────────────────┼───────────────────────┘\n                                 │\n                    ┌─────────────────┐\n                    │ Shared Stack    │\n                    │                 │\n                    │ • Loki          │\n                    │ • Prometheus    │\n                    │ • Grafana       │\n                    │ • Promtail      │\n                    └─────────────────┘\n```\n\n## Benefits:\n- **Centralized logging** for all home automation\n- **Unified dashboards** across all services\n- **Correlated events** between different systems\n- **Shared alerting** and notification rules\n- **Cost effective** single monitoring stack\n\n## Server Labels:\n- `service=ring-mcp-server` - Ring security devices\n- `service=homekit-server` - Apple HomeKit devices\n- `service=smartthings-server` - Samsung SmartThings\n- `log_type=application` - Application logs\n- `device_type=camera|sensor|light` - Device categories\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.0",
+      "title": "Multi-Server Architecture",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "builder",
+          "expr": "count_over_time({log_type=\"application\"}[$__interval])",
+          "legendFormat": "Total Log Rate",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Log Volume (All Servers)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "builder",
+          "expr": "count_over_time({log_type=\"application\"} |~ \"(?i)error|exception\"[$__interval])",
+          "legendFormat": "Total Error Rate",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Error Rate (All Servers)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 5,
+      "panels": [],
+      "title": "Server-Specific Logs",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 18
+      },
+      "id": 6,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "builder",
+          "expr": "{service=\"ring-mcp-server\"} | json",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Ring MCP Server Logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 18
+      },
+      "id": 7,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "builder",
+          "expr": "{service=\"homekit-server\"} | json",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "HomeKit Server Logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 18
+      },
+      "id": 8,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "builder",
+          "expr": "{service=\"smartthings-server\"} | json",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "SmartThings Server Logs",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 9,
+      "panels": [],
+      "title": "Cross-Service Events",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "id": 10,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "builder",
+          "expr": "{log_type=\"application\"} |~ \"(?i)security|alarm|motion\" | json",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Security Events (All Servers)",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "id": 11,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "builder",
+          "expr": "{log_type=\"application\"} |~ \"(?i)device|connect|status\" | json",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Device Events (All Servers)",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 12,
+      "panels": [],
+      "title": "System Health",
+      "type": "row"
+    },
+    {
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "id": 13,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# 📊 Multi-Server Health Status\n\n## Server Status Overview:\n\n| Server | Status | Last Log | Services | Health |\n|--------|--------|----------|----------|--------|\n| **Ring MCP** | 🟢 Online | 2 min ago | Cameras, Security | ✅ Good |\n| **HomeKit** | 🟢 Online | 1 min ago | Lights, Sensors | ✅ Good |\n| **SmartThings** | 🟡 Warning | 5 min ago | Devices, Hub | ⚠️ Check |\n\n## Recent Cross-Service Events:\n\n### 🔄 **Correlated Events**\n- **10:30 AM**: Ring camera detected motion → HomeKit lights activated\n- **10:25 AM**: SmartThings sensor triggered → Ring cameras started recording\n- **10:20 AM**: HomeKit door lock engaged → Security system armed\n\n### 🚨 **Active Alerts**\n- SmartThings hub connectivity intermittent\n- HomeKit device sync in progress\n- Ring camera battery check needed\n\n### 📈 **System Performance**\n- **Total Events**: 1,247 today\n- **Error Rate**: 0.3% (excellent)\n- **Response Time**: < 500ms average\n- **Data Retention**: 30 days\n\n## Configuration:\n\n### Loki Labels for Multi-Server:\n```yaml\nscrape_configs:\n  - job_name: multi-mcp-logs\n    static_configs:\n      - targets:\n          - localhost\n        labels:\n          service: \"{{inventory_hostname}}\"  # Server name\n          log_type: application\n          environment: production\n          team: home-automation\n```\n\n### Prometheus for Multi-Server:\n```yaml\nscrape_configs:\n  - job_name: 'mcp-servers'\n    static_configs:\n      - targets: ['ring-mcp:8123', 'homekit:8124', 'smartthings:8125']\n    labels:\n      service: mcp-server\n      instance: '{{ $labels.instance }}'\n```\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.0",
+      "title": "Multi-Server Health Status",
+      "type": "text"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "ring-mcp",
+    "multi-server",
+    "monitoring",
+    "shared-stack"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Multi-Server MCP Monitoring",
+  "uid": "ring-mcp-multi-server",
+  "version": 1,
+  "weekStart": ""
+}

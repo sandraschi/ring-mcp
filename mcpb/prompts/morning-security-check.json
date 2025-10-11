@@ -1,0 +1,40 @@
+{
+  "name": "morning-security-check",
+  "description": "Daily morning security system status check and briefing",
+  "version": "1.0.0",
+  "parameters": {
+    "check_type": {
+      "type": "string",
+      "description": "Type of morning check (standard, detailed, quick)",
+      "enum": ["standard", "detailed", "quick"],
+      "default": "standard"
+    },
+    "include_events": {
+      "type": "boolean",
+      "description": "Include overnight events summary",
+      "default": true
+    },
+    "include_forecast": {
+      "type": "boolean",
+      "description": "Include security recommendations for the day",
+      "default": true
+    }
+  },
+  "prompt": "Perform a morning security check of the Ring system with {{check_type}} detail level.\n\n**Morning Security Briefing:**\n\n1. **System Status Overview**\n   - All device connectivity status\n   - Battery levels summary\n   - Current arm/disarm status\n   - Any offline devices\n\n2. **Overnight Activity Summary**\n   {{#include_events}}\n   - Motion detection events\n   - Doorbell rings\n   - Alarm triggers\n   - Unusual activity patterns\n   {{/include_events}}\n\n3. **Weather & Environmental Notes**\n   - Weather impact on security\n   - Seasonal considerations\n   - Environmental alerts\n\n4. **Daily Security Recommendations**\n   {{#include_forecast}}\n   - Arm/disarm schedule\n   - Device maintenance needed\n   - Security awareness reminders\n   - Emergency preparedness\n   {{/include_forecast}}\n\n5. **Action Items**\n   - Immediate attention needed\n   - Today's maintenance tasks\n   - Follow-up monitoring\n\nFormat as a clear, actionable morning briefing with priority levels for any issues.",
+  "examples": [
+    {
+      "input": {
+        "check_type": "standard",
+        "include_events": true,
+        "include_forecast": true
+      },
+      "output": "## 🌅 Morning Security Briefing\n\n### ✅ System Status: All Clear\n- **Devices Online**: 4/4 (Front Camera, Back Camera, Doorbell, Alarm)\n- **Battery Levels**: All >80% (Front: 85%, Back: 92%, Doorbell: 78%)\n- **System Status**: Disarmed (Home mode)\n\n### 🌙 Overnight Activity (12 AM - 6 AM)\n- **Motion Events**: 2 (Backyard - 2:15 AM, Front yard - 4:30 AM)\n- **Doorbell Rings**: 0\n- **Alerts**: 0\n- **Weather**: Clear, 65°F\n\n### 📋 Today's Security Notes\n- **Weather**: Sunny, low security risk\n- **Schedule**: Arm system when leaving for work\n- **Maintenance**: Check doorbell battery in 2 months\n\n### ⚡ Action Items\n- **Low Priority**: Review backyard motion sensitivity\n- **Info**: All systems operating normally\n\n*Have a secure day! 🛡️*"
+    }
+  ],
+  "metadata": {
+    "category": "monitoring",
+    "complexity": "low",
+    "estimated_duration": "2-3 minutes",
+    "requires_auth": true
+  }
+}

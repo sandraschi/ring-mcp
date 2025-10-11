@@ -23,7 +23,7 @@ def read_requirements():
 
 setup(
     name="ring-mcp",
-    version="0.1.0",
+    version="1.0.1",
     author="Your Name",
     author_email="your.email@example.com",
     description="Ring MCP - Universal Control for Ring Devices",

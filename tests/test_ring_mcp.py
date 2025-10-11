@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 from fastmcp import Client
 
 # Import the server module to test
-from ring_mcp.server import create_app, get_ring_client, mcp
+from ring_mcp.server import create_app
 from ring_mcp.core.ring_client_modern import RingClient
 from ring_mcp.core.exceptions import AuthenticationError, DeviceNotFoundError
 

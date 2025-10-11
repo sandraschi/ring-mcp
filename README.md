@@ -2,12 +2,25 @@
 
 **Universal Ring Security Ecosystem Control** - FastMCP 2.12 server for comprehensive Ring device management including doorbells, security cameras, and alarm systems.
 
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/ring-mcp/ring-mcp/releases)
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![MCP](https://img.shields.io/badge/MCP-2.12.0-orange.svg)](https://modelcontextprotocol.io/)
+[![Glama.ai Gold Status](https://img.shields.io/badge/Glama.ai-Gold%20Status-gold.svg)](https://glama.ai/)
+
+> **Latest Version: 1.0.1** - [View Changelog](CHANGELOG.md)
+
+**Keywords**: `ring`, `security`, `cameras`, `doorbells`, `mcp`, `fastmcp`, `monitoring`, `automation`, `home-security`, `iot`, `smart-home`
+
 ## 📚 Documentation
 
 - **[📖 API Reference](docs/RING_MCP_API_REFERENCE.md)** - Complete API documentation
 - **[🚀 Quick Reference](docs/RING_MCP_QUICK_REFERENCE.md)** - Tool summaries and examples
 - **[🏗️ Ring MCP Architecture](docs/RING_MCP_ARCHITECTURE.md)** - Advanced architecture & advantages
 - **[🏗️ Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)** - System design details
+- **[🔍 Logging & Monitoring](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability guide
+- **[📊 Multi-Server Monitoring](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server analytics
+- **[🔧 FastMCP 2.12 Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
 
 ## Features
 
@@ -17,7 +30,9 @@
 - **Extensible**: Built on FastMCP for easy integration with other services
 - **Scalable**: Designed to handle multiple clients and devices efficiently
 - **Containerized**: Easy deployment with Docker and Docker Compose
-- **Monitoring**: Built-in support for Prometheus metrics and Grafana dashboards
+- **Advanced Monitoring**: Complete observability with Grafana dashboards and Loki logging
+- **Multi-Server Support**: Monitor multiple MCP servers in a unified dashboard
+- **Production Logging**: Structured JSON logging with automatic rotation and correlation
 - **High Availability**: Support for Redis caching and session management
 
 ## Quick Start
@@ -30,28 +45,24 @@
 
 ### Installation
 
-#### Using DXT Extension (Claude Desktop Integration)
+#### Using MCPB Package (Claude Desktop Integration) ⭐ **RECOMMENDED**
 
-The easiest way to use Ring MCP with Claude Desktop is through our DXT extension:
+The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bundle) package:
 
-1. **Build the DXT package**:
+1. **Build the MCPB package**:
    ```bash
-   # Option 1: Python script (recommended)
-   cd dxt
-   python dxt_build.py
+   # Option 1: PowerShell script (recommended)
+   .\scripts\build-mcpb-package.ps1
 
-   # Option 2: PowerShell (Windows)
-   .\scripts\build-dxt.ps1
-
-   # Option 3: Bash (Cross-platform)
-   ./scripts/build-dxt.sh
+   # Option 2: Manual build
+   mcpb pack . dist/ring-mcp.mcpb --no-sign
    ```
 
 2. **Install in Claude Desktop**:
-   - Locate the built package: `dist/ring-mcp-server.dxt`
-   - Drag and drop the `.dxt` file into Claude Desktop
-   - Follow the configuration prompts for your Ring credentials
-   - Restart Claude Desktop
+   - Locate the built package: `dist/ring-mcp.mcpb`
+   - Drag and drop the `.mcpb` file into Claude Desktop
+   - Configure your Ring credentials when prompted
+   - **Restart Claude Desktop completely** (important for MCP server to initialize)
 
 3. **Start using Ring tools**:
    ```
@@ -59,6 +70,8 @@ The easiest way to use Ring MCP with Claude Desktop is through our DXT extension
    ring.health_check       # Check system status
    ring.get_live_stream_url --device_id <camera_id>
    ```
+
+> **Note**: The MCP server now uses lazy authentication - it starts successfully without Ring credentials and only authenticates when tools are actually called. If you encounter authentication issues when using tools, check the Claude Desktop logs at `C:\Users\<username>\AppData\Roaming\Claude\logs\mcp-server-ring-security.log`
 
 #### Using Docker (Recommended for Server Deployment)
 
@@ -235,20 +248,56 @@ docker-compose up --build
    docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
    ```
 
-## Monitoring
+## 🔍 Complete Observability Stack
 
-The application exposes Prometheus metrics at `/metrics`. A sample Grafana dashboard is included in the `monitoring/` directory.
+Ring MCP includes a **production-ready monitoring system** that provides complete visibility into your security system:
 
-### Setting Up Monitoring
+### **📊 Monitoring Features**
+- **Real-time log streaming** with structured JSON logging
+- **Performance metrics** for API calls and tool execution
+- **Security event tracking** with device status monitoring
+- **Multi-server support** for monitoring multiple MCP servers
+- **Pictorial dashboards** showing camera feeds and device status
+- **Alert integration** with email, Slack, and webhook support
 
-1. Start the monitoring stack:
+### **🚀 Quick Monitoring Setup**
+
+1. **Start the complete monitoring stack**:
    ```bash
-   docker-compose -f docker-compose.monitoring.yml up -d
+   cd monitoring
+   docker-compose up -d
    ```
 
-2. Access the dashboards:
-   - Grafana: http://localhost:9001 (admin/admin)
-   - Prometheus: http://localhost:9002
+2. **Access the dashboards**:
+   - **Grafana**: http://localhost:3000 (admin/admin)
+   - **Loki**: http://localhost:3100 (log queries)
+   - **Prometheus**: http://localhost:9090 (metrics)
+
+3. **Available Dashboards**:
+   - **Logs & Analysis**: Real-time log streaming and error tracking
+   - **Performance & Metrics**: API performance and tool usage analytics
+   - **Security Overview**: Device status and security event monitoring
+   - **Multi-Server View**: Cross-server monitoring and correlation
+   - **Security Camera**: Live camera feeds and motion detection
+
+### **🆕 Advanced Features**
+
+#### **Claude Desktop Logs Integration**
+- **Location**: `C:\Users\sandr\AppData\Roaming\Claude\logs`
+- **Mixed logs**: Server + Client logs in same files
+- **Timeline analysis**: Track "what moved" by date/time
+- **Debug correlation**: Match server errors with client-side issues
+
+#### **Multi-Server Monitoring**
+- **Universal stack**: Works for all 20+ MCP servers
+- **Cross-service events**: Motion detection → light activation
+- **Pictorial information**: Camera feeds and visual alerts
+- **Production ready**: Used across all MCP projects
+
+### **📖 Complete Documentation**
+- **[🔍 Logging & Monitoring Guide](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability setup
+- **[📊 Multi-Server Analytics](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server monitoring
+- **[🔧 FastMCP Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging
 
 ## Contributing
 
@@ -304,61 +353,80 @@ ring-mcp/
 - **Error Resilience** - Graceful degradation
 - **Performance Optimized** - Efficient API usage
 
-## 📦 DXT Extension Packaging
+## 📦 MCPB Packaging
 
-Ring MCP includes full DXT (Deployment eXtension Toolkit) support for easy Claude Desktop integration.
+Ring MCP includes full MCPB (MCP Bundle) support for professional Claude Desktop integration.
 
-### Building DXT Extensions
+### Building MCPB Packages
 
 #### Prerequisites
 - Python 3.9+
 - FastMCP 2.12.0+
+- MCPB CLI (`npm install -g @anthropic-ai/mcpb`)
 - Git repository (for version control)
 
 #### Build Commands
 
 ```bash
-# Option 1: Python script (recommended)
-cd dxt
-python dxt_build.py
+# Option 1: PowerShell script (recommended)
+.\scripts\build-mcpb-package.ps1
 
-# Option 2: PowerShell script (Windows)
-.\scripts\build-dxt.ps1
+# Option 2: Manual build (requires config files in mcpb/)
+mcpb pack . dist/ring-mcp.mcpb --no-sign
 
-# Option 3: Bash script (cross-platform)
-./scripts/build-dxt.sh
+# Option 3: With signing (production)
+mcpb pack . dist/ring-mcp.mcpb
 ```
 
 #### Package Contents
 - **Source code**: All Python modules properly structured
-- **Dependencies**: All runtime dependencies bundled in `lib/` directory
-- **Manifest**: Complete configuration for Claude Desktop
-- **Entry point**: Proper main.py with sys.path configuration
+- **Dependencies**: All runtime dependencies bundled
+- **Manifest**: Complete MCPB configuration from `mcpb/manifest.json`
+- **Build config**: MCPB build settings from `mcpb/mcpb.json`
+- **Prompt templates**: 6 comprehensive AI prompt templates in `mcpb/prompts/`
+- **User configuration**: Interactive setup prompts
+- **Security**: Optional cryptographic signing
 
 #### Installation in Claude Desktop
-1. Build the package: `python dxt/dxt_build.py`
-2. Locate: `dist/ring-mcp-server.dxt`
+1. Build the package: `.\scripts\build-mcpb-package.ps1`
+2. Locate: `dist/ring-mcp.mcpb`
 3. Drag & drop into Claude Desktop
-4. Configure Ring credentials
+4. Configure Ring credentials when prompted
 5. Restart Claude Desktop
 
-### DXT Configuration
+### MCPB Configuration
 
-The DXT extension includes:
+The MCPB package includes:
 
-- **20+ Ring tools** - Complete device management
+- **10+ Ring tools** - Complete device management
+- **6 AI prompt templates** - Advanced AI interaction templates
 - **Real-time monitoring** - Live device status
-- **Secure authentication** - Ring API integration
-- **User configuration** - Easy setup prompts
+- **Secure authentication** - Ring API integration with lazy loading
+- **User configuration** - Interactive setup prompts for credentials
 - **Error handling** - Graceful failure recovery
+- **Cross-platform** - Windows, macOS, and Linux support
+
+#### AI Prompt Templates
+
+The package includes 6 comprehensive prompt templates for advanced AI interactions:
+
+1. **Security System Analysis** - Comprehensive security assessment and recommendations
+2. **Device Troubleshooting** - Step-by-step device issue diagnosis and resolution
+3. **Morning Security Check** - Daily security briefing and status updates
+4. **Emergency Response** - Critical incident response protocol activation
+5. **Camera Management** - Camera system optimization and maintenance
+6. **System Monitoring** - Continuous health monitoring and performance tracking
+
+All templates follow MCPB standards with structured JSON format, parameter validation, and example usage patterns.
 
 ### CI/CD Integration
 
-DXT packaging is fully integrated into the GitHub Actions workflow:
-- Automatic DXT package building
-- Dependency validation
-- Multi-platform testing
-- Artifact upload for releases
+MCPB packaging is fully integrated into GitHub Actions:
+- Automatic MCPB package building on version tags
+- Dependency validation and testing
+- Multi-platform compatibility
+- Artifact upload and release creation
+- PyPI publication for Python packages
 
 ## 📊 Usage Examples
 

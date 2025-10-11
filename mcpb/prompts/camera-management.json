@@ -1,0 +1,40 @@
+{
+  "name": "camera-management",
+  "description": "Comprehensive camera system management and optimization",
+  "version": "1.0.0",
+  "parameters": {
+    "action_type": {
+      "type": "string",
+      "description": "Type of camera management action",
+      "enum": ["status_check", "optimization", "maintenance", "configuration"],
+      "default": "status_check"
+    },
+    "camera_focus": {
+      "type": "string",
+      "description": "Specific camera or 'all' for all cameras",
+      "default": "all"
+    },
+    "include_recommendations": {
+      "type": "boolean",
+      "description": "Include optimization recommendations",
+      "default": true
+    }
+  },
+  "prompt": "Perform {{action_type}} for Ring camera system, focusing on {{camera_focus}}.\n\n**Camera Management Analysis:**\n\n1. **Camera Inventory & Status**\n   - List all Ring cameras\n   - Current online/offline status\n   - Battery levels and power status\n   - Firmware versions\n\n2. **Performance Metrics**\n   - Video quality assessment\n   - Motion detection sensitivity\n   - Night vision capability\n   - Storage utilization\n\n3. **Connectivity Analysis**\n   - WiFi signal strength\n   - Network stability\n   - Upload/download speeds\n   - Connection reliability\n\n4. **Recording & Storage**\n   - Available storage space\n   - Recording settings\n   - Retention policies\n   - Cloud vs local storage\n\n{{#include_recommendations}}\n5. **Optimization Recommendations**\n   - Camera placement improvements\n   - Settings adjustments\n   - Maintenance schedule\n   - Performance enhancements\n\n6. **Security Assessment**\n   - Privacy settings review\n   - Access control verification\n   - Update status\n{{/include_recommendations}}\n\nProvide detailed analysis with specific actionable recommendations.",
+  "examples": [
+    {
+      "input": {
+        "action_type": "optimization",
+        "camera_focus": "all",
+        "include_recommendations": true
+      },
+      "output": "## 📹 Camera System Optimization Report\n\n### Camera Inventory\n- **Front Door**: Ring Spotlight Cam (Online, Battery 78%)\n- **Backyard**: Ring Floodlight Cam (Online, Battery 92%)\n- **Garage**: Ring Indoor Cam (Online, Wired)\n\n### Current Performance\n- **Video Quality**: All cameras 1080p\n- **Motion Detection**: Medium sensitivity\n- **Night Vision**: IR enabled on all\n- **Storage**: 75% used (30 days retention)\n\n### Optimization Recommendations\n\n#### 🔧 Immediate Actions\n1. **Adjust Motion Sensitivity**\n   - Front Door: Increase to High (currently missing motion)\n   - Backyard: Decrease to Low (too many false positives)\n\n2. **Camera Positioning**\n   - Front Door: Lower angle by 5° for better face capture\n   - Backyard: Reposition to eliminate tree movement triggers\n\n#### 📅 Maintenance Schedule\n- **Monthly**: Clean camera lenses and check mounts\n- **Quarterly**: Test night vision and motion detection\n- **Bi-annually**: Replace batteries (Front Door due in 3 months)\n\n#### ⚙️ Advanced Settings\n- Enable person detection for all cameras\n- Set custom motion zones for backyard camera\n- Configure email alerts for important events only"
+    }
+  ],
+  "metadata": {
+    "category": "management",
+    "complexity": "medium",
+    "estimated_duration": "4-6 minutes",
+    "requires_auth": true
+  }
+}

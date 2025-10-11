@@ -1,0 +1,42 @@
+{
+  "name": "security-system-analysis",
+  "description": "Comprehensive analysis of Ring security system status and recommendations",
+  "version": "1.0.0",
+  "parameters": {
+    "analysis_type": {
+      "type": "string",
+      "description": "Type of analysis to perform (comprehensive, quick, detailed)",
+      "enum": ["comprehensive", "quick", "detailed"],
+      "default": "comprehensive"
+    },
+    "focus_area": {
+      "type": "string",
+      "description": "Specific area to focus on (devices, events, battery, connectivity)",
+      "enum": ["devices", "events", "battery", "connectivity", "all"],
+      "default": "all"
+    },
+    "time_period": {
+      "type": "string",
+      "description": "Time period to analyze (24h, 7d, 30d)",
+      "enum": ["24h", "7d", "30d"],
+      "default": "24h"
+    }
+  },
+  "prompt": "Perform a {{analysis_type}} analysis of the Ring security system, focusing on {{focus_area}} for the past {{time_period}}. Include:\n\n1. **Device Status Overview**\n   - List all Ring devices and their current status\n   - Identify any offline or malfunctioning devices\n   - Check battery levels for battery-powered devices\n\n2. **Event Analysis**\n   - Review recent events (motion, doorbell, alarms)\n   - Identify patterns or unusual activity\n   - Flag any security concerns\n\n3. **System Health**\n   - Connectivity status of all devices\n   - Signal strength and network issues\n   - Firmware update status\n\n4. **Security Assessment**\n   - Current arm/disarm status\n   - Recent access patterns\n   - Potential vulnerabilities\n\n5. **Recommendations**\n   - Immediate actions needed\n   - Maintenance tasks\n   - Security improvements\n   - Cost-saving suggestions\n\nProvide actionable insights with specific steps for any issues found.",
+  "examples": [
+    {
+      "input": {
+        "analysis_type": "comprehensive",
+        "focus_area": "all",
+        "time_period": "24h"
+      },
+      "output": "## Ring Security System Analysis (Last 24 Hours)\n\n### Device Status Overview\n- **Front Door Camera**: Online, Battery 85%, Last motion: 2 hours ago\n- **Backyard Camera**: Online, Battery 92%, Last motion: 6 hours ago\n- **Doorbell**: Online, Battery 78%, 3 rings today\n- **Security Alarm**: Online, Currently disarmed\n\n### Key Findings\n- All devices are operational\n- Battery levels are good (>75%)\n- No unusual activity detected\n\n### Recommendations\n- Schedule battery replacement for doorbell in 2 months\n- Consider enabling motion alerts for backyard camera"
+    }
+  ],
+  "metadata": {
+    "category": "analysis",
+    "complexity": "high",
+    "estimated_duration": "5-10 minutes",
+    "requires_auth": true
+  }
+}
