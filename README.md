@@ -15,13 +15,14 @@
 
 ## 📚 Documentation
 
+- **[🚀 Complete Setup Guide](docs/RING_MCP_SETUP_GUIDE.md)** - Device onboarding, API keys, 2FA, discovery & iOS app integration
 - **[📖 API Reference](docs/RING_MCP_API_REFERENCE.md)** - Complete API documentation
 - **[🚀 Quick Reference](docs/RING_MCP_QUICK_REFERENCE.md)** - Tool summaries and examples
 - **[🏗️ Ring MCP Architecture](docs/RING_MCP_ARCHITECTURE.md)** - Advanced architecture & advantages
 - **[🏗️ Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)** - System design details
 - **[🔍 Logging & Monitoring](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability guide
 - **[📊 Multi-Server Monitoring](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server analytics
-- **[🔧 FastMCP 2.12 Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
+- **[🔧 FastMCP 2.13 Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
 
 ## Features
 
@@ -43,6 +44,11 @@
 - Python 3.10+ (3.11+ recommended for optimal performance)
 - Ring account with 2FA enabled (recommended)
 - Docker and Docker Compose (for containerized deployment)
+
+#### 📱 Ring Account Setup
+- **Ring App**: Download from [App Store](https://apps.apple.com/app/ring/id926252661) or [Google Play](https://play.google.com/store/apps/details?id=com.ringapp)
+- **2FA Required**: Enable two-factor authentication in Ring app for security
+- **Supported Devices**: Video Doorbell, Spotlight Cam, Floodlight Cam, Indoor Cam, Alarm systems
 
 ### Installation
 
