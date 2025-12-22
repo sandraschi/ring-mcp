@@ -1,4 +1,4 @@
-# 🔧 FastMCP 2.12 Troubleshooting Guide
+# 🔧 FastMCP 2.13 Troubleshooting Guide
 
 **Based on Real-World Debugging Experience**  
 **Project**: nest-protect MCP Server  

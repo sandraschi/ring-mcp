@@ -2,7 +2,7 @@
 
 **Last Updated**: September 20, 2025  
 **Version**: 1.0.0 (Production)  
-**Framework**: FastMCP 2.12.3  
+**Framework**: FastMCP 2.13.0  
 **Status**: ✅ **PRODUCTION READY**
 
 ---

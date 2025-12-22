@@ -1,0 +1,165 @@
+{
+  "manifest_version": "0.2",
+  "name": "ring-mcp",
+  "version": "1.0.2",
+  "description": "🔥 Ring Security Ecosystem MCP - Universal control for Ring doorbell, burglar alarm, fire alarm, and cameras with Austrian precision",
+  "author": "Sandra Schiessl",
+  "homepage": "https://github.com/sandraschi/ring-mcp",
+  "license": "MIT",
+  "server": {
+    "type": "python",
+    "entry_point": "ring_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "ring_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1",
+        "RING_USERNAME": "${RING_USERNAME}",
+        "RING_PASSWORD": "${RING_PASSWORD}",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  },
+  "user_config": {
+    "ring_username": {
+      "type": "string",
+      "title": "Ring Account Username/Email",
+      "description": "Your Ring account email address",
+      "required": true,
+      "default": "",
+      "secret": true
+    },
+    "ring_password": {
+      "type": "string",
+      "title": "Ring Account Password",
+      "description": "Your Ring account password (2FA recommended)",
+      "required": true,
+      "default": "",
+      "secret": true
+    },
+    "log_level": {
+      "type": "string",
+      "title": "Log Level",
+      "description": "Logging verbosity level",
+      "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+      "default": "INFO"
+    },
+    "request_timeout": {
+      "type": "number",
+      "title": "API Request Timeout (seconds)",
+      "description": "Timeout for Ring API requests",
+      "minimum": 10,
+      "maximum": 300,
+      "default": 30
+    },
+    "enable_websocket": {
+      "type": "boolean",
+      "title": "Enable Real-time Events",
+      "description": "Enable WebSocket connection for real-time device events",
+      "default": true
+    },
+    "cache_ttl": {
+      "type": "number",
+      "title": "Cache TTL (seconds)",
+      "description": "How long to cache device data",
+      "minimum": 30,
+      "maximum": 3600,
+      "default": 300
+    }
+  },
+  "tools": [
+    {
+      "name": "list_devices",
+      "description": "List all Ring devices in your account with current status"
+    },
+    {
+      "name": "get_device_info",
+      "description": "Get detailed information about a specific Ring device"
+    },
+    {
+      "name": "get_device_health",
+      "description": "Check battery level and connectivity status of Ring devices"
+    },
+    {
+      "name": "start_live_view",
+      "description": "Start live video streaming from Ring cameras"
+    },
+    {
+      "name": "capture_snapshot",
+      "description": "Capture a still image from Ring camera"
+    },
+    {
+      "name": "get_recent_events",
+      "description": "Retrieve recent motion, doorbell, and alarm events"
+    },
+    {
+      "name": "control_device",
+      "description": "Control Ring device lights, sirens, and other features"
+    },
+    {
+      "name": "set_device_settings",
+      "description": "Configure device settings like motion sensitivity and notifications"
+    },
+    {
+      "name": "monitor_events",
+      "description": "Subscribe to real-time device events via WebSocket"
+    },
+    {
+      "name": "get_system_status",
+      "description": "Get overall Ring system status and diagnostics"
+    },
+    {
+      "name": "test_connectivity",
+      "description": "Test connectivity to Ring API and devices"
+    },
+    {
+      "name": "manage_locations",
+      "description": "Manage Ring locations and device groupings"
+    },
+    {
+      "name": "get_shared_users",
+      "description": "List users who have access to your Ring devices"
+    },
+    {
+      "name": "update_firmware",
+      "description": "Check and update device firmware"
+    },
+    {
+      "name": "export_device_data",
+      "description": "Export device history and event data"
+    }
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "python": ">=3.10",
+    "mcp": ">=2.13.0"
+  },
+  "features": [
+    "🔥 Unified Ring device API (doorbells, cameras, alarms)",
+    "📡 Real-time event monitoring with WebSocket",
+    "🎥 Live video streaming access",
+    "🚨 Motion and doorbell event detection",
+    "❤️ Health monitoring and diagnostics",
+    "🔋 Device status and battery monitoring",
+    "💡 Light and siren control",
+    "📸 Snapshot capture",
+    "🔐 Secure token storage with auto-refresh",
+    "🐳 Docker containerization support",
+    "📊 Grafana monitoring dashboards",
+    "📝 Structured JSON logging with Loki",
+    "🌐 Multi-server monitoring support",
+    "🇦🇹 Austrian engineering quality"
+  ],
+  "supported_devices": [
+    "Ring Video Doorbell (all models: 1-5, Pro, Elite)",
+    "Ring Stick Up Cam (Wired/Wire-Free/Battery)",
+    "Ring Spotlight Cam (Wired/Wire-Free/Pro)",
+    "Ring Floodlight Cam (Wired/Wire-Free/Pro)",
+    "Ring Indoor Cam",
+    "Ring Alarm (Base Station, Contact Sensor, Motion Sensor)",
+    "Ring Chime and Chime Pro",
+    "Ring Smart Lighting (Pathlight, Steplight)"
+  ]
+}
+

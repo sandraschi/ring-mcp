@@ -1,14 +1,15 @@
 # Ring MCP 🚨
 
-**Universal Ring Security Ecosystem Control** - FastMCP 2.12 server for comprehensive Ring device management including doorbells, security cameras, and alarm systems.
+**Universal Ring Security Ecosystem Control** - FastMCP 2.13.0 server for comprehensive Ring device management including doorbells, security cameras, and alarm systems with Austrian precision.
 
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/ring-mcp/ring-mcp/releases)
-[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
+[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/sandraschi/ring-mcp/releases)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![MCP](https://img.shields.io/badge/MCP-2.12.0-orange.svg)](https://modelcontextprotocol.io/)
-[![Glama.ai Gold Status](https://img.shields.io/badge/Glama.ai-Gold%20Status-gold.svg)](https://glama.ai/)
+[![FastMCP 2.13.0](https://img.shields.io/badge/FastMCP-2.13.0-orange.svg)](https://github.com/modelcontextprotocol/fastmcp)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://github.com/sandraschi/ring-mcp)
 
-> **Latest Version: 1.0.1** - [View Changelog](CHANGELOG.md)
+> **Latest Version: 1.0.2** - [View Changelog](CHANGELOG.md)
 
 **Keywords**: `ring`, `security`, `cameras`, `doorbells`, `mcp`, `fastmcp`, `monitoring`, `automation`, `home-security`, `iot`, `smart-home`
 
@@ -39,7 +40,7 @@
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.10+ (3.11+ recommended for optimal performance)
 - Ring account with 2FA enabled (recommended)
 - Docker and Docker Compose (for containerized deployment)
 

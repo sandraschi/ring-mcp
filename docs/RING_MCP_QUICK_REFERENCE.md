@@ -1,6 +1,6 @@
 # 🏠 Ring MCP Server - Quick Reference
 
-**Version**: 2.12.0 | **Updated**: September 20, 2025
+**Version**: 2.13.0 | **Updated**: December 21, 2025
 
 ---
 
