@@ -1,15 +1,15 @@
 # 🏗️ Ring MCP Server - Advanced Architecture & Advantages
 
-**Last Updated**: September 20, 2025
-**Version**: 2.12.0 (Production)
-**Framework**: FastMCP 2.13.0
+**Last Updated**: March 2026
+**Version**: 3.1.0 (Production)
+**Framework**: FastMCP 3.1
 **Status**: ✅ **PRODUCTION READY**
 
 ---
 
 ## 🎯 Architecture Overview
 
-The Ring MCP Server implements a **dual-interface, production-grade architecture** that provides seamless integration with Claude Desktop while offering comprehensive HTTP APIs for testing, monitoring, and external client access. Built on **FastMCP 2.12** with **real Ring device integration**, this system delivers enterprise-class security management capabilities.
+The Ring MCP Server implements a **dual-interface, production-grade architecture** that provides seamless integration with Claude Desktop while offering comprehensive HTTP APIs for testing, monitoring, and external client access. Built on **FastMCP 3.1** (sampling, agentic workflows, prompts/skills) with **real Ring device integration**, this system delivers enterprise-class security management capabilities.
 
 ### 🚀 **Core Innovation: Dual Interface Design**
 
@@ -21,7 +21,7 @@ The Ring MCP Server implements a **dual-interface, production-grade architecture
                       │ STDIO Transport
                       │ JSON-RPC Messages
 ┌─────────────────────▼───────────────────────────────────────┐
-│                FastMCP Server 2.12                          │
+│                FastMCP Server 3.1                           │
 │              (ring_mcp/server.py)                           │
 │  ┌─────────────────────────────────────────────────────────┤
 │  │ Tool Registry (17+ tools)                              │
@@ -54,15 +54,15 @@ The Ring MCP Server implements a **dual-interface, production-grade architecture
 
 ## 🏛️ Core Components
 
-### **1. FastMCP 2.12 Server Layer**
+### **1. FastMCP 3.1 Server Layer**
 
 **File**: `ring_mcp/server.py`
 
 **Purpose**: Central application orchestrator with dual transport support
 
 **Key Features**:
-- **Dual Transport**: `["stdio", "http"]` - Claude Desktop + HTTP API
-- **Tool Registration**: 17+ tools with FastMCP 2.12 multiline decorators
+- **Dual Transport**: stdio (Claude Desktop) and HTTP (REST API via `ring_mcp.http_server`)
+- **Tool Registration**: 17+ tools; FastMCP 3.1 conversational responses, sampling, agentic workflows
 - **Type Safety**: Full Pydantic v2 model integration
 - **Health Monitoring**: Built-in health checks and metrics
 - **Error Recovery**: Comprehensive exception handling with structured logging
@@ -75,9 +75,8 @@ RING_MCP_PORT = get_ring_mcp_port()  # Uses 8123 by default, handles conflicts
 
 app = FastMCP(
     name="Ring Security",
-    version="2.12.0",
-    description="Ring Security Ecosystem Integration - FastMCP 2.12",
-    transport=["stdio", "http"],  # Dual interface support
+    version="3.1.0",
+    description="Ring Security Ecosystem Integration - FastMCP 3.1",
     host=os.getenv("HOST", "0.0.0.0"),
     port=RING_MCP_PORT,  # Dynamic port with conflict resolution
 )
@@ -145,6 +144,7 @@ app = FastMCP(
 - **Real-time Control**: Live device status and command execution
 - **Event Streaming**: Historical and real-time event access
 - **Error Handling**: Robust retry logic and connection management
+- **WebRTC streaming**: Ring uses WebRTC (not RTSP). `RingClient` exposes `webrtc_start`, `webrtc_ice`, and `webrtc_close` for signaling; the HTTP server relays offer/answer and ICE over a WebSocket at `/api/v1/devices/{id}/stream/webrtc` so the webapp can show live video in-browser.
 
 ### **4. Smart Port Management Layer**
 

@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, List, Optional, Union, cast, Awaitable
 
 import aiocache
 from ring_doorbell import Ring, Auth, RingDoorBell, RingEvent, RingStickUpCam
+from ring_doorbell.webrtcstream import RingWebRtcStream, RingWebRtcMessage
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -518,31 +519,76 @@ class RingClient:
             logger.error("Error getting events for device %s: %s", device_id, str(e))
             raise RingError(f"Failed to get device events: {str(e)}") from e
 
-    async def get_live_stream_url(self, device_id: str) -> str:
-        """Get a live stream URL for a camera device."""
+    def _get_library_device(self, device_id: str):
+        """Return the underlying ring_doorbell device (RingDoorBell or RingStickUpCam)."""
+        return self._devices.get(device_id)
+
+    async def webrtc_start(
+        self,
+        device_id: str,
+        sdp_offer: str,
+        on_message: Callable[[Dict[str, Any]], Awaitable[None]],
+    ) -> str:
+        """Start WebRTC signaling with Ring; call on_message with answer/ICE. Returns session_id."""
         if not self._devices:
             await self._update_devices()
-            
         device = self._devices.get(device_id)
         if not device:
-            raise DeviceNotFoundError(f"Device {device_id} not found")
-            
-        if not hasattr(device, "live_streaming"):
-            raise StreamingError("Device does not support live streaming")
-            
-        try:
-            # This will trigger the camera to start streaming
-            stream_url = await asyncio.to_thread(
-                lambda: device.live_streaming.rtsp_url
-            )
-            if not stream_url:
-                raise StreamingError("Failed to get stream URL")
-                
-            return stream_url
-            
-        except Exception as e:
-            logger.error("Error getting stream URL for %s: %s", device_id, str(e))
-            raise StreamingError(f"Failed to get stream URL: {str(e)}") from e
+            raise DeviceNotFoundError(device_id)
+        if not hasattr(device, "generate_async_webrtc_stream"):
+            raise StreamingError("Device does not support WebRTC streaming")
+        session_id = RingWebRtcStream.get_sdp_session_id(sdp_offer)
+        if not session_id:
+            raise StreamingError("Could not extract session id from SDP offer")
+
+        def sync_cb(msg: RingWebRtcMessage) -> None:
+            if msg.error_code is not None:
+                asyncio.create_task(
+                    on_message({"type": "error", "code": msg.error_code, "message": msg.error_message or ""})
+                )
+            if msg.answer:
+                asyncio.create_task(on_message({"type": "answer", "sdp": msg.answer}))
+            if msg.candidate is not None:
+                asyncio.create_task(
+                    on_message({
+                        "type": "ice",
+                        "candidate": msg.candidate,
+                        "mlineindex": msg.sdp_m_line_index or 0,
+                    })
+                )
+
+        await device.generate_async_webrtc_stream(
+            sdp_offer,
+            session_id,
+            sync_cb,
+            keep_alive_timeout=60 * 5,
+        )
+        return session_id
+
+    async def webrtc_ice(
+        self,
+        device_id: str,
+        session_id: str,
+        candidate: str,
+        mlineindex: int,
+    ) -> None:
+        """Send an ICE candidate from the client to Ring."""
+        device = self._devices.get(device_id)
+        if not device:
+            raise DeviceNotFoundError(device_id)
+        await device.on_webrtc_candidate(session_id, candidate, mlineindex)
+
+    async def webrtc_close(self, device_id: str, session_id: str) -> None:
+        """Close the WebRTC stream for the given session."""
+        device = self._devices.get(device_id)
+        if device and hasattr(device, "close_webrtc_stream"):
+            await device.close_webrtc_stream(session_id)
+
+    async def get_live_stream_url(self, device_id: str) -> str:
+        """Live stream is WebRTC-only; use the WebSocket signaling endpoint for in-browser video."""
+        raise StreamingError(
+            "Use WebRTC streaming: connect to /api/v1/devices/{id}/stream/webrtc WebSocket for in-browser video."
+        )
 
     async def set_arm_status(self, device_id: str, status: bool) -> bool:
         """Arm or disarm a security device."""

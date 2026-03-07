@@ -1,15 +1,15 @@
 # Ring MCP 🚨
 
-**Universal Ring Security Ecosystem Control** - FastMCP 2.13.0 server for comprehensive Ring device management including doorbells, security cameras, and alarm systems with Austrian precision.
+**Universal Ring Security Ecosystem Control** - FastMCP 3.1 server for comprehensive Ring device management including doorbells, security cameras, and alarm systems. Supports sampling, agentic workflows, and MCP prompts/skills.
 
-[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/sandraschi/ring-mcp/releases)
+[![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)](https://github.com/sandraschi/ring-mcp/releases)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![FastMCP 2.13.0](https://img.shields.io/badge/FastMCP-2.13.0-orange.svg)](https://github.com/modelcontextprotocol/fastmcp)
+[![FastMCP 3.1](https://img.shields.io/badge/FastMCP-3.1-orange.svg)](https://gofastmcp.com/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://github.com/sandraschi/ring-mcp)
 
-> **Latest Version: 1.0.2** - [View Changelog](CHANGELOG.md)
+> **Latest Version: 1.0.3** - [View Changelog](CHANGELOG.md)
 
 **Keywords**: `ring`, `security`, `cameras`, `doorbells`, `mcp`, `fastmcp`, `monitoring`, `automation`, `home-security`, `iot`, `smart-home`
 
@@ -19,10 +19,11 @@
 - **[📖 API Reference](docs/RING_MCP_API_REFERENCE.md)** - Complete API documentation
 - **[🚀 Quick Reference](docs/RING_MCP_QUICK_REFERENCE.md)** - Tool summaries and examples
 - **[🏗️ Ring MCP Architecture](docs/RING_MCP_ARCHITECTURE.md)** - Advanced architecture & advantages
+- **[📋 PRD](docs/PRD.md)** - Product requirements, FastMCP 3.1, sampling, agentic workflows
 - **[🏗️ Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)** - System design details
 - **[🔍 Logging & Monitoring](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability guide
 - **[📊 Multi-Server Monitoring](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server analytics
-- **[🔧 FastMCP 2.13 Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
+- **[🔧 FastMCP 3.1 Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
 
 ## Features
 
@@ -50,8 +51,28 @@
 - **2FA Required**: Enable two-factor authentication in Ring app for security
 - **Supported Devices**: Video Doorbell, Spotlight Cam, Floodlight Cam, Indoor Cam, Alarm systems
 
-### Installation
+## 🚀 Installation
 
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
+
+### 📦 Quick Start
+Run immediately via `uvx`:
+```bash
+uvx ring-mcp
+```
+
+### 🎯 Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "ring-mcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/ring-mcp", "run", "ring-mcp"]
+  }
+}
+```
 #### Using MCPB Package (Claude Desktop Integration) ⭐ **RECOMMENDED**
 
 The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bundle) package:
@@ -111,7 +132,7 @@ The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bun
    ```bash
    git clone https://github.com/yourusername/ring-mcp.git
    cd ring-mcp
-   python -m venv venv
+   uv venv
    source venv/bin/activate  # On Windows: .\venv\Scripts\activate
    ```
 
@@ -119,7 +140,7 @@ The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bun
    ```bash
    pip install -e ".[dev]"  # For development
    # or
-   pip install -e .  # For production
+   uv pip install -e .  # For production
    ```
 
 3. Configure your environment:
@@ -132,6 +153,32 @@ The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bun
    ```bash
    ring-mcp
    ```
+
+### 🌐 React Webapp (web_sota)
+
+Ring MCP includes a **React webapp** that talks to the **real Ring API** (no mocks). Configure Ring credentials in the UI and control devices from the browser.
+
+#### Quick Start with Webapp
+
+1. **Start backend and frontend** (from repo root):
+   ```powershell
+   cd web_sota
+   .\start.ps1
+   ```
+   This starts the REST API on port **10729** and the Vite dev server on **10728**.
+
+2. **Open the app**: [http://localhost:10728](http://localhost:10728)
+
+3. **Configure Ring**: Go to **Settings**, enter your Ring email and password, click **Save Ring credentials**. Use **Test connection** to verify the backend.
+
+4. **Use devices**: Open **Status** to see your real Ring devices, arm/disarm alarms, and trigger doorbell chime.
+5. **Live video**: Open **Doorbell & Camera**, select a device, and click **Start live view**. The app uses WebRTC (WebSocket signaling at `/api/v1/devices/{id}/stream/webrtc`) to show the camera stream in the browser.
+
+#### Webapp Features
+- **Settings**: Ring account (email/password) and API URL (default `http://127.0.0.1:10729`). Test connection hits `/api/v1/health`.
+- **Status**: Real device list from the API; Arm/Disarm and Chime actions.
+- **Doorbell & Camera**: Live video in browser via WebRTC (Start live view / Stop); two-way audio placeholder (Hold to talk).
+- **Dashboard**: Backend health and device count from the API.
 
 ## Configuration
 
@@ -189,21 +236,9 @@ async def get_device_details(device_id: str):
 asyncio.run(get_device_details("your_device_id_here"))
 ```
 
-### Stream Camera Feed
+### Live video (WebRTC)
 
-```python
-import asyncio
-import webbrowser
-from ring_mcp import RingClient
-
-async def stream_camera(device_id: str):
-    async with RingClient() as client:
-        stream_info = await client.get_live_stream_url(device_id)
-        print(f"Opening stream: {stream_info['url']}")
-        webbrowser.open(stream_info['url'])
-
-asyncio.run(stream_camera("your_camera_id_here"))
-```
+Ring devices use WebRTC for streaming (no RTSP URL). For in-browser video, use the webapp: **Doorbell & Camera** → select device → **Start live view**. The REST API exposes WebSocket signaling at `GET /api/v1/devices/{device_id}/stream/webrtc` (offer/answer and ICE). Programmatic access would require a WebRTC client that connects to this WebSocket and displays the remote stream.
 
 ### Arm/Disarm Alarm
 
@@ -304,7 +339,7 @@ Ring MCP includes a **production-ready monitoring system** that provides complet
 ### **📖 Complete Documentation**
 - **[🔍 Logging & Monitoring Guide](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability setup
 - **[📊 Multi-Server Analytics](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server monitoring
-- **[🔧 FastMCP Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging
+- **[🔧 FastMCP Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging (3.1)
 
 ## Contributing
 
@@ -337,7 +372,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🛠️ Development
 
-Built with FastMCP 2.12 for maximum compatibility and performance.
+Built with **FastMCP 3.1**: sampling, agentic workflows, and MCP prompts/skills per [gofastmcp.com](https://gofastmcp.com/). Tool responses are conversational and support agentic use.
 
 ### Project Structure
 ```
@@ -367,8 +402,8 @@ Ring MCP includes full MCPB (MCP Bundle) support for professional Claude Desktop
 ### Building MCPB Packages
 
 #### Prerequisites
-- Python 3.9+
-- FastMCP 2.12.0+
+- Python 3.12+
+- FastMCP 3.1+
 - MCPB CLI (`npm install -g @anthropic-ai/mcpb`)
 - Git repository (for version control)
 
@@ -394,13 +429,28 @@ mcpb pack . dist/ring-mcp.mcpb
 - **User configuration**: Interactive setup prompts
 - **Security**: Optional cryptographic signing
 
-#### Installation in Claude Desktop
-1. Build the package: `.\scripts\build-mcpb-package.ps1`
-2. Locate: `dist/ring-mcp.mcpb`
-3. Drag & drop into Claude Desktop
-4. Configure Ring credentials when prompted
-5. Restart Claude Desktop
+## 🚀 Installation
 
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
+
+### 📦 Quick Start
+Run immediately via `uvx`:
+```bash
+uvx ring-mcp
+```
+
+### 🎯 Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "ring-mcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/ring-mcp", "run", "ring-mcp"]
+  }
+}
+```
 ### MCPB Configuration
 
 The MCPB package includes:

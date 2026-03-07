@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **FastMCP 3.1**: Upgraded dependency to `fastmcp>=3.1`. Server and tool docstrings aligned to 3.1; conversational tool responses support sampling and agentic workflows.
+- **Webapp real API**: Web_sota now uses the live REST API (no mocks). Settings: Ring credentials (email/password) and API URL; Test connection calls `/api/v1/health`. Status: real device list from `/api/v1/devices` and `/api/v1/status`; Arm/Disarm and Chime actions. Dashboard: backend health and device count from API.
+- **In-browser live video (WebRTC)**: Ring uses WebRTC (not RTSP). Backend WebSocket at `GET /api/v1/devices/{id}/stream/webrtc` relays SDP offer/answer and ICE between browser and Ring. Doorbell & Camera page: "Start live view" opens WebSocket, creates RTCPeerConnection, sends offer, applies Ring answer and ICE, and displays stream in a `<video>` element. "Stop" closes stream and WebSocket. `RingClient`: `webrtc_start`, `webrtc_ice`, `webrtc_close`; `get_live_stream_url` now raises and directs callers to WebRTC.
+- **API client**: `web_sota/src/lib/api.ts` with `configureAuth`, `getHealth`, `getDevices`, `getStatus`, `setArmStatus`, `triggerChime`, `getWebRtcWsUrl`. Base URL from localStorage or `VITE_API_URL` (default `http://127.0.0.1:10729`).
+- **Start script**: `web_sota/start.ps1` now runs `ring_mcp.http_server:app` (REST API) on port 10729; frontend on 10728. CORS updated for 10728 and 10706.
+
+### Changed
+- **Docs**: README, architecture, PRD, and code comments now state FastMCP 3.1 and WebRTC in-browser video; removed 2.10/2.12/2.13 version references. README webapp section describes web_sota, Doorbell & Camera live view, and real API flow.
+- **PRD**: `docs/PRD.md` updated: in-scope WebRTC live video in webapp; non-goals no longer exclude in-browser streaming.
+
+### Fixed
+- Webapp was mock-only and did not show or control real Ring devices; backend started wrong process (MCP server instead of REST API). Fixed by starting `http_server:app` and wiring frontend to REST endpoints with Ring auth in Settings.
+
+---
+
+## [1.0.3] - 2026-01-17
+
+### 🛠️ **Test Framework Fixes**
+
+#### **Fixed Broken Test Suite**
+- **Test Framework**: Fixed broken test framework that was using non-existent `Client.connect()` method
+- **FastMCP Testing**: Updated tests to follow proper FastMCP 2.13 testing patterns
+- **Mock Setup**: Improved mock client setup and test fixtures
+- **Error Handling**: Enhanced error handling tests for authentication and device not found scenarios
+- **Test Coverage**: All 10 tests now pass successfully
+
+#### **Technical Improvements**
+- **Import Optimization**: Cleaned up test imports and removed unused dependencies
+- **Test Structure**: Reorganized test fixtures and assertions for better maintainability
+- **Documentation**: Updated test documentation to reflect current testing approach
+
+---
+
 ## [1.0.2] - 2025-12-21
 
 ### 🔥 **SOTA Upgrade - FastMCP 2.13.0 & Modern Standards**

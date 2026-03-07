@@ -1,11 +1,9 @@
 """
-Ring Security System Management Tools - FastMCP 2.12
+Ring Security System Management Tools - FastMCP 3.1
 
 Core security system operations for Ring burglar alarm and overall system control.
 Handles arming/disarming, status monitoring, and emergency protocols.
-
-This module uses FastMCP 2.12 patterns with multiline decorators and proper
-tool registration for Claude Desktop stdio communication.
+Tool responses support sampling and agentic workflows (FastMCP 3.1).
 """
 
 import logging
@@ -19,10 +17,7 @@ from ..core.exceptions import RingError, AuthenticationError, DeviceNotFoundErro
 logger = logging.getLogger(__name__)
 
 def register_tools(app: FastMCP) -> None:
-    """Register security system management tools with the FastMCP application.
-
-    Uses FastMCP 2.12 patterns with multiline decorators and proper
-    stdio communication support for Claude Desktop integration.
+    """Register security system management tools with the FastMCP application (FastMCP 3.1).
 
     Args:
         app: FastMCP application instance

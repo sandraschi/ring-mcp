@@ -1,10 +1,9 @@
 """
 Ring MCP - Unified Security Ecosystem
 
-FastMCP 2.10 implementation for Ring doorbell, burglar alarm, fire alarm, and security cameras.
+FastMCP 3.1 implementation for Ring doorbell, burglar alarm, fire alarm, and security cameras.
 Universal security control through Ring API with real-time monitoring and emergency automation.
-
-Austrian dev efficiency: Complete home security management from Claude.
+Supports sampling, agentic workflows, and MCP prompts/skills per FastMCP 3.1.
 """
 
 import asyncio
@@ -43,11 +42,12 @@ logger.info("Ring MCP server initialized with all security tool modules")
 def main():
     """Main entry point for Ring MCP server."""
     import sys
-    
+
     logger.info("Starting Ring MCP server with stdio transport")
-    
-    # Run the FastMCP server with stdio transport
-    mcp.run_stdio()
+
+    # Run FastMCP directly with stdio transport
+    import asyncio
+    asyncio.run(mcp.run(transport="stdio"))
 
 if __name__ == "__main__":
     main()
