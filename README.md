@@ -1,4 +1,4 @@
-# Ring MCP 🚨
+# Ring MCP 
 
 **Universal Ring Security Ecosystem Control** - FastMCP 3.1 server for comprehensive Ring device management including doorbells, security cameras, and alarm systems. Supports sampling, agentic workflows, and MCP prompts/skills.
 
@@ -13,17 +13,17 @@
 
 **Keywords**: `ring`, `security`, `cameras`, `doorbells`, `mcp`, `fastmcp`, `monitoring`, `automation`, `home-security`, `iot`, `smart-home`
 
-## 📚 Documentation
+##  Documentation
 
-- **[🚀 Complete Setup Guide](docs/RING_MCP_SETUP_GUIDE.md)** - Device onboarding, API keys, 2FA, discovery & iOS app integration
-- **[📖 API Reference](docs/RING_MCP_API_REFERENCE.md)** - Complete API documentation
-- **[🚀 Quick Reference](docs/RING_MCP_QUICK_REFERENCE.md)** - Tool summaries and examples
-- **[🏗️ Ring MCP Architecture](docs/RING_MCP_ARCHITECTURE.md)** - Advanced architecture & advantages
-- **[📋 PRD](docs/PRD.md)** - Product requirements, FastMCP 3.1, sampling, agentic workflows
-- **[🏗️ Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)** - System design details
-- **[🔍 Logging & Monitoring](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability guide
-- **[📊 Multi-Server Monitoring](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server analytics
-- **[🔧 FastMCP 3.1 Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
+- **[ Complete Setup Guide](docs/RING_MCP_SETUP_GUIDE.md)** - Device onboarding, API keys, 2FA, discovery & iOS app integration
+- **[ API Reference](docs/RING_MCP_API_REFERENCE.md)** - Complete API documentation
+- **[ Quick Reference](docs/RING_MCP_QUICK_REFERENCE.md)** - Tool summaries and examples
+- **[ Ring MCP Architecture](docs/RING_MCP_ARCHITECTURE.md)** - Advanced architecture & advantages
+- **[ PRD](docs/PRD.md)** - Product requirements, FastMCP 3.1, sampling, agentic workflows
+- **[ Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)** - System design details
+- **[ Logging & Monitoring](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability guide
+- **[ Multi-Server Monitoring](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server analytics
+- **[ FastMCP 3.1 Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
 
 ## Features
 
@@ -46,24 +46,24 @@
 - Ring account with 2FA enabled (recommended)
 - Docker and Docker Compose (for containerized deployment)
 
-#### 📱 Ring Account Setup
+####  Ring Account Setup
 - **Ring App**: Download from [App Store](https://apps.apple.com/app/ring/id926252661) or [Google Play](https://play.google.com/store/apps/details?id=com.ringapp)
 - **2FA Required**: Enable two-factor authentication in Ring app for security
 - **Supported Devices**: Video Doorbell, Spotlight Cam, Floodlight Cam, Indoor Cam, Alarm systems
 
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
 - Python 3.12+
 
-### 📦 Quick Start
+###  Quick Start
 Run immediately via `uvx`:
 ```bash
 uvx ring-mcp
 ```
 
-### 🎯 Claude Desktop Integration
+###  Claude Desktop Integration
 Add to your `claude_desktop_config.json`:
 ```json
 "mcpServers": {
@@ -73,7 +73,7 @@ Add to your `claude_desktop_config.json`:
   }
 }
 ```
-#### Using MCPB Package (Claude Desktop Integration) ⭐ **RECOMMENDED**
+#### Using MCPB Package (Claude Desktop Integration)  **RECOMMENDED**
 
 The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bundle) package:
 
@@ -154,7 +154,7 @@ The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bun
    ring-mcp
    ```
 
-### 🌐 React Webapp (web_sota)
+###  React Webapp (web_sota)
 
 Ring MCP includes a **React webapp** that talks to the **real Ring API** (no mocks). Configure Ring credentials in the UI and control devices from the browser.
 
@@ -238,7 +238,7 @@ asyncio.run(get_device_details("your_device_id_here"))
 
 ### Live video (WebRTC)
 
-Ring devices use WebRTC for streaming (no RTSP URL). For in-browser video, use the webapp: **Doorbell & Camera** → select device → **Start live view**. The REST API exposes WebSocket signaling at `GET /api/v1/devices/{device_id}/stream/webrtc` (offer/answer and ICE). Programmatic access would require a WebRTC client that connects to this WebSocket and displays the remote stream.
+Ring devices use WebRTC for streaming (no RTSP URL). For in-browser video, use the webapp: **Doorbell & Camera**  select device  **Start live view**. The REST API exposes WebSocket signaling at `GET /api/v1/devices/{device_id}/stream/webrtc` (offer/answer and ICE). Programmatic access would require a WebRTC client that connects to this WebSocket and displays the remote stream.
 
 ### Arm/Disarm Alarm
 
@@ -290,11 +290,11 @@ docker-compose up --build
    docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
    ```
 
-## 🔍 Complete Observability Stack
+##  Complete Observability Stack
 
 Ring MCP includes a **production-ready monitoring system** that provides complete visibility into your security system:
 
-### **📊 Monitoring Features**
+### ** Monitoring Features**
 - **Real-time log streaming** with structured JSON logging
 - **Performance metrics** for API calls and tool execution
 - **Security event tracking** with device status monitoring
@@ -302,7 +302,7 @@ Ring MCP includes a **production-ready monitoring system** that provides complet
 - **Pictorial dashboards** showing camera feeds and device status
 - **Alert integration** with email, Slack, and webhook support
 
-### **🚀 Quick Monitoring Setup**
+### ** Quick Monitoring Setup**
 
 1. **Start the complete monitoring stack**:
    ```bash
@@ -322,7 +322,7 @@ Ring MCP includes a **production-ready monitoring system** that provides complet
    - **Multi-Server View**: Cross-server monitoring and correlation
    - **Security Camera**: Live camera feeds and motion detection
 
-### **🆕 Advanced Features**
+### ** Advanced Features**
 
 #### **Claude Desktop Logs Integration**
 - **Location**: `C:\Users\sandr\AppData\Roaming\Claude\logs`
@@ -332,14 +332,14 @@ Ring MCP includes a **production-ready monitoring system** that provides complet
 
 #### **Multi-Server Monitoring**
 - **Universal stack**: Works for all 20+ MCP servers
-- **Cross-service events**: Motion detection → light activation
+- **Cross-service events**: Motion detection  light activation
 - **Pictorial information**: Camera feeds and visual alerts
 - **Production ready**: Used across all MCP projects
 
-### **📖 Complete Documentation**
-- **[🔍 Logging & Monitoring Guide](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability setup
-- **[📊 Multi-Server Analytics](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server monitoring
-- **[🔧 FastMCP Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging (3.1)
+### ** Complete Documentation**
+- **[ Logging & Monitoring Guide](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability setup
+- **[ Multi-Server Analytics](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server monitoring
+- **[ FastMCP Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging (3.1)
 
 ## Contributing
 
@@ -363,30 +363,30 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Privacy Focus** - Local processing where possible
 - **Emergency Ready** - Fail-safe operation modes
 
-## 🏠 Austrian Integration
+##  Austrian Integration
 
 - **Vienna Emergency Services** - Local emergency contact integration
 - **European Privacy** - GDPR compliant data handling
 - **Time Zone Support** - Central European Time scheduling
 - **Local Standards** - Austrian fire safety compliance
 
-## 🛠️ Development
+##  Development
 
 Built with **FastMCP 3.1**: sampling, agentic workflows, and MCP prompts/skills per [gofastmcp.com](https://gofastmcp.com/). Tool responses are conversational and support agentic use.
 
 ### Project Structure
 ```
 ring-mcp/
-├── ring_mcp/
-│   ├── __init__.py          # FastMCP stdio server
-│   ├── core/                # Ring API client & exceptions
-│   └── tools/               # Modular tool categories
-│       ├── security_system_tools.py
-│       ├── doorbell_tools.py
-│       ├── fire_safety_tools.py
-│       ├── camera_tools.py
-│       ├── monitoring_tools.py
-│       └── automation_tools.py
+ ring_mcp/
+    __init__.py          # FastMCP stdio server
+    core/                # Ring API client & exceptions
+    tools/               # Modular tool categories
+        security_system_tools.py
+        doorbell_tools.py
+        fire_safety_tools.py
+        camera_tools.py
+        monitoring_tools.py
+        automation_tools.py
 ```
 
 ### Austrian Dev Standards
@@ -395,7 +395,7 @@ ring-mcp/
 - **Error Resilience** - Graceful degradation
 - **Performance Optimized** - Efficient API usage
 
-## 📦 MCPB Packaging
+##  MCPB Packaging
 
 Ring MCP includes full MCPB (MCP Bundle) support for professional Claude Desktop integration.
 
@@ -429,19 +429,19 @@ mcpb pack . dist/ring-mcp.mcpb
 - **User configuration**: Interactive setup prompts
 - **Security**: Optional cryptographic signing
 
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
 - Python 3.12+
 
-### 📦 Quick Start
+###  Quick Start
 Run immediately via `uvx`:
 ```bash
 uvx ring-mcp
 ```
 
-### 🎯 Claude Desktop Integration
+###  Claude Desktop Integration
 Add to your `claude_desktop_config.json`:
 ```json
 "mcpServers": {
@@ -485,7 +485,7 @@ MCPB packaging is fully integrated into GitHub Actions:
 - Artifact upload and release creation
 - PyPI publication for Python packages
 
-## 📊 Usage Examples
+##  Usage Examples
 
 ### Morning Security Check
 ```python
@@ -515,7 +515,7 @@ emergency = trigger_emergency_protocol()
 # Automatically: arms system, starts recording, notifies contacts
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 ### Environment Variables
 ```bash
@@ -534,7 +534,7 @@ schedule_security_modes({
 })
 ```
 
-## 🚨 Emergency Features
+##  Emergency Features
 
 - **Instant Activation** - Emergency protocol in seconds
 - **Multi-device Response** - Coordinated security activation
@@ -542,7 +542,7 @@ schedule_security_modes({
 - **Audit Logging** - Complete incident documentation
 - **Fail-safe Design** - Works even with partial connectivity
 
-## 📱 Integration Ready
+##  Integration Ready
 
 Designed for **Home Dashboard MCP** integration:
 - Standardized event formats
@@ -550,7 +550,7 @@ Designed for **Home Dashboard MCP** integration:
 - Unified alert management
 - Cross-device automation support
 
-## 🛡️ Privacy & Security
+##  Privacy & Security
 
 - **Local Processing** - Minimize cloud dependencies
 - **Encrypted Storage** - Secure credential management
@@ -558,10 +558,10 @@ Designed for **Home Dashboard MCP** integration:
 - **Rate Limiting** - Responsible API usage
 - **Emergency Protocols** - Always-available safety features
 
-## 📄 License
+##  License
 
 MIT License - See LICENSE file for details.
 
 ---
 
-**Ring MCP: Because your family's security deserves Austrian engineering precision! 🇦🇹🔐**
+**Ring MCP: Because your family's security deserves Austrian engineering precision! **

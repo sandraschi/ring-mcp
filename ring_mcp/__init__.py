@@ -6,9 +6,7 @@ Universal security control through Ring API with real-time monitoring and emerge
 Supports sampling, agentic workflows, and MCP prompts/skills per FastMCP 3.1.
 """
 
-import asyncio
 import logging
-from pathlib import Path
 
 from fastmcp import FastMCP
 
@@ -41,13 +39,9 @@ logger.info("Ring MCP server initialized with all security tool modules")
 
 def main():
     """Main entry point for Ring MCP server."""
-    import sys
-
     logger.info("Starting Ring MCP server with stdio transport")
-
-    # Run FastMCP directly with stdio transport
-    import asyncio
-    asyncio.run(mcp.run(transport="stdio"))
+    # FastMCP.run() is synchronous and blocks until shutdown (do not wrap in asyncio.run).
+    mcp.run(transport="stdio", show_banner=False)
 
 if __name__ == "__main__":
     main()
