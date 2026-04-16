@@ -35,7 +35,7 @@ keywords = [
     "monitoring", "automation", "home-security", "iot", "smart-home", "surveillance"
 ]
 dependencies = [
-    "fastmcp>=3.1",  # MCP 3.1: sampling, agentic workflows, prompts
+    "fastmcp>=3.1", # MCP 3.1: sampling, agentic workflows, prompts
     "ring-doorbell>=0.8.0", # Real Ring integration
     "requests>=2.31.0", # HTTP client (ring_client)
     "httpx>=0.25.0", # Modern HTTP client
@@ -64,6 +64,7 @@ dependencies = [
     "types-requests>=2.31.0",
     "types-python-dateutil>=2.8.0",
     "ruff>=0.15.2",
+    "prefab-ui>=0.14.0",
 ]
 
 [project.optional-dependencies]
