@@ -58,7 +58,7 @@
     "model": "Ring Indoor Cam",
     "firmware": "1.7.5",
     "battery_life": 78,
-    "online": false,
+    "online": true,
     "address": "123 Main St",
     "timezone": "America/New_York",
     "has_subscription": true,

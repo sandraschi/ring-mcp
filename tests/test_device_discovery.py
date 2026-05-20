@@ -78,7 +78,7 @@ class TestDeviceDiscovery:
     async def test_device_discovery_timeout_handling(self):
         """Test that device discovery handles timeouts gracefully."""
         # Mock a slow/broken discovery
-        with patch('tests.conftest.RingClient') as mock_client_class:
+        with patch("ring_mcp.core.ring_client_modern.RingClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_devices = AsyncMock(side_effect=asyncio.TimeoutError())
             mock_client_class.return_value = mock_client
@@ -93,7 +93,7 @@ class TestDeviceDiscovery:
         """Test device discovery with authentication failure."""
         from ring_mcp.core.exceptions import AuthenticationError
 
-        with patch('tests.conftest.RingClient') as mock_client_class:
+        with patch("ring_mcp.core.ring_client_modern.RingClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_devices = AsyncMock(side_effect=AuthenticationError("Invalid credentials"))
             mock_client_class.return_value = mock_client
@@ -322,7 +322,7 @@ class TestDiscoveryErrorHandling:
     @pytest.mark.asyncio
     async def test_discovery_network_error(self):
         """Test discovery with network connectivity issues."""
-        with patch('tests.conftest.RingClient') as mock_client_class:
+        with patch("ring_mcp.core.ring_client_modern.RingClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_devices = AsyncMock(side_effect=Exception("Network error"))
             mock_client_class.return_value = mock_client

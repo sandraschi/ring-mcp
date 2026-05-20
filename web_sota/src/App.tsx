@@ -1,14 +1,20 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/app-layout';
-import { Dashboard } from '@/pages/dashboard';
-import { Doorbell } from '@/pages/doorbell';
-import { Alarms } from '@/pages/alarms';
-import { Chat } from '@/pages/chat';
-import { Settings } from '@/pages/settings';
-import { Tools } from '@/pages/tools';
-import { Status } from '@/pages/status';
-import { Apps } from '@/pages/apps';
-import { Help } from '@/pages/help';
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from "react-router-dom";
+import { AppLayout } from "@/components/layout/app-layout";
+import { Alarms } from "@/pages/alarms";
+import { Apps } from "@/pages/apps";
+import { Chat } from "@/pages/chat";
+import { Dashboard } from "@/pages/dashboard";
+import { Doorbell } from "@/pages/doorbell";
+import { Help } from "@/pages/help";
+import { Logger } from "@/pages/logger";
+import { Settings } from "@/pages/settings";
+import { Status } from "@/pages/status";
+import { Tools } from "@/pages/tools";
 
 function App() {
   return (
@@ -23,6 +29,7 @@ function App() {
           <Route path="/apps" element={<Apps />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/logger" element={<Logger />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

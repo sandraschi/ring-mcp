@@ -35,7 +35,8 @@ keywords = [
     "monitoring", "automation", "home-security", "iot", "smart-home", "surveillance"
 ]
 dependencies = [
-    "fastmcp>=3.1", # MCP 3.1: sampling, agentic workflows, prompts
+    "fastmcp>=3.2.0", # Fleet: FastMCP 3.2+ (MCP 3.2 ecosystem)
+    "fastapi>=0.115.0", # HTTP server + composition (not bundled by fastmcp 3.2)
     "ring-doorbell>=0.8.0", # Real Ring integration
     "requests>=2.31.0", # HTTP client (ring_client)
     "httpx>=0.25.0", # Modern HTTP client
@@ -48,6 +49,7 @@ dependencies = [
     "prometheus-client>=0.20.0", # Prometheus metrics
     "structlog>=23.1.0", # Structured logging
     "websockets>=11.0.0,<16.0.0", # WebSocket support
+    "paho-mqtt>=2.1.0", # Optional ring-mqtt (Ring Alarm) MQTT bridge
     "python-dateutil>=2.8.2", # Date utilities
     "anyio>=4.5.0", # Async utilities
     "tomli>=0.10.2; python_version < \"3.11\"", # TOML support for older Python

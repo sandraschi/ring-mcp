@@ -60,7 +60,7 @@ logger.warning("Motion detected",
 # ring-mcp server
 logger.info("Person at door detected",
     camera_id="front_door",
-    image_url="http://localhost:8123/stills/alert_12345.jpg",
+    image_url="http://localhost:10729/stills/alert_12345.jpg",
     confidence=0.85,
     description="Person detected at front door"
 )
@@ -108,14 +108,14 @@ async def detect_motion(device_id: str) -> dict:
         # Log with image URL for Grafana
         logger.warning("Motion detected",
             device_id=device_id,
-            image_url=f"http://localhost:8123/stills/{filename}",
+            image_url=f"http://localhost:10729/stills/{filename}",
             confidence=0.87,
             event_type="motion_detection"
         )
 
         return {
             "detected": True,
-            "image_url": f"http://localhost:8123/stills/{filename}",
+            "image_url": f"http://localhost:10729/stills/{filename}",
             "confidence": 0.87
         }
 
@@ -253,7 +253,7 @@ scrape_configs:
 scrape_configs:
   - job_name: 'mcp-servers'
     static_configs:
-      - targets: ['ring-mcp:8123', 'homekit:8124', 'smartthings:8125']
+      - targets: ['ring-mcp:10729', 'homekit:8124', 'smartthings:8125']
     labels:
       service: mcp-server
       instance: '{{ $labels.instance }}'
@@ -261,7 +261,7 @@ scrape_configs:
 
   - job_name: 'ring-mcp-metrics'
     static_configs:
-      - targets: ['ring-mcp:8123']
+      - targets: ['ring-mcp:10729']
     labels:
       service: ring-mcp-server
       device_category: security
@@ -346,7 +346,7 @@ async def capture_motion_image(device_id: str, confidence: float) -> str:
         f.write(image_data)
 
     # Make available via HTTP
-    image_url = f"http://localhost:8123/stills/{filename}"
+    image_url = f"http://localhost:10729/stills/{filename}"
 
     # Log with image URL for Grafana
     logger.warning("Motion detected with image",
@@ -447,7 +447,7 @@ async def detect_and_log_motion(camera_id: str) -> dict:
         "refId": "A"
       }],
       "options": {
-        "url": "http://localhost:8123/stills/front_door_latest.jpg",
+        "url": "http://localhost:10729/stills/front_door_latest.jpg",
         "alt": "Front door camera feed"
       }
     }
@@ -535,7 +535,7 @@ python -m smartthings_mcp
   "device_id": "front_door_camera",
   "event": "motion_detected",
   "confidence": 0.85,
-  "image_url": "http://localhost:8123/stills/motion_12345.jpg",
+  "image_url": "http://localhost:10729/stills/motion_12345.jpg",
   "correlated_services": ["homekit-server", "smartthings-server"],
   "actions_taken": ["lights_activated", "recording_started"]
 }

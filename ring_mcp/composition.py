@@ -235,6 +235,9 @@ def create_composed_app(ring_client=None) -> FastMCP:
     # Register a cleanup handler to close all connections on shutdown
     @app.on_event("shutdown")
     async def shutdown_event():
+        from .ring_mqtt_bridge import get_ring_mqtt_bridge
+
+        get_ring_mqtt_bridge().stop()
         await composition.close()
 
     return app

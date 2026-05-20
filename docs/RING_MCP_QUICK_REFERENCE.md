@@ -119,7 +119,7 @@ await trigger_emergency_protocol()
 | `RING_PASSWORD` | - | Yes* |
 | `RING_TOKEN` | - | Yes* |
 | `HOST` | `0.0.0.0` | No |
-| `PORT` | `8123` | No |
+| `PORT` | `10729` | No |
 
 *One of: USERNAME/PASSWORD or TOKEN
 

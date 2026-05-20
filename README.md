@@ -1,13 +1,18 @@
 # Ring MCP 
 
-[![FastMCP Version](https://img.shields.io/badge/FastMCP-3.1-blue?style=flat-square&logo=python&logoColor=white)](https://github.com/sandraschi/fastmcp) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev/) [![Built with Just](https://img.shields.io/badge/Built_with-Just-000000?style=flat-square&logo=gnu-bash&logoColor=white)](https://github.com/casey/just)
+<p align="center">
+  <a href="https://github.com/casey/just"><img src="https://img.shields.io/badge/just-ready_to_go-7c5cfc?style=flat-square&logo=just&logoColor=white" alt="Just"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
+</p>
 
-**Universal Ring Security Ecosystem Control** - FastMCP 3.1 server for comprehensive Ring device management including doorbells, security cameras, and alarm systems. Supports sampling, agentic workflows, and MCP prompts/skills.
+**Universal Ring Security Ecosystem Control** - FastMCP 3.2+ server for comprehensive Ring device management including doorbells, security cameras, and alarm systems. Supports sampling, agentic workflows, and MCP prompts/skills.
 
 [![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)](https://github.com/sandraschi/ring-mcp/releases)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![FastMCP 3.1](https://img.shields.io/badge/FastMCP-3.1-orange.svg)](https://goFastMCP 3.1com/)
+[![FastMCP 3.2](https://img.shields.io/badge/FastMCP-3.2-orange.svg)](https://gofastmcp.com/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://github.com/sandraschi/ring-mcp)
 
@@ -21,11 +26,11 @@
 - **[ API Reference](docs/RING_MCP_API_REFERENCE.md)** - Complete API documentation
 - **[ Quick Reference](docs/RING_MCP_QUICK_REFERENCE.md)** - Tool summaries and examples
 - **[ Ring MCP Architecture](docs/RING_MCP_ARCHITECTURE.md)** - Advanced architecture & advantages
-- **[ PRD](docs/PRD.md)** - Product requirements, FastMCP 3.1, sampling, agentic workflows
+- **[ PRD](docs/PRD.md)** - Product requirements, FastMCP 3.2+, sampling, agentic workflows
 - **[ Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)** - System design details
 - **[ Logging & Monitoring](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability guide
 - **[ Multi-Server Monitoring](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server analytics
-- **[ FastMCP 3.1 Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
+- **[ FastMCP troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging guide
 
 ## Features
 
@@ -42,12 +47,21 @@
 
 ## Quick Start
 
-### Prerequisites
+```powershell
+git clone https://github.com/sandraschi/ring-mcp
+cd ring-mcp
+just
+```
 
+This opens an interactive dashboard showing all available commands. Run `just bootstrap` to install dependencies, then `just serve` or `just dev` to start.
+
+### Manual Setup
+
+If you don't have `just` installed:
+### Prerequisites
 - Python 3.10+ (3.11+ recommended for optimal performance)
 - Ring account with 2FA enabled (recommended)
 - Docker and Docker Compose (for containerized deployment)
-
 ####  Ring Account Setup
 - **Ring App**: Download from [App Store](https://apps.apple.com/app/ring/id926252661) or [Google Play](https://play.google.com/store/apps/details?id=com.ringapp)
 - **2FA Required**: Enable two-factor authentication in Ring app for security
@@ -123,8 +137,8 @@ The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bun
    ```
 
 4. Access the API:
-   - API: http://localhost:8123
-   - Swagger UI: http://localhost:8123/docs
+   - API: http://127.0.0.1:10729
+   - Swagger UI: http://127.0.0.1:10729/docs
    - Prometheus: http://localhost:9002
    - Grafana: http://localhost:9001 (admin/admin)
 
@@ -156,11 +170,11 @@ The easiest way to use Ring MCP with Claude Desktop is through our MCPB (MCP Bun
    ring-mcp
    ```
 
-###  React Webapp (web_sota)
+### React UI (web_sota)
 
-Ring MCP includes a **React webapp** that talks to the **real Ring API** (no mocks). Configure Ring credentials in the UI and control devices from the browser.
+Ring MCP ships a **Vite + React** fleet UI under `web_sota/` that talks to the **real Ring API** (no mocks). Configure Ring credentials in the UI and control devices from the browser.
 
-#### Quick Start with Webapp
+#### Quick start
 
 1. **Start backend and frontend** (from repo root):
    ```powershell
@@ -176,11 +190,15 @@ Ring MCP includes a **React webapp** that talks to the **real Ring API** (no moc
 4. **Use devices**: Open **Status** to see your real Ring devices, arm/disarm alarms, and trigger doorbell chime.
 5. **Live video**: Open **Doorbell & Camera**, select a device, and click **Start live view**. The app uses WebRTC (WebSocket signaling at `/api/v1/devices/{id}/stream/webrtc`) to show the camera stream in the browser.
 
-#### Webapp Features
+#### UI features
 - **Settings**: Ring account (email/password) and API URL (default `http://127.0.0.1:10729`). Test connection hits `/api/v1/health`.
 - **Status**: Real device list from the API; Arm/Disarm and Chime actions.
 - **Doorbell & Camera**: Live video in browser via WebRTC (Start live view / Stop); two-way audio placeholder (Hold to talk).
 - **Dashboard**: Backend health and device count from the API.
+
+#### CLI device check (no browser)
+
+From repo root, with Ring account env vars or interactive prompts: **`just devices`** prints each device’s **online** and **battery** via `RingClient` (the Ring HTTP API process does not need to be running). For scripts or CI, set `RING_USERNAME` and `RING_PASSWORD` and use **`just devices-env`** (non-interactive).
 
 ## Configuration
 
@@ -193,7 +211,7 @@ RING_PASSWORD=your_ring_password
 
 # Optional (with defaults)
 HOST=0.0.0.0
-PORT=8123
+PORT=10729
 LOG_LEVEL=INFO
 CACHE_TTL=300  # 5 minutes
 RATE_LIMIT=10  # Requests per minute per client
@@ -233,14 +251,15 @@ async def get_device_details(device_id: str):
         device = await client.get_device(device_id)
         print(f"Device: {device['name']}")
         print(f"Type: {device['device_type']}")
-        print(f"Battery: {device.get('battery_life', 'N/A')}%"n        print(f"Status: {device.get('status')}")
+        print(f"Battery: {device.get('battery_life', 'N/A')}%")
+        print(f"Status: {device.get('status')}")
 
 asyncio.run(get_device_details("your_device_id_here"))
 ```
 
 ### Live video (WebRTC)
 
-Ring devices use WebRTC for streaming (no RTSP URL). For in-browser video, use the webapp: **Doorbell & Camera**  select device  **Start live view**. The REST API exposes WebSocket signaling at `GET /api/v1/devices/{device_id}/stream/webrtc` (offer/answer and ICE). Programmatic access would require a WebRTC client that connects to this WebSocket and displays the remote stream.
+Ring devices use WebRTC for streaming (no RTSP URL). For in-browser video, open **web_sota** (e.g. `just dev`), go to **Doorbell & Camera**, select a device, and click **Start live view**. The REST API exposes WebSocket signaling at `GET /api/v1/devices/{device_id}/stream/webrtc` (offer/answer and ICE). Programmatic access would require a WebRTC client that connects to this WebSocket and displays the remote stream.
 
 ### Arm/Disarm Alarm
 
@@ -341,7 +360,7 @@ Ring MCP includes a **production-ready monitoring system** that provides complet
 ### ** Complete Documentation**
 - **[ Logging & Monitoring Guide](docs/RING_MCP_LOGGING_MONITORING.md)** - Complete observability setup
 - **[ Multi-Server Analytics](docs/RING_MCP_MULTISERVER_MONITORING.md)** - Cross-server monitoring
-- **[ FastMCP Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging (3.1)
+- **[ FastMCP Troubleshooting](docs/TROUBLESHOOTING_FASTMCP_2.12.md)** - Production debugging (3.2+)
 
 ## Contributing
 
@@ -355,8 +374,8 @@ This project adheres to **SOTA 14.1** industrial standards for high-fidelity age
 - **Python (Core)**: [Ruff](https://astral.sh/ruff) for linting and formatting. Zero-tolerance for `print` statements in core handlers (`T201`).
 - **Webapp (UI)**: [Biome](https://biomejs.dev/) for sub-millisecond linting. Strict `noConsoleLog` enforcement.
 - **Protocol Compliance**: Hardened `stdout/stderr` isolation to ensure crash-resistant JSON-RPC communication.
-- **Automation**: [Justfile](./justfile) recipes for all fleet operations (`just lint`, `just fix`, `just dev`).
-- **Security**: Automated audits via `bandit` and `safety`.
+- **Automation**: [Justfile](./justfile) recipes (`just sync`, `just test`, `just test-real`, `just test-real-prompt`, `just devices`, `just devices-env`, `just dev`, `just dev-http`, `just docker-up`, `just lint`, `just fix`, `just check-sec`, `just audit-deps`).
+- **Security**: `just check-sec` (Bandit on `ring_mcp` + `tests`) and `just audit-deps` (pip-audit via uv).
 
 ## License
 
@@ -385,7 +404,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ##  Development
 
-Built with **FastMCP 3.1**: sampling, agentic workflows, and MCP prompts/skills per [goFastMCP 3.1com](https://goFastMCP 3.1com/). Tool responses are conversational and support agentic use.
+Built with **FastMCP 3.2+**: sampling, agentic workflows, and MCP prompts/skills per [gofastmcp.com](https://gofastmcp.com/). Tool responses are conversational and support agentic use.
 
 ### Project Structure
 ```
@@ -416,7 +435,7 @@ Ring MCP includes full MCPB (MCP Bundle) support for professional Claude Desktop
 
 #### Prerequisites
 - Python 3.12+
-- FastMCP 3.1+
+- FastMCP 3.2+
 - MCPB CLI (`npm install -g @anthropic-ai/mcpb`)
 - Git repository (for version control)
 

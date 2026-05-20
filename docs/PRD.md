@@ -2,13 +2,13 @@
 
 **Version**: 1.0  
 **Last updated**: March 2026  
-**Framework**: FastMCP 3.1
+**Framework**: FastMCP 3.2+
 
 ---
 
 ## 1. Overview
 
-Ring MCP is an MCP server that exposes Ring security ecosystem (doorbells, cameras, alarms) as tools and resources for AI assistants and agents. It targets **FastMCP 3.1** and supports **sampling**, **agentic workflows**, and **prompts/skills** as per the FastMCP 3.1 specification.
+Ring MCP is an MCP server that exposes Ring security ecosystem (doorbells, cameras, alarms) as tools and resources for AI assistants and agents. It targets **FastMCP 3.2+** and supports **sampling**, **agentic workflows**, and **prompts/skills** as per the FastMCP 3.2+ release line.
 
 ## 2. Goals
 
@@ -17,16 +17,16 @@ Ring MCP is an MCP server that exposes Ring security ecosystem (doorbells, camer
 - **Web UI**: React webapp (web_sota) using the real Ring REST API (no mocks): configure credentials, list devices, arm/disarm, trigger chime. **In-browser live video** via WebRTC: Doorbell & Camera page connects to backend WebSocket for signaling and displays the Ring stream in a `<video>` element.
 - **Observability**: Logging, metrics (Prometheus), and optional Grafana/Loki.
 
-## 3. FastMCP 3.1 alignment
+## 3. FastMCP 3.2+ alignment
 
 | Area | Requirement |
 |------|-------------|
-| **Dependency** | `fastmcp>=3.1` in pyproject.toml. No 2.x-only usage. |
-| **MCP server** | Stdio entrypoint via FastMCP 3.1 `run(transport="stdio")`. Tool/resource registration and context follow 3.1. |
-| **HTTP/REST** | Custom REST API for the webapp is a separate FastAPI app (`ring_mcp.http_server`). Optional: mount MCP HTTP app via `mcp.http_app()` for 3.1 HTTP transport. |
+| **Dependency** | `fastmcp>=3.2.0` in pyproject.toml. No 2.x-only usage. |
+| **MCP server** | Stdio entrypoint via FastMCP 3.2+ `run(transport="stdio")`. Tool/resource registration and context follow 3.2+. |
+| **HTTP/REST** | Custom REST API for the browser UI is a separate FastAPI app (`ring_mcp.http_server`). Optional: mount MCP HTTP app via `mcp.http_app()` for 3.2+ HTTP transport. |
 | **Tool responses** | Conversational, structured responses compatible with **sampling** and **agentic workflows** (SEP-1577). Docstrings and return shapes document this. |
-| **Prompts / skills** | MCPB prompt templates (e.g. in `mcpb/prompts/`) and tool descriptions align with FastMCP 3.1 prompts and skill-style guidance for AI use. |
-| **Docs** | README, CHANGELOG, ARCHITECTURE, and this PRD state FastMCP 3.1; no 2.10/2.12/2.14 as target. |
+| **Prompts / skills** | MCPB prompt templates (e.g. in `mcpb/prompts/`) and tool descriptions align with FastMCP 3.2+ prompts and skill-style guidance for AI use. |
+| **Docs** | README, CHANGELOG, ARCHITECTURE, and this PRD state FastMCP 3.2+; no 2.10/2.12/2.14 as target. |
 
 ## 4. User flows
 
@@ -52,6 +52,6 @@ Ring MCP is an MCP server that exposes Ring security ecosystem (doorbells, camer
 
 ## 6. References
 
-- [FastMCP 3.1 alignment](https://github.com/modelcontextprotocol/fastmcp) / [gofastmcp.com](https://gofastmcp.com/)
+- [FastMCP 3.2+ (jlowin/fastmcp)](https://github.com/jlowin/fastmcp) / [gofastmcp.com](https://gofastmcp.com/)
 - [MCP Central – FASTMCP_3.1_ALIGNMENT.md](https://github.com/sandraschi/mcp-central-docs/blob/main/docs/operations/FASTMCP_3.1_ALIGNMENT.md)
 - Ring API: [python-ring-doorbell](https://github.com/tchellomello/python-ring-doorbell)

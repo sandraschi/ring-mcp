@@ -50,7 +50,7 @@ RING_TOKEN=your_oauth_token
 
 # Server Configuration
 HOST=0.0.0.0  # Default: 0.0.0.0
-PORT=8123     # Default: 8123 (non-standard to avoid conflicts)
+PORT=10729     # Default: 10729 (fleet SOTA; see web_sota/start.ps1)
 
 # Optional: Token Storage
 RING_MCP_TOKEN_PATH=/path/to/tokens  # Default: ~/.ring-mcp/tokens.enc
@@ -336,7 +336,7 @@ Response:
 | `RING_PASSWORD` | - | Ring account password |
 | `RING_TOKEN` | - | OAuth access token |
 | `HOST` | `0.0.0.0` | Server bind address |
-| `PORT` | `8123` | Server port (non-standard to avoid conflicts) |
+| `PORT` | `10729` | Server port (fleet HTTP API default) |
 | `RING_MCP_TOKEN_PATH` | `~/.ring-mcp/tokens.enc` | Token storage path |
 | `RING_MCP_ENCRYPTION_KEY` | Auto-generated | Encryption key |
 | `RING_MCP_ENCRYPTION_SALT` | Auto-generated | Encryption salt |

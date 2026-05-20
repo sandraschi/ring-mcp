@@ -50,7 +50,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "# 🔒 Ring Security Camera Dashboard\n\n## Motion Detection & Video Monitoring\n\n### Features:\n- Real-time motion detection alerts\n- Video still capture and display\n- Security event correlation\n- Multi-camera support\n- Alert notifications with images\n\n### Implementation:\n1. **Motion Detection**: MCP tools detect movement\n2. **Image Capture**: Server captures video stills\n3. **Storage**: Images stored temporarily/locally\n4. **Display**: Grafana shows images in real-time\n5. **Alerts**: Notifications include image URLs\n\n### Example Log Structure:\n```json\n{\n  \"timestamp\": \"2025-01-20T10:30:45.123Z\",\n  \"level\": \"INFO\",\n  \"event_type\": \"motion_detected\",\n  \"camera_id\": \"front_door\",\n  \"confidence\": 0.85,\n  \"image_url\": \"http://localhost:8123/stills/front_door_12345.jpg\",\n  \"description\": \"Person detected at front door\"\n}\n```\n\n### Grafana Integration:\n- **Image Panels**: Display camera stills\n- **Annotations**: Mark detection events\n- **Alerts**: Include images in notifications\n- **Correlations**: Link to security logs\n",
+        "content": "# 🔒 Ring Security Camera Dashboard\n\n## Motion Detection & Video Monitoring\n\n### Features:\n- Real-time motion detection alerts\n- Video still capture and display\n- Security event correlation\n- Multi-camera support\n- Alert notifications with images\n\n### Implementation:\n1. **Motion Detection**: MCP tools detect movement\n2. **Image Capture**: Server captures video stills\n3. **Storage**: Images stored temporarily/locally\n4. **Display**: Grafana shows images in real-time\n5. **Alerts**: Notifications include image URLs\n\n### Example Log Structure:\n```json\n{\n  \"timestamp\": \"2025-01-20T10:30:45.123Z\",\n  \"level\": \"INFO\",\n  \"event_type\": \"motion_detected\",\n  \"camera_id\": \"front_door\",\n  \"confidence\": 0.85,\n  \"image_url\": \"http://localhost:10729/stills/front_door_12345.jpg\",\n  \"description\": \"Person detected at front door\"\n}\n```\n\n### Grafana Integration:\n- **Image Panels**: Display camera stills\n- **Annotations**: Mark detection events\n- **Alerts**: Include images in notifications\n- **Correlations**: Link to security logs\n",
         "mode": "markdown"
       },
       "pluginVersion": "10.2.0",
@@ -150,7 +150,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "# 📸 Front Door Camera\n\n**Status**: 🟢 Online\n\n**Last Motion**: 2 minutes ago\n\n**Battery**: 85%\n\n**[View Live Feed](http://localhost:8123/camera/front_door)**\n\n---\n\n### Recent Events:\n- Person detected (10:28 AM)\n- Motion detected (10:15 AM)\n- Door opened (9:45 AM)",
+        "content": "# 📸 Front Door Camera\n\n**Status**: 🟢 Online\n\n**Last Motion**: 2 minutes ago\n\n**Battery**: 85%\n\n**[View Live Feed](http://localhost:10729/camera/front_door)**\n\n---\n\n### Recent Events:\n- Person detected (10:28 AM)\n- Motion detected (10:15 AM)\n- Door opened (9:45 AM)",
         "mode": "markdown"
       },
       "pluginVersion": "10.2.0",
@@ -171,7 +171,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "# 📸 Backyard Camera\n\n**Status**: 🟢 Online\n\n**Last Motion**: 15 minutes ago\n\n**Battery**: 92%\n\n**[View Live Feed](http://localhost:8123/camera/backyard)**\n\n---\n\n### Recent Events:\n- Wildlife detected (10:22 AM)\n- Motion detected (9:58 AM)\n- Light activated (9:30 AM)",
+        "content": "# 📸 Backyard Camera\n\n**Status**: 🟢 Online\n\n**Last Motion**: 15 minutes ago\n\n**Battery**: 92%\n\n**[View Live Feed](http://localhost:10729/camera/backyard)**\n\n---\n\n### Recent Events:\n- Wildlife detected (10:22 AM)\n- Motion detected (9:58 AM)\n- Light activated (9:30 AM)",
         "mode": "markdown"
       },
       "pluginVersion": "10.2.0",
@@ -192,7 +192,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "# 📸 Garage Camera\n\n**Status**: 🟢 Online\n\n**Last Motion**: 1 hour ago\n\n**Battery**: 78%\n\n**[View Live Feed](http://localhost:8123/camera/garage)**\n\n---\n\n### Recent Events:\n- Vehicle detected (9:45 AM)\n- Motion detected (9:30 AM)\n- Door closed (9:15 AM)",
+        "content": "# 📸 Garage Camera\n\n**Status**: 🟢 Online\n\n**Last Motion**: 1 hour ago\n\n**Battery**: 78%\n\n**[View Live Feed](http://localhost:10729/camera/garage)**\n\n---\n\n### Recent Events:\n- Vehicle detected (9:45 AM)\n- Motion detected (9:30 AM)\n- Door closed (9:15 AM)",
         "mode": "markdown"
       },
       "pluginVersion": "10.2.0",
@@ -226,7 +226,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "# 🚨 Security Camera Alerts\n\n## Alert Types:\n\n### 1. **Motion Detection Alert**\n- **Trigger**: Motion detected on any camera\n- **Actions**: \n  - Capture video still\n  - Send notification with image\n  - Log event with image URL\n\n### 2. **Person Detection Alert**\n- **Trigger**: Person detected (not just motion)\n- **Actions**:\n  - High-priority notification\n  - Include camera still in alert\n  - Activate security lights\n\n### 3. **Security System Alert**\n- **Trigger**: Alarm triggered\n- **Actions**:\n  - Immediate high-priority alert\n  - All camera stills captured\n  - Security team notified\n\n## Grafana Integration:\n- **Image URLs** embedded in log entries\n- **Annotations** mark detection events\n- **Alert rules** trigger on log patterns\n- **Notification channels** include images\n\n## Example Alert Message:\n```\n🚨 SECURITY ALERT: Person detected at Front Door\n\n📸 Camera: Front Door\n⏰ Time: 2025-01-20 10:30:45\n🎯 Confidence: 85%\n🖼️ Image: http://localhost:8123/stills/alert_12345.jpg\n\n📊 View Dashboard: http://localhost:3000/d/ring-mcp-security\n```\n",
+        "content": "# 🚨 Security Camera Alerts\n\n## Alert Types:\n\n### 1. **Motion Detection Alert**\n- **Trigger**: Motion detected on any camera\n- **Actions**: \n  - Capture video still\n  - Send notification with image\n  - Log event with image URL\n\n### 2. **Person Detection Alert**\n- **Trigger**: Person detected (not just motion)\n- **Actions**:\n  - High-priority notification\n  - Include camera still in alert\n  - Activate security lights\n\n### 3. **Security System Alert**\n- **Trigger**: Alarm triggered\n- **Actions**:\n  - Immediate high-priority alert\n  - All camera stills captured\n  - Security team notified\n\n## Grafana Integration:\n- **Image URLs** embedded in log entries\n- **Annotations** mark detection events\n- **Alert rules** trigger on log patterns\n- **Notification channels** include images\n\n## Example Alert Message:\n```\n🚨 SECURITY ALERT: Person detected at Front Door\n\n📸 Camera: Front Door\n⏰ Time: 2025-01-20 10:30:45\n🎯 Confidence: 85%\n🖼️ Image: http://localhost:10729/stills/alert_12345.jpg\n\n📊 View Dashboard: http://localhost:3000/d/ring-mcp-security\n```\n",
         "mode": "markdown"
       },
       "pluginVersion": "10.2.0",

@@ -85,6 +85,21 @@ export RING_MCP_TEST_MODE=real
 python tests/run_tests.py all
 ```
 
+### One-time interactive (repo root, recommended for local)
+
+Prompts in the terminal; values are passed only to the pytest subprocess (not written to `.env` or disk):
+
+`just test-real-prompt`
+
+Extra pytest arguments go after the script when using uv directly, for example:
+`uv run python scripts/run_test_real_prompt.py -k test_real_device_discovery`
+
+If `RING_USERNAME` / `RING_PASSWORD` are already set in the environment, the script uses them and skips the matching prompts.
+
+### Quick device status (CLI, no HTTP server)
+
+From repo root: `just devices` prints each Ring device’s **online** and **battery** (uses `RingClient`; prompts for credentials if `RING_*` are unset). For non-interactive use: set `RING_USERNAME` / `RING_PASSWORD` and run `just devices-env`.
+
 ### Auto-Detection
 ```bash
 # Framework detects based on available credentials

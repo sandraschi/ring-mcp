@@ -510,7 +510,7 @@ services:
       - RING_PASSWORD=${RING_PASSWORD}
       - LOG_LEVEL=INFO
     ports:
-      - "8123:8123"
+      - "10729:10729"
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs

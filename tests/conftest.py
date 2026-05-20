@@ -300,12 +300,9 @@ def pytest_collection_modifyitems(config, items):
         if "device_discovery" in item.keywords and env["mock_mode"]:
             item.add_marker(pytest.mark.skip(reason="Device discovery not available in mock mode"))
 
-        # Mark integration tests appropriately
-        if "integration" in item.keywords:
-            if env["mock_mode"]:
-                item.add_marker(pytest.mark.skip(reason="Integration tests skipped in mock mode"))
-            else:
-                item.add_marker(pytest.mark.skip(reason="Real device integration not configured"))
+        # Integration tests also require real Ring; skip only in explicit mock mode
+        if "integration" in item.keywords and env["mock_mode"]:
+            item.add_marker(pytest.mark.skip(reason="Integration tests skipped in mock mode"))
 
 # Environment setup
 @pytest.fixture(scope="session", autouse=True)

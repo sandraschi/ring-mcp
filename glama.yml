@@ -204,7 +204,7 @@ examples:
 # Dependencies for Glama.ai compatibility check
 dependencies:
   runtime:
-    - fastmcp: ">=2.12.0"
+    - fastmcp: ">=3.2.0"
     - ring-doorbell: ">=0.8.0"
     - httpx: ">=0.25.0"
     - pydantic: ">=2.0.0"

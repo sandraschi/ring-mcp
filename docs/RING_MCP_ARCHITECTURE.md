@@ -1,15 +1,15 @@
 # 🏗️ Ring MCP Server - Advanced Architecture & Advantages
 
 **Last Updated**: March 2026
-**Version**: 3.1.0 (Production)
-**Framework**: FastMCP 3.1
+**Version**: 3.2.0 (Production)
+**Framework**: FastMCP 3.2+
 **Status**: ✅ **PRODUCTION READY**
 
 ---
 
 ## 🎯 Architecture Overview
 
-The Ring MCP Server implements a **dual-interface, production-grade architecture** that provides seamless integration with Claude Desktop while offering comprehensive HTTP APIs for testing, monitoring, and external client access. Built on **FastMCP 3.1** (sampling, agentic workflows, prompts/skills) with **real Ring device integration**, this system delivers enterprise-class security management capabilities.
+The Ring MCP Server implements a **dual-interface, production-grade architecture** that provides seamless integration with Claude Desktop while offering comprehensive HTTP APIs for testing, monitoring, and external client access. Built on **FastMCP 3.2+** (sampling, agentic workflows, prompts/skills) with **real Ring device integration**, this system delivers enterprise-class security management capabilities.
 
 ### 🚀 **Core Innovation: Dual Interface Design**
 
@@ -21,7 +21,7 @@ The Ring MCP Server implements a **dual-interface, production-grade architecture
                       │ STDIO Transport
                       │ JSON-RPC Messages
 ┌─────────────────────▼───────────────────────────────────────┐
-│                FastMCP Server 3.1                           │
+│                FastMCP Server 3.2+                        │
 │              (ring_mcp/server.py)                           │
 │  ┌─────────────────────────────────────────────────────────┤
 │  │ Tool Registry (17+ tools)                              │
@@ -54,7 +54,7 @@ The Ring MCP Server implements a **dual-interface, production-grade architecture
 
 ## 🏛️ Core Components
 
-### **1. FastMCP 3.1 Server Layer**
+### **1. FastMCP 3.2+ Server Layer**
 
 **File**: `ring_mcp/server.py`
 
@@ -62,7 +62,7 @@ The Ring MCP Server implements a **dual-interface, production-grade architecture
 
 **Key Features**:
 - **Dual Transport**: stdio (Claude Desktop) and HTTP (REST API via `ring_mcp.http_server`)
-- **Tool Registration**: 17+ tools; FastMCP 3.1 conversational responses, sampling, agentic workflows
+- **Tool Registration**: 17+ tools; FastMCP 3.2+ conversational responses, sampling, agentic workflows
 - **Type Safety**: Full Pydantic v2 model integration
 - **Health Monitoring**: Built-in health checks and metrics
 - **Error Recovery**: Comprehensive exception handling with structured logging
@@ -71,12 +71,12 @@ The Ring MCP Server implements a **dual-interface, production-grade architecture
 ```python
 # Port management with graceful termination of previous instances
 from ring_mcp.core.port_manager import get_ring_mcp_port, print_port_info
-RING_MCP_PORT = get_ring_mcp_port()  # Uses 8123 by default, handles conflicts
+RING_MCP_PORT = get_ring_mcp_port()  # Uses 10729 by default, handles conflicts
 
 app = FastMCP(
     name="Ring Security",
-    version="3.1.0",
-    description="Ring Security Ecosystem Integration - FastMCP 3.1",
+    version="3.2.0",
+    description="Ring Security Ecosystem Integration - FastMCP 3.2+",
     host=os.getenv("HOST", "0.0.0.0"),
     port=RING_MCP_PORT,  # Dynamic port with conflict resolution
 )
@@ -144,7 +144,7 @@ app = FastMCP(
 - **Real-time Control**: Live device status and command execution
 - **Event Streaming**: Historical and real-time event access
 - **Error Handling**: Robust retry logic and connection management
-- **WebRTC streaming**: Ring uses WebRTC (not RTSP). `RingClient` exposes `webrtc_start`, `webrtc_ice`, and `webrtc_close` for signaling; the HTTP server relays offer/answer and ICE over a WebSocket at `/api/v1/devices/{id}/stream/webrtc` so the webapp can show live video in-browser.
+- **WebRTC streaming**: Ring uses WebRTC (not RTSP). `RingClient` exposes `webrtc_start`, `webrtc_ice`, and `webrtc_close` for signaling; the HTTP server relays offer/answer and ICE over a WebSocket at `/api/v1/devices/{id}/stream/webrtc` so **web_sota** can show live video in-browser.
 
 ### **4. Smart Port Management Layer**
 
@@ -153,8 +153,8 @@ app = FastMCP(
 **Purpose**: Intelligent port allocation with graceful conflict resolution
 
 **Key Features**:
-- **Non-Standard Ports**: Uses port 8123 by default (avoids popular port conflicts)
-- **Dynamic Port Discovery**: Automatically finds free ports in range 8100-8200
+- **Non-Standard Ports**: Uses port 10729 by default (avoids popular port conflicts)
+- **Dynamic Port Discovery**: Automatically finds free ports in range 10720-10800
 - **Graceful Termination**: Terminates previous instances using the same port
 - **Cross-Platform**: Works on Windows, Linux, and macOS
 - **Developer-Friendly**: No manual port management required
@@ -162,9 +162,9 @@ app = FastMCP(
 **Port Strategy**:
 ```python
 # Avoids popular ports like 8000, 3000, 5000
-DEFAULT_RING_MCP_PORT = 8123
-PORT_RANGE_START = 8100
-PORT_RANGE_END = 8200
+DEFAULT_RING_MCP_PORT = 10729
+PORT_RANGE_START = 10720
+PORT_RANGE_END = 10800
 
 # Automatic conflict resolution
 def handle_port_conflict(port: int) -> Tuple[int, bool]:
@@ -234,7 +234,7 @@ curl -X POST http://localhost:8000/tools/get_camera_status
 - ✅ **Token Management** - Automatic refresh and secure storage
 
 **Smart Port Management**
-- ✅ **Zero Configuration** - Automatic port allocation (8123 default)
+- ✅ **Zero Configuration** - Automatic port allocation (10729 default)
 - ✅ **Conflict Resolution** - Graceful termination of previous instances
 - ✅ **Cross-Platform** - Works on Windows, Linux, macOS
 - ✅ **Development Friendly** - No manual port management needed
@@ -326,7 +326,7 @@ Tailscale provides **zero-config VPN** technology that creates a secure, encrypt
 ┌─────────────────────▼───────────────────────────────────────┐
 │              Ring MCP Server + Monitoring                   │
 │  ┌─────────────────────────────────────────────────────────┤
-│  │ Ring MCP: http://100.64.0.10:8123                       │
+│  │ Ring MCP: http://100.64.0.10:10729                       │
 │  │ Grafana: http://100.64.0.10:9001                        │
 │  │ Prometheus: http://100.64.0.10:9002                     │
 │  │ Loki: http://100.64.0.10:9003                           │
@@ -357,11 +357,11 @@ services:
     restart: unless-stopped
     environment:
       - HOST=0.0.0.0
-      - PORT=8123
+      - PORT=10729
       - RING_USERNAME=${RING_USERNAME}
       - RING_PASSWORD=${RING_PASSWORD}
     ports:
-      - "8123:8123"
+      - "10729:10729"
     networks:
       - ring-mcp-net
 
@@ -549,7 +549,7 @@ async def get_devices():
 docker-compose up -d
 
 # Access:
-# Ring MCP: http://localhost:8123
+# Ring MCP: http://localhost:10729
 # Grafana: http://localhost:9001
 # Prometheus: http://localhost:9002
 ```
@@ -575,12 +575,12 @@ spec:
       - name: ring-mcp
         image: ring-mcp:production
         ports:
-        - containerPort: 8123
+        - containerPort: 10729
         env:
         - name: HOST
           value: "0.0.0.0"
         - name: PORT
-          value: "8123"
+          value: "10729"
         - name: RING_USERNAME
           valueFrom:
             secretKeyRef:
@@ -594,13 +594,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8123
+            port: 10729
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 8123
+            port: 10729
           initialDelaySeconds: 5
           periodSeconds: 5
 ```
@@ -613,7 +613,7 @@ spec:
 # 3. Access monitoring dashboards remotely:
 #    - Grafana: http://100.64.0.10:9001
 #    - Prometheus: http://100.64.0.10:9002
-#    - Ring MCP API: http://100.64.0.10:8123
+#    - Ring MCP API: http://100.64.0.10:10729
 ```
 
 ---

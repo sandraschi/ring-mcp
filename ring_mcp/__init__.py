@@ -1,9 +1,9 @@
 """
 Ring MCP - Unified Security Ecosystem
 
-FastMCP 3.1 implementation for Ring doorbell, burglar alarm, fire alarm, and security cameras.
+FastMCP 3.2+ implementation for Ring doorbell, burglar alarm, fire alarm, and security cameras.
 Universal security control through Ring API with real-time monitoring and emergency automation.
-Supports sampling, agentic workflows, and MCP prompts/skills per FastMCP 3.1.
+Supports sampling, agentic workflows, and MCP prompts/skills per FastMCP 3.2+.
 """
 
 import logging

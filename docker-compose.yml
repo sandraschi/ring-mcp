@@ -1,26 +1,25 @@
-version: '3.8'
-
 services:
   ring-mcp:
     build: .
     container_name: ring-mcp
+    entrypoint: ["ring-mcp-http"]
     restart: unless-stopped
     environment:
       - RING_USERNAME=${RING_USERNAME:-}
       - RING_PASSWORD=${RING_PASSWORD:-}
       - RING_TOKEN=${RING_TOKEN:-}
       - HOST=0.0.0.0
-      - PORT=8123
+      - PORT=10729
       - LOG_LEVEL=INFO
       - CACHE_TTL=300
       - RATE_LIMIT=10
     ports:
-      - "8123:8123"
+      - "10729:10729"
     volumes:
       - ./data:/app/data
       - ./config:/app/config
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8123/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:10729/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3

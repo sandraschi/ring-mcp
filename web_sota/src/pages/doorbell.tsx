@@ -14,7 +14,17 @@ function useDevices() {
 
 function isDoorbellOrCamera(d: RingDevice): boolean {
   const t = (d.type ?? "").toLowerCase();
-  return t === "doorbell" || t === "camera" || t.includes("doorbell") || t.includes("camera");
+  const f = (d.family ?? "").toLowerCase();
+  return (
+    t === "doorbell" ||
+    t === "camera" ||
+    t.includes("doorbell") ||
+    t.includes("camera") ||
+    t.includes("doorbot") ||
+    t.includes("stickup") ||
+    f.includes("doorbot") ||
+    f.includes("stickup")
+  );
 }
 
 export function Doorbell() {

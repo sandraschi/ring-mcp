@@ -7,19 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **Next.js `webapp/`**: Removed the legacy Next.js UI; the only supported browser UI is **`web_sota`** (`just dev`, `web_sota/start.ps1`). Dropped `just dev-webapp`.
+
 ### Added
-- **FastMCP 3.1**: Upgraded dependency to `fastmcp>=3.1`. Server and tool docstrings aligned to 3.1; conversational tool responses support sampling and agentic workflows.
-- **Webapp real API**: Web_sota now uses the live REST API (no mocks). Settings: Ring credentials (email/password) and API URL; Test connection calls `/api/v1/health`. Status: real device list from `/api/v1/devices` and `/api/v1/status`; Arm/Disarm and Chime actions. Dashboard: backend health and device count from API.
+- **CLI device status**: `scripts/ring_device_status.py` with `just devices` (env or prompt for Ring creds) and `just devices-env` (`--no-prompt`, requires `RING_USERNAME` / `RING_PASSWORD`). Prints **online** and **battery** per device via `RingClient` (no HTTP API process required).
+- **FastMCP 3.2+**: Upgraded dependency to `fastmcp>=3.2.0` (resolved to 3.2.x). Explicit `fastapi` dependency for `http_server` and composition. Server and tool docstrings aligned to 3.2+.
+- **web_sota real API**: Fleet UI now uses the live REST API (no mocks). Settings: Ring credentials (email/password) and API URL; Test connection calls `/api/v1/health`. Status: real device list from `/api/v1/devices` and `/api/v1/status`; Arm/Disarm and Chime actions. Dashboard: backend health and device count from API.
 - **In-browser live video (WebRTC)**: Ring uses WebRTC (not RTSP). Backend WebSocket at `GET /api/v1/devices/{id}/stream/webrtc` relays SDP offer/answer and ICE between browser and Ring. Doorbell & Camera page: "Start live view" opens WebSocket, creates RTCPeerConnection, sends offer, applies Ring answer and ICE, and displays stream in a `<video>` element. "Stop" closes stream and WebSocket. `RingClient`: `webrtc_start`, `webrtc_ice`, `webrtc_close`; `get_live_stream_url` now raises and directs callers to WebRTC.
 - **API client**: `web_sota/src/lib/api.ts` with `configureAuth`, `getHealth`, `getDevices`, `getStatus`, `setArmStatus`, `triggerChime`, `getWebRtcWsUrl`. Base URL from localStorage or `VITE_API_URL` (default `http://127.0.0.1:10729`).
 - **Start script**: `web_sota/start.ps1` now runs `ring_mcp.http_server:app` (REST API) on port 10729; frontend on 10728. CORS updated for 10728 and 10706.
 
 ### Changed
-- **Docs**: README, architecture, PRD, and code comments now state FastMCP 3.1 and WebRTC in-browser video; removed 2.10/2.12/2.13 version references. README webapp section describes web_sota, Doorbell & Camera live view, and real API flow.
-- **PRD**: `docs/PRD.md` updated: in-scope WebRTC live video in webapp; non-goals no longer exclude in-browser streaming.
+- **Fleet ports**: Default Ring HTTP REST API port is **10729** (matches `web_sota/start.ps1`); conflict fallback range **10720–10800**. Default `RING_HTTP_API_ORIGIN` for tooling/docs is `http://127.0.0.1:10729`. Docker Compose uses `ring-mcp-http` entrypoint, port **10729**, and health check on `/api/v1/health`.
+- **Docs**: README, architecture, PRD, and code comments now state FastMCP 3.2+ and WebRTC in-browser video; removed 2.10/2.12/2.13 version references. README describes **web_sota**, Doorbell & Camera live view, and real API flow.
+- **PRD**: `docs/PRD.md` updated: in-scope WebRTC live video in **web_sota**; non-goals no longer exclude in-browser streaming.
 
 ### Fixed
-- Webapp was mock-only and did not show or control real Ring devices; backend started wrong process (MCP server instead of REST API). Fixed by starting `http_server:app` and wiring frontend to REST endpoints with Ring auth in Settings.
+- **web_sota** was mock-only and did not show or control real Ring devices; backend started wrong process (MCP server instead of REST API). Fixed by starting `http_server:app` and wiring the UI to REST endpoints with Ring auth in Settings.
 
 ---
 

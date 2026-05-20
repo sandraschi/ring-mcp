@@ -16,10 +16,11 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-# Use non-standard port to avoid conflicts
-DEFAULT_RING_MCP_PORT = 8123
-PORT_RANGE_START = 8100
-PORT_RANGE_END = 8200
+# Fleet SOTA: REST HTTP API (uvicorn ring_mcp.http_server) default — see web_sota/start.ps1
+FLEET_RING_HTTP_API_PORT = 10729
+DEFAULT_RING_MCP_PORT = FLEET_RING_HTTP_API_PORT
+PORT_RANGE_START = 10720
+PORT_RANGE_END = 10800
 
 
 def find_free_port(preferred_port: int = DEFAULT_RING_MCP_PORT) -> int:

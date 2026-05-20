@@ -1,8 +1,8 @@
 """
-FastMCP 3.1 server for Ring MCP.
+FastMCP 3.2+ server for Ring MCP.
 
 This module provides a FastMCP server implementation for controlling Ring devices
-with composition and proxy capabilities. Aligned to FastMCP 3.1 (sampling,
+with composition and proxy capabilities. Aligned to FastMCP 3.2+ (sampling,
 agentic workflows, prompts).
 """
 import asyncio
@@ -13,12 +13,14 @@ from typing import Any, Dict, List, Optional, Callable, Awaitable
 
 from fastapi import FastAPI
 from fastmcp import FastMCP
+from fastmcp.server import create_proxy
 from pydantic import BaseModel, Field
 from prometheus_client import Counter, Histogram, Gauge, start_http_server
 import structlog
 import pythonjsonlogger
 
 from .core.ring_client_modern import RingClient
+from .ring_mqtt_bridge import get_ring_mqtt_bridge
 
 
 def create_fastapi_app_with_docs() -> FastAPI:
@@ -26,7 +28,7 @@ def create_fastapi_app_with_docs() -> FastAPI:
     return FastAPI(
         title="Ring MCP API",
         description="Ring Security System Management API - FastAPI Documentation",
-        version="3.1.0",
+        version="3.2.0",
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json"
@@ -131,11 +133,23 @@ logger = structlog.get_logger(__name__)
 from ring_mcp.core.port_manager import get_ring_mcp_port, print_port_info
 RING_MCP_PORT = get_ring_mcp_port()
 
-# Initialize FastMCP 3.1
+# Initialize FastMCP 3.2+
 app = FastMCP(
     name="Ring Security",
-    version="3.1.0",
+    version="3.2.0",
 )
+
+_bridge_proxies: list[str] = []
+bridge_urls = os.getenv("MCP_BRIDGE_URLS", "")
+if bridge_urls:
+    for url in bridge_urls.split(","):
+        url = url.strip()
+        if url:
+            try:
+                app.add_provider(create_proxy(url))
+                _bridge_proxies.append(url)
+            except Exception:
+                pass
 
 # Prometheus metrics
 ring_api_calls_total = Counter('ring_api_calls_total', 'Total Ring API calls', ['endpoint', 'status'])
@@ -235,14 +249,15 @@ def get_ring_client() -> RingClient:
     return _ring_client
 
 def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
-    """Register Ring MCP tools with the FastMCP application (FastMCP 3.1).
+    """Register Ring MCP tools with the FastMCP application (FastMCP 3.2+).
 
     Args:
         app: FastMCP application instance
         ring_client: Initialized RingClient instance
     """
+    get_ring_mqtt_bridge().start()
 
-    # Request/Response models for FastMCP 3.1
+    # Request/Response models for FastMCP 3.2+
     class DeviceID(BaseModel):
         """Device identifier model."""
         device_id: str = Field(..., description="The ID of the device")
@@ -321,7 +336,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Used by: list operation. Default: False. Forces API call instead of using cache.
 
         Returns:
-            **FastMCP 3.1 conversational response (sampling/agentic):**
+            **FastMCP 3.2+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -369,6 +384,9 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
         """
         try:
             devices = await ring_client.get_devices(force_refresh=force_refresh)
+            bridge = get_ring_mqtt_bridge()
+            if bridge.enabled:
+                devices = [*devices, *bridge.list_alarm_devices()]
 
             # Track device metrics
             for device in devices:
@@ -420,7 +438,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Must be a valid Ring device ID from get_devices().
 
         Returns:
-            **FastMCP 3.1 conversational response (sampling/agentic):**
+            **FastMCP 3.2+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -462,6 +480,10 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
         """
         try:
             device = await ring_client.get_device(device_id)
+            if not device:
+                bridge = get_ring_mqtt_bridge()
+                if bridge.enabled:
+                    device = bridge.get_device_dict(device_id)
             if not device:
                 raise DeviceNotFoundError(f"Device {device_id} not found")
 
@@ -517,7 +539,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Limits API calls and response size for performance.
 
         Returns:
-            **FastMCP 3.1 conversational response (sampling/agentic):**
+            **FastMCP 3.2+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -607,7 +629,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Must be a valid Ring camera device ID from get_devices().
 
         Returns:
-            **FastMCP 3.1 conversational response (sampling/agentic):**
+            **FastMCP 3.2+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -693,7 +715,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 False = deactivate security monitoring for authorized access
 
         Returns:
-            **FastMCP 3.1 conversational response (sampling/agentic):**
+            **FastMCP 3.2+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -743,6 +765,18 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
             - Ring Support: Professional assistance for security system issues
         """
         try:
+            bridge = get_ring_mqtt_bridge()
+            if bridge.enabled and bridge.is_alarm_panel(device_id):
+                mode = "arm_away" if status else "disarm"
+                success = await bridge.publish_alarm_mode(device_id, mode)
+                location = "ring_mqtt"
+                ring_security_armed.labels(location=location).set(1 if status else 0)
+                action = "armed" if status else "disarmed"
+                return StatusResponse(
+                    success=success,
+                    message=f"Device {device_id} {action} via ring-mqtt ({mode})",
+                )
+
             success = await ring_client.set_arm_status(device_id, status)
 
             # Track security system status
@@ -796,7 +830,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Must be a valid Ring doorbell device from get_devices().
 
         Returns:
-            **FastMCP 3.1 conversational response (sampling/agentic):**
+            **FastMCP 3.2+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -883,7 +917,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
             None required - comprehensive health check is automatic.
 
         Returns:
-            **FastMCP 3.1 conversational response (sampling/agentic):**
+            **FastMCP 3.2+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -987,7 +1021,7 @@ def create_app(ring_client: Optional[RingClient] = None) -> FastMCP:
     """Create and configure the FastMCP application with composition support.
 
     This function creates the main FastMCP application instance and registers
-    all Ring security tools (FastMCP 3.1: sampling, agentic workflows).
+    all Ring security tools (FastMCP 3.2+: sampling, agentic workflows).
 
     Args:
         ring_client: Optional pre-initialized RingClient instance. If not provided,
@@ -1045,5 +1079,5 @@ if __name__ == "__main__":
 
     # Create and run the FastMCP server with stdio transport for Claude Desktop
     # The app is already configured with both stdio and HTTP transports
-    logger.info("Starting Ring MCP server with FastMCP 3.1")
+    logger.info("Starting Ring MCP server with FastMCP 3.2+")
     logger.info("Server will be available via stdio for Claude Desktop and HTTP for web access")

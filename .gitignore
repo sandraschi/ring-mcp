@@ -199,8 +199,6 @@ secrets/
 # Node modules (if any)
 node_modules/
 
-# Next.js build output (webapp/)
-webapp/.next/
 
 # Runtime data
 pids/
@@ -258,3 +256,5 @@ docs/site/
 # CI/CD
 .github/workflows/cache/
 .github/workflows/logs/
+
+_dashboard/
