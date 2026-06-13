@@ -1,9 +1,9 @@
-﻿param(
+param(
     [switch]$Headless,
     [switch]$BackendOnly,
     [switch]$FrontendOnly,
-    [switch]$NoBrowser
-)
+    [switch]$NoBrowser,
+    [switch]$ReuseIfRunning)
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $FleetStartPath = Join-Path $ProjectRoot "scripts\FleetStartMode.ps1"
@@ -15,17 +15,30 @@ if (-not (Test-Path -LiteralPath $FleetStartPath)) {
 $FleetStart = Initialize-FleetStartMode @PSBoundParameters
 Enter-FleetHeadlessConsole -Headless:$Headless -BackendOnly:$BackendOnly
 
+$portResolve = @{
+    Ports      = @($WebPort, $BackendPort)
+    Label      = "ring-mcp"
+    AllowReuse = $ReuseIfRunning
+}
+if ($ReuseIfRunning) {
+    $portResolve.HealthChecks = @{
+        $WebPort = "http://127.0.0.1:$WebPort/"
+        $BackendPort = "http://127.0.0.1:$BackendPort/health"
+    }
+}
+$portState = Resolve-FleetPortConflict @portResolve
+if ($portState.Action -eq 'Blocked') { exit 1 }
+if ($portState.Reuse) { return }
 # Webapp Start - Standardized SOTA (Auto-Repaired V2.5)
 $WebPort = 10728
 $BackendPort = 10729
 
-Stop-FleetPortSquatters -Ports @($WebPort, $BackendPort) -Label "ring-mcp"
 
-if (-not (Assert-FleetPortsAvailable -Ports @($WebPort, $BackendPort) -Label "ring-mcp")) { exit 1 }
 
 # 2. Setup
 Set-Location $PSScriptRoot
 if (-not (Test-Path "node_modules")) { npm install }
+uv sync
 
 # 3. Start the Python backend (Background)
 Write-Host "Starting Python backend on port $BackendPort ..." -ForegroundColor Cyan
@@ -34,6 +47,12 @@ Write-Host "Starting Python backend on port $BackendPort ..." -ForegroundColor C
 $backendCmd = "Set-Location '$PSScriptRoot'; uv run --project '$ProjectRoot' uvicorn ring_mcp.http_server:app --host 127.0.0.1 --port $BackendPort --log-level info"
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd -WindowStyle Normal
+
+# 3b. Wait for backend to be ready
+Write-Host "Waiting for backend on port $BackendPort ..." -ForegroundColor Cyan
+for ($i = 0; $i -lt 60; $i++) {
+    try { $null = Invoke-WebRequest -Uri "http://127.0.0.1:$BackendPort/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; Write-Host "Backend ready!" -ForegroundColor Green; break } catch { Start-Sleep -Seconds 1 }
+}
 
 # 4. Run server (Vite dev)
 if (-not $FleetStart.RunFrontend) { return }
