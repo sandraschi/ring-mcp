@@ -12,8 +12,8 @@ tool registration for Claude Desktop stdio communication.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -31,13 +31,9 @@ def register_tools(app: FastMCP) -> None:
     """
 
     @app.tool(
-        name="list_available_tools",
-        description="List all available Ring MCP tools with categories and descriptions"
+        name="list_available_tools", description="List all available Ring MCP tools with categories and descriptions"
     )
-    async def list_available_tools(
-        category: Optional[str] = None,
-        include_hidden: bool = False
-    ) -> Dict[str, Any]:
+    async def list_available_tools(category: str | None = None, include_hidden: bool = False) -> dict[str, Any]:
         """List all available Ring MCP tools with categories and descriptions.
 
         Provides a comprehensive overview of all available tools, organized by category.
@@ -64,7 +60,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "cameras",
                     "parameters": {},
                     "example": "get_camera_status()",
-                    "returns": "Camera status including online/offline, battery, recording"
+                    "returns": "Camera status including online/offline, battery, recording",
                 },
                 {
                     "name": "stream_all_cameras",
@@ -72,10 +68,9 @@ def register_tools(app: FastMCP) -> None:
                     "category": "cameras",
                     "parameters": {},
                     "example": "stream_all_cameras()",
-                    "returns": "Live stream URLs and status for all cameras"
-                }
+                    "returns": "Live stream URLs and status for all cameras",
+                },
             ],
-
             # Doorbell Management Tools
             "doorbells": [
                 {
@@ -84,7 +79,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "doorbells",
                     "parameters": {},
                     "example": "get_doorbell_status()",
-                    "returns": "Doorbell connectivity, battery, and visitor detection status"
+                    "returns": "Doorbell connectivity, battery, and visitor detection status",
                 },
                 {
                     "name": "get_doorbell_live_stream",
@@ -92,7 +87,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "doorbells",
                     "parameters": {"doorbell_id": "string"},
                     "example": "get_doorbell_live_stream(doorbell_id='1234567890')",
-                    "returns": "Live stream URL for the specified doorbell"
+                    "returns": "Live stream URL for the specified doorbell",
                 },
                 {
                     "name": "answer_doorbell_call",
@@ -100,7 +95,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "doorbells",
                     "parameters": {"doorbell_id": "string"},
                     "example": "answer_doorbell_call(doorbell_id='1234567890')",
-                    "returns": "Call handling status"
+                    "returns": "Call handling status",
                 },
                 {
                     "name": "get_visitor_history",
@@ -108,7 +103,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "doorbells",
                     "parameters": {"hours": "int", "doorbell_id": "string"},
                     "example": "get_visitor_history(hours=24, doorbell_id='1234567890')",
-                    "returns": "Recent visitor activity and motion events"
+                    "returns": "Recent visitor activity and motion events",
                 },
                 {
                     "name": "configure_motion_detection",
@@ -116,10 +111,9 @@ def register_tools(app: FastMCP) -> None:
                     "category": "doorbells",
                     "parameters": {"doorbell_id": "string", "enabled": "bool", "sensitivity": "int"},
                     "example": "configure_motion_detection(doorbell_id='1234567890', enabled=True, sensitivity=80)",
-                    "returns": "Motion detection configuration status"
-                }
+                    "returns": "Motion detection configuration status",
+                },
             ],
-
             # Security System Tools
             "security": [
                 {
@@ -128,7 +122,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "security",
                     "parameters": {},
                     "example": "get_security_system_status()",
-                    "returns": "Overall security system status, modes, and device health"
+                    "returns": "Overall security system status, modes, and device health",
                 },
                 {
                     "name": "arm_security_system",
@@ -136,7 +130,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "security",
                     "parameters": {"mode": "string", "devices": "list"},
                     "example": "arm_security_system(mode='home', devices=['front_door', 'back_door'])",
-                    "returns": "Arming status and countdown information"
+                    "returns": "Arming status and countdown information",
                 },
                 {
                     "name": "disarm_security_system",
@@ -144,7 +138,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "security",
                     "parameters": {"code": "string"},
                     "example": "disarm_security_system(code='1234')",
-                    "returns": "Disarming status and system state"
+                    "returns": "Disarming status and system state",
                 },
                 {
                     "name": "get_security_history",
@@ -152,10 +146,9 @@ def register_tools(app: FastMCP) -> None:
                     "category": "security",
                     "parameters": {"hours": "int", "event_type": "string"},
                     "example": "get_security_history(hours=24, event_type='alarm')",
-                    "returns": "Security events and system activity logs"
-                }
+                    "returns": "Security events and system activity logs",
+                },
             ],
-
             # Fire Safety Tools
             "fire": [
                 {
@@ -164,7 +157,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "fire",
                     "parameters": {},
                     "example": "get_fire_alarm_status()",
-                    "returns": "Fire alarm health, battery levels, and system status"
+                    "returns": "Fire alarm health, battery levels, and system status",
                 },
                 {
                     "name": "test_fire_safety_system",
@@ -172,10 +165,9 @@ def register_tools(app: FastMCP) -> None:
                     "category": "fire",
                     "parameters": {"device_id": "string", "test_type": "string"},
                     "example": "test_fire_safety_system(device_id='smoke_detector_1', test_type='battery')",
-                    "returns": "Test results and system health report"
-                }
+                    "returns": "Test results and system health report",
+                },
             ],
-
             # Monitoring Tools
             "monitoring": [
                 {
@@ -184,7 +176,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "monitoring",
                     "parameters": {},
                     "example": "monitor_system_health()",
-                    "returns": "System health score, device status, and maintenance alerts"
+                    "returns": "System health score, device status, and maintenance alerts",
                 },
                 {
                     "name": "get_real_time_activity",
@@ -192,10 +184,9 @@ def register_tools(app: FastMCP) -> None:
                     "category": "monitoring",
                     "parameters": {"minutes": "int"},
                     "example": "get_real_time_activity(minutes=30)",
-                    "returns": "Recent activity, motion events, and system alerts"
-                }
+                    "returns": "Recent activity, motion events, and system alerts",
+                },
             ],
-
             # Automation Tools
             "automation": [
                 {
@@ -206,10 +197,10 @@ def register_tools(app: FastMCP) -> None:
                         "trigger_type": "string",
                         "trigger_conditions": "dict",
                         "response_actions": "list",
-                        "automation_name": "string"
+                        "automation_name": "string",
                     },
                     "example": "create_security_automation(trigger_type='motion', automation_name='Front Door Alert')",
-                    "returns": "Automation rule creation status and ID"
+                    "returns": "Automation rule creation status and ID",
                 },
                 {
                     "name": "trigger_emergency_protocol",
@@ -217,22 +208,17 @@ def register_tools(app: FastMCP) -> None:
                     "category": "automation",
                     "parameters": {"protocol_type": "string", "severity": "string"},
                     "example": "trigger_emergency_protocol(protocol_type='intruder', severity='high')",
-                    "returns": "Emergency protocol activation status"
+                    "returns": "Emergency protocol activation status",
                 },
                 {
                     "name": "schedule_security_modes",
                     "description": "Schedule automatic security mode changes",
                     "category": "automation",
-                    "parameters": {
-                        "schedule_name": "string",
-                        "time_rules": "list",
-                        "mode_sequence": "list"
-                    },
+                    "parameters": {"schedule_name": "string", "time_rules": "list", "mode_sequence": "list"},
                     "example": "schedule_security_modes(schedule_name='Night Schedule')",
-                    "returns": "Schedule creation status and validation"
-                }
+                    "returns": "Schedule creation status and validation",
+                },
             ],
-
             # System Tools
             "system": [
                 {
@@ -241,7 +227,7 @@ def register_tools(app: FastMCP) -> None:
                     "category": "system",
                     "parameters": {},
                     "example": "health_check()",
-                    "returns": "Service health status and diagnostic information"
+                    "returns": "Service health status and diagnostic information",
                 },
                 {
                     "name": "get_system_status",
@@ -249,9 +235,9 @@ def register_tools(app: FastMCP) -> None:
                     "category": "system",
                     "parameters": {},
                     "example": "get_system_status()",
-                    "returns": "Authentication status, device connectivity, and system health"
-                }
-            ]
+                    "returns": "Authentication status, device connectivity, and system health",
+                },
+            ],
         }
 
         # Flatten tools list
@@ -276,17 +262,11 @@ def register_tools(app: FastMCP) -> None:
             "categories": sorted(list(categories)),
             "total_count": len(tools),
             "filtered_count": len(tools),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
-    @app.tool(
-        name="get_tool_help",
-        description="Get detailed help and usage information for a specific tool"
-    )
-    async def get_tool_help(
-        tool_name: str,
-        include_examples: bool = True
-    ) -> Dict[str, Any]:
+    @app.tool(name="get_tool_help", description="Get detailed help and usage information for a specific tool")
+    async def get_tool_help(tool_name: str, include_examples: bool = True) -> dict[str, Any]:
         """Get detailed help and usage information for a specific tool.
 
         Provides comprehensive information about a specific tool including:
@@ -318,7 +298,7 @@ def register_tools(app: FastMCP) -> None:
             return {
                 "error": f"Tool '{tool_name}' not found",
                 "available_tools": [t["name"] for t in all_tools],
-                "suggestion": "Use 'list_available_tools()' to see all available tools"
+                "suggestion": "Use 'list_available_tools()' to see all available tools",
             }
 
         # Enhanced help information
@@ -328,14 +308,14 @@ def register_tools(app: FastMCP) -> None:
             "category": tool["category"],
             "parameters": tool["parameters"],
             "returns": tool["returns"],
-            "usage": tool["example"]
+            "usage": tool["example"],
         }
 
         if include_examples:
             help_info["examples"] = {
                 "basic": tool["example"],
                 "advanced": generate_advanced_example(tool),
-                "error_handling": generate_error_handling_example(tool)
+                "error_handling": generate_error_handling_example(tool),
             }
 
             help_info["tips"] = generate_usage_tips(tool)
@@ -343,15 +323,8 @@ def register_tools(app: FastMCP) -> None:
 
         return help_info
 
-    @app.tool(
-        name="search_tools",
-        description="Search for tools by name, description, or functionality"
-    )
-    async def search_tools(
-        query: str,
-        category: Optional[str] = None,
-        limit: int = 10
-    ) -> Dict[str, Any]:
+    @app.tool(name="search_tools", description="Search for tools by name, description, or functionality")
+    async def search_tools(query: str, category: str | None = None, limit: int = 10) -> dict[str, Any]:
         """Search for tools by name, description, or functionality.
 
         Intelligent search across all tools using fuzzy matching on:
@@ -418,26 +391,26 @@ def register_tools(app: FastMCP) -> None:
                 "Use exact tool names for best results",
                 "Try partial names or keywords",
                 "Specify category for focused results",
-                "Check parameter names and descriptions"
-            ]
+                "Check parameter names and descriptions",
+            ],
         }
 
 
-def generate_advanced_example(tool: Dict[str, Any]) -> str:
+def generate_advanced_example(tool: dict[str, Any]) -> str:
     """Generate advanced usage examples for a tool."""
     examples = {
         "get_camera_status": "get_camera_status()  # Get all cameras with detailed status",
         "get_doorbell_status": "get_doorbell_status()  # Monitor visitor detection and battery",
         "monitor_system_health": "monitor_system_health()  # Comprehensive system check",
-        "get_security_system_status": "get_security_system_status()  # Check security mode and devices"
+        "get_security_system_status": "get_security_system_status()  # Check security mode and devices",
     }
     return examples.get(tool["name"], f"{tool['name']}()  # Advanced usage with error handling")
 
 
-def generate_error_handling_example(tool: Dict[str, Any]) -> str:
+def generate_error_handling_example(tool: dict[str, Any]) -> str:
     """Generate error handling examples for a tool."""
     return f"""try:
-    result = await {tool['name']}()
+    result = await {tool["name"]}()
     print(f"Success: {{result}}")
 except ValueError as e:
     print(f"Authentication/parameter error: {{e}}")
@@ -446,41 +419,43 @@ except Exception as e:
     # Tools are designed to handle errors gracefully"""
 
 
-def generate_usage_tips(tool: Dict[str, Any]) -> List[str]:
+def generate_usage_tips(tool: dict[str, Any]) -> list[str]:
     """Generate usage tips for a tool."""
     tips = []
 
     if "camera" in tool["name"]:
-        tips.extend([
-            "Check camera status before streaming",
-            "Monitor battery levels regularly",
-            "Test motion detection in different lighting"
-        ])
+        tips.extend(
+            [
+                "Check camera status before streaming",
+                "Monitor battery levels regularly",
+                "Test motion detection in different lighting",
+            ]
+        )
     elif "doorbell" in tool["name"]:
-        tips.extend([
-            "Configure motion zones for better detection",
-            "Check visitor history regularly",
-            "Test call answering functionality"
-        ])
+        tips.extend(
+            [
+                "Configure motion zones for better detection",
+                "Check visitor history regularly",
+                "Test call answering functionality",
+            ]
+        )
     elif "security" in tool["name"]:
-        tips.extend([
-            "Set up entry/exit delays appropriately",
-            "Test alarm system regularly",
-            "Monitor device connectivity status"
-        ])
+        tips.extend(
+            [
+                "Set up entry/exit delays appropriately",
+                "Test alarm system regularly",
+                "Monitor device connectivity status",
+            ]
+        )
     elif "fire" in tool["name"]:
-        tips.extend([
-            "Test smoke detectors monthly",
-            "Replace batteries annually",
-            "Clean sensors regularly"
-        ])
+        tips.extend(["Test smoke detectors monthly", "Replace batteries annually", "Clean sensors regularly"])
     else:
         tips.append("Check tool help for detailed usage instructions")
 
     return tips
 
 
-def find_related_tools(tool: Dict[str, Any], all_tools: List[Dict[str, Any]]) -> List[str]:
+def find_related_tools(tool: dict[str, Any], all_tools: list[dict[str, Any]]) -> list[str]:
     """Find tools related to the current tool."""
     related = []
     current_category = tool["category"]

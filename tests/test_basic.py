@@ -3,6 +3,7 @@ Basic test for Ring MCP server functionality.
 
 This is a simplified test to verify the server can start and register tools properly.
 """
+
 import asyncio
 import logging
 import sys
@@ -17,6 +18,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
+
 async def test_server():
     """Test that the server can be created and has tools registered."""
     try:
@@ -29,7 +31,7 @@ async def test_server():
         print(f"Server type: {type(app)}")
 
         # Check if tools are registered
-        if hasattr(app, '_tools'):
+        if hasattr(app, "_tools"):
             tool_count = len(app._tools)
             print(f"Tools registered: {tool_count}")
 
@@ -49,8 +51,10 @@ async def test_server():
     except Exception as e:
         print(f"Error testing server: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 if __name__ == "__main__":
     success = asyncio.run(test_server())

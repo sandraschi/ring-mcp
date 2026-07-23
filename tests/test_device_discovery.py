@@ -4,16 +4,15 @@ Device discovery and presence detection tests.
 These tests verify that the system can properly detect and work with
 real Ring devices when they are available.
 """
-import pytest
-import asyncio
-import json
-import os
-from pathlib import Path
-from typing import List, Dict, Any, Optional
-from unittest.mock import patch, AsyncMock
-import logging
 
-from tests.conftest import detect_test_environment, discover_real_devices, TEST_CONFIG
+import json
+import logging
+import os
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+from tests.conftest import TEST_CONFIG, detect_test_environment, discover_real_devices
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +35,7 @@ class TestDeviceDiscovery:
 
     def test_environment_detection_auto_with_credentials(self):
         """Test automatic real mode detection with credentials."""
-        with patch.dict(os.environ, {
-            "RING_USERNAME": "test@example.com",
-            "RING_PASSWORD": "testpass"
-        }):
+        with patch.dict(os.environ, {"RING_USERNAME": "test@example.com", "RING_PASSWORD": "testpass"}):
             env = detect_test_environment()
             assert env["ring_credentials_configured"] is True
             assert env["mock_mode"] is False  # Should switch to real mode
@@ -80,7 +76,7 @@ class TestDeviceDiscovery:
         # Mock a slow/broken discovery
         with patch("ring_mcp.core.ring_client_modern.RingClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client.get_devices = AsyncMock(side_effect=asyncio.TimeoutError())
+            mock_client.get_devices = AsyncMock(side_effect=TimeoutError())
             mock_client_class.return_value = mock_client
 
             devices = await discover_real_devices()
@@ -114,21 +110,21 @@ class TestDevicePresenceDetection:
 
         test_devices = [
             {"id": "test-1", "name": "Test Device 1", "type": "doorbell", "online": True},
-            {"id": "test-2", "name": "Test Device 2", "type": "camera", "online": False}
+            {"id": "test-2", "name": "Test Device 2", "type": "camera", "online": False},
         ]
 
         # Use temporary path for testing
         test_cache_file = tmp_path / "test_cache.json"
 
         # Temporarily patch the cache file path
-        with patch('tests.conftest.TEST_CONFIG', {**TEST_CONFIG, "real_device_cache": test_cache_file}):
+        with patch("tests.conftest.TEST_CONFIG", {**TEST_CONFIG, "real_device_cache": test_cache_file}):
             save_real_device_cache(test_devices)
 
             # Verify cache file was created
             assert test_cache_file.exists()
 
             # Verify cache contents
-            with open(test_cache_file, 'r') as f:
+            with open(test_cache_file) as f:
                 cache_data = json.load(f)
 
             assert cache_data["available"] is True
@@ -203,7 +199,7 @@ class TestDeviceConnectivityValidation:
     def test_online_status_distribution(self, mock_device_data):
         """Test that devices have realistic online/offline distribution."""
         online_count = sum(1 for d in mock_device_data if d.get("online", False))
-        offline_count = sum(1 for d in mock_device_data if not d.get("online", False))
+        sum(1 for d in mock_device_data if not d.get("online", False))
 
         total_devices = len(mock_device_data)
         assert total_devices > 0, "Should have test devices"
@@ -280,20 +276,18 @@ class TestDiscoveryIntegration:
         from tests.conftest import save_real_device_cache
 
         # Create test data
-        test_devices = [
-            {"id": "cached-1", "name": "Cached Device 1", "type": "doorbell", "online": True}
-        ]
+        test_devices = [{"id": "cached-1", "name": "Cached Device 1", "type": "doorbell", "online": True}]
 
         cache_file = tmp_path / "discovery_cache.json"
 
         # Save to cache
-        with patch('tests.conftest.TEST_CONFIG', {**TEST_CONFIG, "real_device_cache": cache_file}):
+        with patch("tests.conftest.TEST_CONFIG", {**TEST_CONFIG, "real_device_cache": cache_file}):
             save_real_device_cache(test_devices)
 
             # Verify cache file exists and contains data
             assert cache_file.exists()
 
-            with open(cache_file, 'r') as f:
+            with open(cache_file) as f:
                 cached_data = json.load(f)
 
             assert cached_data["count"] == 1
@@ -305,10 +299,10 @@ class TestDiscoveryIntegration:
 
         # Test with empty device list
         cache_file = tmp_path / "empty_cache.json"
-        with patch('tests.conftest.TEST_CONFIG', {**TEST_CONFIG, "real_device_cache": cache_file}):
+        with patch("tests.conftest.TEST_CONFIG", {**TEST_CONFIG, "real_device_cache": cache_file}):
             save_real_device_cache([])
 
-            with open(cache_file, 'r') as f:
+            with open(cache_file) as f:
                 cached_data = json.load(f)
 
             assert cached_data["available"] is False
@@ -347,12 +341,12 @@ class TestDiscoveryErrorHandling:
         original_content = None
 
         if cache_file.exists():
-            with open(cache_file, 'r') as f:
+            with open(cache_file) as f:
                 original_content = f.read()
 
         try:
             # Write invalid JSON
-            with open(cache_file, 'w') as f:
+            with open(cache_file, "w") as f:
                 f.write("invalid json content {")
 
             # Try to read environment
@@ -364,7 +358,7 @@ class TestDiscoveryErrorHandling:
         finally:
             # Restore original content
             if original_content is not None:
-                with open(cache_file, 'w') as f:
+                with open(cache_file, "w") as f:
                     f.write(original_content)
             elif cache_file.exists():
                 cache_file.unlink()

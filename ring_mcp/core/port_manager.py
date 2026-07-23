@@ -10,7 +10,6 @@ import socket
 import subprocess
 import sys
 import time
-from typing import Optional, Tuple
 
 import structlog
 
@@ -62,7 +61,7 @@ def _find_any_free_port() -> int:
         return port
 
 
-def get_process_using_port(port: int) -> Optional[int]:
+def get_process_using_port(port: int) -> int | None:
     """
     Get the PID of the process using the specified port.
 
@@ -71,12 +70,7 @@ def get_process_using_port(port: int) -> Optional[int]:
     try:
         # Windows: use netstat
         if sys.platform == "win32":
-            result = subprocess.run(
-                ["netstat", "-ano"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            result = subprocess.run(["netstat", "-ano"], capture_output=True, text=True, check=True)
             for line in result.stdout.splitlines():
                 if f":{port} " in line and "LISTENING" in line:
                     parts = line.split()
@@ -90,12 +84,7 @@ def get_process_using_port(port: int) -> Optional[int]:
         # Linux/Unix: use lsof or ss
         elif sys.platform in ["linux", "darwin"]:
             try:
-                result = subprocess.run(
-                    ["lsof", "-i", f":{port}"],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
+                result = subprocess.run(["lsof", "-i", f":{port}"], capture_output=True, text=True, check=True)
                 for line in result.stdout.splitlines()[1:]:  # Skip header
                     parts = line.split()
                     if len(parts) >= 2:
@@ -106,12 +95,7 @@ def get_process_using_port(port: int) -> Optional[int]:
             except (subprocess.CalledProcessError, FileNotFoundError):
                 # Try alternative method
                 try:
-                    result = subprocess.run(
-                        ["ss", "-tlnp"],
-                        capture_output=True,
-                        text=True,
-                        check=True
-                    )
+                    result = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True, check=True)
                     for line in result.stdout.splitlines():
                         if f":{port} " in line:
                             parts = line.split()
@@ -139,11 +123,7 @@ def gracefully_terminate_process(pid: int) -> bool:
     try:
         if sys.platform == "win32":
             # Windows: use taskkill
-            subprocess.run(
-                ["taskkill", "/PID", str(pid), "/F"],
-                capture_output=True,
-                check=True
-            )
+            subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, check=True)
         else:
             # Unix/Linux: use kill
             subprocess.run(["kill", "-TERM", str(pid)], capture_output=True)
@@ -162,7 +142,7 @@ def gracefully_terminate_process(pid: int) -> bool:
         return False
 
 
-def handle_port_conflict(port: int) -> Tuple[int, bool]:
+def handle_port_conflict(port: int) -> tuple[int, bool]:
     """
     Handle port conflicts by terminating previous instances.
 

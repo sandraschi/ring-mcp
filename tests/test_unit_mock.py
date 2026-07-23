@@ -4,13 +4,13 @@ Comprehensive unit tests using mocks for Ring MCP functionality.
 These tests verify all Ring MCP tools work correctly with mocked Ring API responses.
 All tests use isolated mocks and do not require real Ring credentials or devices.
 """
-import asyncio
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Dict, List, Any
 
-from ring_mcp.server import create_app
+import asyncio
+
+import pytest
+
 from ring_mcp.core.exceptions import AuthenticationError, DeviceNotFoundError, StreamingError
+from ring_mcp.server import create_app
 
 
 class TestMockDeviceManagement:
@@ -19,24 +19,12 @@ class TestMockDeviceManagement:
     @pytest.mark.asyncio
     async def test_get_devices_success(self, mock_ring_client):
         """Test successful device listing."""
-        app = create_app(mock_ring_client)
+        create_app(mock_ring_client)
 
         # Mock the get_devices call
         mock_devices = [
-            {
-                "id": "doorbell-001",
-                "name": "Front Door",
-                "type": "doorbell",
-                "online": True,
-                "battery_life": 85
-            },
-            {
-                "id": "camera-001",
-                "name": "Backyard",
-                "type": "camera",
-                "online": True,
-                "battery_life": 92
-            }
+            {"id": "doorbell-001", "name": "Front Door", "type": "doorbell", "online": True, "battery_life": 85},
+            {"id": "camera-001", "name": "Backyard", "type": "camera", "online": True, "battery_life": 92},
         ]
         mock_ring_client.get_devices.return_value = mock_devices
 
@@ -269,7 +257,7 @@ class TestMockDataValidation:
     def test_online_status_distribution(self, mock_device_data):
         """Test that we have mix of online/offline devices."""
         online_count = sum(1 for device in mock_device_data if device["online"])
-        offline_count = sum(1 for device in mock_device_data if not device["online"])
+        sum(1 for device in mock_device_data if not device["online"])
 
         # Should have at least one online and possibly some offline
         assert online_count >= 1
@@ -330,7 +318,7 @@ class TestMockConcurrentOperations:
         tasks = [
             mock_ring_client.get_devices(),
             mock_ring_client.get_device("test-id"),
-            mock_ring_client.set_arm_status("alarm-001", True)
+            mock_ring_client.set_arm_status("alarm-001", True),
         ]
         results = await asyncio.gather(*tasks)
 
@@ -358,7 +346,7 @@ class TestMockEdgeCases:
         """Test handling of device data with missing fields."""
         incomplete_device = {
             "id": "incomplete-001",
-            "name": "Incomplete Device"
+            "name": "Incomplete Device",
             # Missing type, online, etc.
         }
         mock_ring_client.get_device.return_value = incomplete_device
@@ -373,12 +361,7 @@ class TestMockEdgeCases:
     async def test_very_long_device_names(self, mock_ring_client):
         """Test handling of devices with very long names."""
         long_name = "A" * 200  # 200 character name
-        device_with_long_name = {
-            "id": "long-name-001",
-            "name": long_name,
-            "type": "doorbell",
-            "online": True
-        }
+        device_with_long_name = {"id": "long-name-001", "name": long_name, "type": "doorbell", "online": True}
         mock_ring_client.get_device.return_value = device_with_long_name
 
         device = await mock_ring_client.get_device("long-name-001")
@@ -390,12 +373,7 @@ class TestMockEdgeCases:
     async def test_unicode_device_names(self, mock_ring_client):
         """Test handling of device names with unicode characters."""
         unicode_name = "Français Doorbell 🚪"
-        unicode_device = {
-            "id": "unicode-001",
-            "name": unicode_name,
-            "type": "doorbell",
-            "online": True
-        }
+        unicode_device = {"id": "unicode-001", "name": unicode_name, "type": "doorbell", "online": True}
         mock_ring_client.get_device.return_value = unicode_device
 
         device = await mock_ring_client.get_device("unicode-001")

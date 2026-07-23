@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Shield, Timer, KeyRound, HardDrive } from "lucide-react";
-import { api, type LogEntry, type HealthResponse } from "@/lib/api";
+import { type HealthResponse, type LogEntry, api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { Activity, HardDrive, KeyRound, Shield, Timer } from "lucide-react";
+import { Link } from "react-router-dom";
 
 function logLineTone(level: string): string {
   const u = level.toUpperCase();
@@ -54,7 +54,9 @@ export function Dashboard() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Ring MCP Dashboard
           </h2>
-          <p className="text-slate-400">System overview (data from this HTTP API only)</p>
+          <p className="text-slate-400">
+            System overview (data from this HTTP API only)
+          </p>
         </div>
       </div>
 
@@ -99,10 +101,17 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">
-              {isLoading ? "…" : isError ? "—" : ringSignedIn ? "Signed in" : "Not signed in"}
+              {isLoading
+                ? "…"
+                : isError
+                  ? "—"
+                  : ringSignedIn
+                    ? "Signed in"
+                    : "Not signed in"}
             </div>
             <p className="text-xs text-slate-400">
-              From <span className="font-mono">authentication_valid</span> on last health check
+              From <span className="font-mono">authentication_valid</span> on
+              last health check
             </p>
           </CardContent>
         </Card>
@@ -163,8 +172,8 @@ export function Dashboard() {
                 <p className="text-slate-500">Loading…</p>
               ) : overviewLogs.length === 0 ? (
                 <p className="text-slate-500">
-                  No log lines yet. Traffic from this API appears here (same buffer as
-                  Logger).
+                  No log lines yet. Traffic from this API appears here (same
+                  buffer as Logger).
                 </p>
               ) : (
                 overviewLogs.map((e: LogEntry, i: number) => (
@@ -203,8 +212,9 @@ export function Dashboard() {
                     stdio MCP
                   </p>
                   <p className="text-xs text-slate-400">
-                    This page only talks to the HTTP API. A separate stdio MCP process may
-                    still be running; it is not probed from the browser.
+                    This page only talks to the HTTP API. A separate stdio MCP
+                    process may still be running; it is not probed from the
+                    browser.
                   </p>
                 </div>
               </div>

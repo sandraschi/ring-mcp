@@ -1,0 +1,14 @@
+# Ring MCP
+
+> Universal Ring Security Ecosystem Control — FastMCP 3.4+ server for Ring doorbell, security camera, burglar alarm, and fire alarm management.
+
+## Docs
+- [llms-full.txt](llms-full.txt) — Full tool reference, env vars, architecture
+- [README.md](README.md) — Setup, configuration, API examples
+- [CHANGELOG.md](CHANGELOG.md) — Version history
+- [INSTALL.md](INSTALL.md) — Installation guide
+
+## Quick Start
+```bash
+uvx ring-mcp
+```

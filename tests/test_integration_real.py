@@ -9,11 +9,12 @@ Tests are marked with pytest markers:
 - @pytest.mark.device_discovery: Involves device discovery
 - @pytest.mark.integration: Full integration tests
 """
-import pytest
+
 import asyncio
-import time
-from typing import List, Dict, Any
 import logging
+import time
+
+import pytest
 
 logger = logging.getLogger(__name__)
 
@@ -284,7 +285,7 @@ class TestRealDevicePerformance:
 
         # Test device listing response time
         start_time = time.time()
-        devices = await real_ring_client.get_devices()
+        await real_ring_client.get_devices()
         list_time = time.time() - start_time
 
         logger.info(".2f")
@@ -295,7 +296,7 @@ class TestRealDevicePerformance:
         # Test individual device details response time
         device_id = real_devices[0]["id"]
         start_time = time.time()
-        device = await real_ring_client.get_device(device_id)
+        await real_ring_client.get_device(device_id)
         detail_time = time.time() - start_time
 
         logger.info(".2f")
@@ -333,7 +334,7 @@ class TestRealDevicePerformance:
         """Test error recovery with real devices."""
         # Test with invalid device ID
         try:
-            invalid_device = await real_ring_client.get_device("invalid-device-id-12345")
+            await real_ring_client.get_device("invalid-device-id-12345")
             # Should either return None or raise an exception
         except Exception as e:
             logger.info(f"Expected error for invalid device ID: {type(e).__name__}")
@@ -378,7 +379,7 @@ class TestRealDeviceMonitoring:
             device_details = await real_ring_client.get_device(device_id)
             initial_states[device_id] = {
                 "online": device_details.get("online"),
-                "battery": device_details.get("battery_life")
+                "battery": device_details.get("battery_life"),
             }
 
         # Wait a bit and check again
@@ -390,7 +391,7 @@ class TestRealDeviceMonitoring:
             device_details = await real_ring_client.get_device(device_id)
             final_states[device_id] = {
                 "online": device_details.get("online"),
-                "battery": device_details.get("battery_life")
+                "battery": device_details.get("battery_life"),
             }
 
         # Log any changes
@@ -439,7 +440,7 @@ class TestRealDeviceWorkflows:
         # Step 4: Status monitoring
         final_details = await real_ring_client.get_device(test_device["id"])
         assert final_details is not None
-        logger.info(f"✓ Monitored device status")
+        logger.info("✓ Monitored device status")
 
         logger.info("Complete workflow test passed!")
 

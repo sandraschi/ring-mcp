@@ -1,7 +1,7 @@
-'''MCP server entry point for Ring-MCP.
+"""MCP server entry point for Ring-MCP.
 
 This is the MCPB-compliant server wrapper that launches the Ring-MCP server.
-'''
+"""
 
 import sys
 from pathlib import Path
@@ -20,8 +20,8 @@ except ImportError:
     except ImportError:
         # Another fallback
         import ring_mcp
+
         main = ring_mcp.main
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

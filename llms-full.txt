@@ -1,0 +1,117 @@
+# Ring MCP — Full Reference
+
+FastMCP 3.4+ server for comprehensive Ring device management.
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| RING_USERNAME | Yes | — | Ring account email |
+| RING_PASSWORD | Yes | — | Ring account password |
+| RING_TOKEN | No | — | Existing OAuth token |
+| HOST | No | 0.0.0.0 | Server bind address |
+| PORT | No | 10729 | HTTP API port |
+| LOG_LEVEL | No | INFO | Logging level |
+| CACHE_TTL | No | 300 | Cache TTL in seconds |
+| RATE_LIMIT | No | 10 | Requests per minute per client |
+| REDIS_URL | No | — | Redis connection for distributed cache |
+| RING_HTTP_API_ORIGIN | No | http://127.0.0.1:10729 | Base URL for web_sota |
+| RING_MQTT_ENABLED | No | — | Enable ring-mqtt bridge |
+| RING_MQTT_URL | No | mqtt://127.0.0.1:1883 | MQTT broker URL |
+| RING_MQTT_USERNAME | No | — | MQTT username |
+| RING_MQTT_PASSWORD | No | — | MQTT password |
+| RING_MQTT_TOPIC_PREFIX | No | ring | MQTT topic prefix |
+| RING_MQTT_CLIENT_ID | No | ring-mcp-bridge | MQTT client ID |
+
+## Ports
+
+- Frontend (Vite): 10728
+- Backend (FastAPI): 10729
+- Backend (stdio MCP): standard input/output
+
+## Tools
+
+### Device Management
+- `get_devices(force_refresh)` — List all Ring devices with status
+- `get_device_details(device_id)` — Get detailed info for a specific device
+- `get_device_events(device_id, limit)` — Recent events for a device
+- `get_live_stream_url(device_id)` — Temporary live stream URL for cameras
+
+### Security System
+- `set_arm_status(device_id, status)` — Arm/disarm security systems (CRITICAL)
+- `trigger_chime(device_id)` — Test doorbell chime
+
+### Monitoring
+- `health_check()` — Full service and Ring API connectivity health check
+
+## Architecture
+
+```
+ring_mcp/
+  __init__.py         — FastMCP stdio server entry point
+  http_server.py      — FastAPI HTTP server with CORS, REST endpoints, WebRTC streaming
+  server.py           — FastMCP server with tool registration and helpers
+  composition.py      — Multi-server composition support
+  local_llm.py        — Local LLM integration (Ollama)
+  ring_mqtt_bridge.py — MQTT bridge for Ring Alarm base station
+  core/
+    ring_client_modern.py — Async Ring API client
+    ring_client.py        — Legacy Ring API client
+    token_manager.py      — OAuth token management
+    port_manager.py       — Port conflict resolution
+    exceptions.py         — Custom exception hierarchy
+  tools/
+    security_system_tools.py — Alarm arm/disarm tools
+    doorbell_tools.py        — Doorbell chime and event tools
+    fire_safety_tools.py     — Fire/CO alarm tools
+    camera_tools.py          — Camera streaming tools
+    monitoring_tools.py      — System health monitoring
+    automation_tools.py      — Automation/rule tools
+    help_tool.py             — Interactive help tools
+    status_tool.py           — System status tools
+  utils/
+    rate_limiter.py     — Rate limiting utilities
+
+web_sota/              — Vite + React fleet UI
+native/                — Tauri desktop shell (NSIS installer)
+```
+
+## REST API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /health | GET | Backend liveness health check |
+| /api/v1/health | GET | Detailed health status |
+| /api/v1/devices | GET | List all devices |
+| /api/v1/devices/{id} | GET | Device details |
+| /api/v1/devices/{id}/events | GET | Device events |
+| /api/v1/devices/{id}/stream/webrtc | GET | WebRTC stream signaling |
+| /api/v1/arm/{id} | POST | Arm alarm |
+| /api/v1/disarm/{id} | POST | Disarm alarm |
+| /api/v1/chime/{id} | POST | Trigger doorbell chime |
+| /api/v1/chat | POST | Chat completion via local LLM |
+| /api/v1/logs | GET | Recent logs from ring buffer |
+| /api/v1/credentials | GET/POST | Ring credential management |
+| /api/v1/llm/discover | GET | LLM provider auto-discovery |
+| /api/health | GET | Health check |
+| /api/status | GET | Server status |
+| /api/skills | GET | List available skills |
+| /docs | GET | Swagger UI |
+| /redoc | GET | ReDoc API docs |
+| /openapi.json | GET | OpenAPI schema |
+
+## Tool Categories
+
+| Category | Tools | Description |
+|----------|-------|-------------|
+| Device Management | get_devices, get_device_details, get_device_events | List, query, and monitor Ring devices |
+| Security | set_arm_status | Arm/disarm burglar alarm systems |
+| Doorbell | trigger_chime | Test doorbell hardware |
+| Camera | get_live_stream_url | Generate temporary streaming URLs |
+| Monitoring | health_check | System health and Ring API connectivity |
+
+## Transport Modes
+
+- **stdio**: Default for Claude Desktop (`mcp.run(transport="stdio")`)
+- **HTTP**: REST API on port 10729 (uvicorn)
+- **Tauri**: Embedded backend via PyInstaller onefile binary

@@ -19,12 +19,12 @@ mcp = FastMCP("Ring Security")
 
 # Import and register tool modules
 from .tools import (
-    security_system_tools,
-    doorbell_tools, 
-    fire_safety_tools,
+    automation_tools,
     camera_tools,
+    doorbell_tools,
+    fire_safety_tools,
     monitoring_tools,
-    automation_tools
+    security_system_tools,
 )
 
 # Register all tool groups with the server
@@ -37,11 +37,13 @@ automation_tools.register_tools(mcp)
 
 logger.info("Ring MCP server initialized with all security tool modules")
 
+
 def main():
     """Main entry point for Ring MCP server."""
     logger.info("Starting Ring MCP server with stdio transport")
     # FastMCP.run() is synchronous and blocks until shutdown (do not wrap in asyncio.run).
     mcp.run(transport="stdio", show_banner=False)
+
 
 if __name__ == "__main__":
     main()

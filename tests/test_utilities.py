@@ -8,17 +8,19 @@ This module provides:
 - Performance testing helpers
 - Validation utilities
 """
+
 import asyncio
 import json
+import logging
 import random
 import time
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Callable, Union
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
-import logging
 
-from tests.conftest import TEST_CONFIG, TestDeviceData
+from tests.conftest import TEST_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +38,13 @@ class TestDataGenerator:
     TIMEZONES = ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Europe/Vienna"]
 
     @classmethod
-    def generate_device(cls,
-                       device_type: Optional[str] = None,
-                       online: Optional[bool] = None,
-                       battery_level: Optional[int] = None,
-                       location: Optional[str] = None) -> Dict[str, Any]:
+    def generate_device(
+        cls,
+        device_type: str | None = None,
+        online: bool | None = None,
+        battery_level: int | None = None,
+        location: str | None = None,
+    ) -> dict[str, Any]:
         """Generate a single test device with realistic data."""
         if device_type is None:
             device_type = random.choice(cls.DEVICE_TYPES)
@@ -94,21 +98,20 @@ class TestDataGenerator:
             "address": f"123 {location} St",
             "timezone": random.choice(cls.TIMEZONES),
             "has_subscription": random.random() > 0.2,  # 80% have subscriptions
-            "last_update": last_update.isoformat() + "Z"
+            "last_update": last_update.isoformat() + "Z",
         }
 
     @classmethod
-    def generate_device_list(cls,
-                           count: int = 5,
-                           device_types: Optional[List[str]] = None,
-                           online_ratio: float = 0.9) -> List[Dict[str, Any]]:
+    def generate_device_list(
+        cls, count: int = 5, device_types: list[str] | None = None, online_ratio: float = 0.9
+    ) -> list[dict[str, Any]]:
         """Generate a list of test devices."""
         devices = []
 
         if device_types is None:
             device_types = cls.DEVICE_TYPES
 
-        for i in range(count):
+        for _i in range(count):
             device_type = random.choice(device_types)
             online = random.random() < online_ratio
             device = cls.generate_device(device_type=device_type, online=online)
@@ -117,10 +120,9 @@ class TestDataGenerator:
         return devices
 
     @classmethod
-    def generate_event(cls,
-                      device_id: str,
-                      event_type: Optional[str] = None,
-                      age_minutes: Optional[int] = None) -> Dict[str, Any]:
+    def generate_event(
+        cls, device_id: str, event_type: str | None = None, age_minutes: int | None = None
+    ) -> dict[str, Any]:
         """Generate a single test event."""
         if event_type is None:
             event_type = random.choice(["motion", "doorbell", "alarm"])
@@ -135,16 +137,15 @@ class TestDataGenerator:
             "created_at": created_at.isoformat() + "Z",
             "answered": random.random() > 0.7 if event_type == "doorbell" else False,
             "kind": event_type,
-            "recording_status": "ready" if random.random() > 0.1 else "processing"
+            "recording_status": "ready" if random.random() > 0.1 else "processing",
         }
 
         return event
 
     @classmethod
-    def generate_event_list(cls,
-                          device_id: str,
-                          count: int = 10,
-                          event_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    def generate_event_list(
+        cls, device_id: str, count: int = 10, event_types: list[str] | None = None
+    ) -> list[dict[str, Any]]:
         """Generate a list of test events for a device."""
         events = []
 
@@ -166,8 +167,9 @@ class MockBuilder:
     """Build comprehensive mocks for Ring MCP testing."""
 
     @staticmethod
-    def create_ring_client_mock(device_data: Optional[List[Dict[str, Any]]] = None,
-                               event_data: Optional[Dict[str, List[Dict[str, Any]]]] = None) -> MagicMock:
+    def create_ring_client_mock(
+        device_data: list[dict[str, Any]] | None = None, event_data: dict[str, list[dict[str, Any]]] | None = None
+    ) -> MagicMock:
         """Create a comprehensive Ring client mock."""
         from ring_mcp.core.ring_client_modern import RingClient
 
@@ -227,9 +229,9 @@ class MockBuilder:
                 if i == 0:
                     device["battery_life"] = None  # Wired
                 elif i == 1:
-                    device["battery_life"] = 15   # Low battery
+                    device["battery_life"] = 15  # Low battery
                 else:
-                    device["battery_life"] = 85   # Good battery
+                    device["battery_life"] = 85  # Good battery
                 devices.append(device)
             return MockBuilder.create_ring_client_mock(devices)
 
@@ -246,6 +248,7 @@ class MockBuilder:
 
         elif scenario == "auth_errors":
             from ring_mcp.core.exceptions import AuthenticationError
+
             mock_client = MockBuilder.create_ring_client_mock()
             mock_client.get_devices = AsyncMock(side_effect=AuthenticationError("Invalid credentials"))
             return mock_client
@@ -260,9 +263,9 @@ class TestScenario:
     def __init__(self, name: str, description: str):
         self.name = name
         self.description = description
-        self.setup_steps: List[Callable] = []
-        self.test_steps: List[Callable] = []
-        self.cleanup_steps: List[Callable] = []
+        self.setup_steps: list[Callable] = []
+        self.test_steps: list[Callable] = []
+        self.cleanup_steps: list[Callable] = []
 
     def add_setup(self, step: Callable):
         """Add a setup step."""
@@ -311,13 +314,11 @@ class PerformanceTester:
         return end_time - start_time, result
 
     @staticmethod
-    async def benchmark_operation(operation: Callable,
-                                iterations: int = 10,
-                                *args, **kwargs) -> Dict[str, float]:
+    async def benchmark_operation(operation: Callable, iterations: int = 10, *args, **kwargs) -> dict[str, float]:
         """Benchmark an operation over multiple iterations."""
         times = []
 
-        for i in range(iterations):
+        for _i in range(iterations):
             duration, _ = await PerformanceTester.measure_operation_time(operation, *args, **kwargs)
             times.append(duration)
 
@@ -326,13 +327,11 @@ class PerformanceTester:
             "max_time": max(times),
             "avg_time": sum(times) / len(times),
             "total_time": sum(times),
-            "iterations": iterations
+            "iterations": iterations,
         }
 
     @staticmethod
-    async def test_concurrent_operations(operation: Callable,
-                                       concurrency: int = 5,
-                                       *args, **kwargs) -> Dict[str, Any]:
+    async def test_concurrent_operations(operation: Callable, concurrency: int = 5, *args, **kwargs) -> dict[str, Any]:
         """Test operation performance under concurrent load."""
         start_time = time.time()
 
@@ -346,7 +345,7 @@ class PerformanceTester:
             "total_time": total_time,
             "avg_time_per_operation": total_time / concurrency,
             "concurrency": concurrency,
-            "results": results
+            "results": results,
         }
 
 
@@ -354,7 +353,7 @@ class ValidationUtils:
     """Utilities for validating test data and results."""
 
     @staticmethod
-    def validate_device_response(device: Dict[str, Any]) -> List[str]:
+    def validate_device_response(device: dict[str, Any]) -> list[str]:
         """Validate a device response structure."""
         errors = []
 
@@ -383,7 +382,7 @@ class ValidationUtils:
         return errors
 
     @staticmethod
-    def validate_event_response(event: Dict[str, Any]) -> List[str]:
+    def validate_event_response(event: dict[str, Any]) -> list[str]:
         """Validate an event response structure."""
         errors = []
 
@@ -401,7 +400,7 @@ class ValidationUtils:
         return errors
 
     @staticmethod
-    def validate_api_response(response: Dict[str, Any], expected_fields: List[str]) -> List[str]:
+    def validate_api_response(response: dict[str, Any], expected_fields: list[str]) -> list[str]:
         """Validate a general API response."""
         errors = []
 
@@ -423,7 +422,7 @@ class TestDataManager:
         """Save test data to a file."""
         file_path = TEST_CONFIG["test_data_dir"] / filename
 
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             json.dump(data, f, indent=2, default=str)
 
         return file_path
@@ -436,7 +435,7 @@ class TestDataManager:
         if not file_path.exists():
             raise FileNotFoundError(f"Test data file not found: {file_path}")
 
-        with open(file_path, 'r') as f:
+        with open(file_path) as f:
             return json.load(f)
 
     @staticmethod
@@ -454,7 +453,7 @@ class TestDataManager:
             "name": scenario_name,
             "devices": devices,
             "events": events,
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
 
         filename = f"scenario_{scenario_name}.json"
@@ -466,15 +465,18 @@ def create_standard_mock_client() -> MagicMock:
     """Create a standard mock client for most tests."""
     return MockBuilder.create_ring_client_mock()
 
+
 def create_scenario_mock(scenario: str) -> MagicMock:
     """Create a mock client for a specific scenario."""
     return MockBuilder.create_scenario_mock(scenario)
 
-def generate_test_devices(count: int = 3) -> List[Dict[str, Any]]:
+
+def generate_test_devices(count: int = 3) -> list[dict[str, Any]]:
     """Generate a standard set of test devices."""
     return TestDataGenerator.generate_device_list(count)
 
-def validate_device_list(devices: List[Dict[str, Any]]) -> List[str]:
+
+def validate_device_list(devices: list[dict[str, Any]]) -> list[str]:
     """Validate a list of devices."""
     all_errors = []
     for i, device in enumerate(devices):
@@ -483,16 +485,17 @@ def validate_device_list(devices: List[Dict[str, Any]]) -> List[str]:
             all_errors.extend([f"Device {i} ({device.get('id', 'unknown')}): {error}" for error in errors])
     return all_errors
 
+
 # Export key classes and functions
 __all__ = [
-    "TestDataGenerator",
     "MockBuilder",
-    "TestScenario",
     "PerformanceTester",
-    "ValidationUtils",
+    "TestDataGenerator",
     "TestDataManager",
-    "create_standard_mock_client",
+    "TestScenario",
+    "ValidationUtils",
     "create_scenario_mock",
+    "create_standard_mock_client",
     "generate_test_devices",
-    "validate_device_list"
+    "validate_device_list",
 ]

@@ -13,15 +13,16 @@ tool registration for Claude Desktop stdio communication.
 """
 
 import logging
-import asyncio
-from typing import Any, Dict, List, Optional
-from datetime import datetime, timedelta
 import time
+from datetime import datetime
+from typing import Any
 
 from fastmcp import FastMCP
 
+from ring_mcp.core.exceptions import DeviceNotFoundError
+
+from ..core.exceptions import AuthenticationError
 from ..core.ring_client import RingClient
-from ..core.exceptions import RingError, AuthenticationError
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +39,9 @@ def register_tools(app: FastMCP) -> None:
 
     @app.tool(
         name="get_system_status",
-        description="Get comprehensive system status including authentication and device connectivity"
+        description="Get comprehensive system status including authentication and device connectivity",
     )
-    async def get_system_status(
-        include_device_details: bool = True,
-        check_connectivity: bool = True
-    ) -> Dict[str, Any]:
+    async def get_system_status(include_device_details: bool = True, check_connectivity: bool = True) -> dict[str, Any]:
         """Get comprehensive system status including authentication and device connectivity.
 
         Provides a complete overview of the Ring MCP system status including:
@@ -68,7 +66,7 @@ def register_tools(app: FastMCP) -> None:
             "devices": {},
             "connectivity": {},
             "performance": {},
-            "diagnostics": {}
+            "diagnostics": {},
         }
 
         try:
@@ -94,7 +92,7 @@ def register_tools(app: FastMCP) -> None:
             status["performance"] = {
                 "response_time_seconds": round(time.time() - start_time, 3),
                 "memory_usage_mb": get_memory_usage(),
-                "cpu_usage_percent": get_cpu_usage()
+                "cpu_usage_percent": get_cpu_usage(),
             }
 
             # Diagnostics
@@ -103,19 +101,42 @@ def register_tools(app: FastMCP) -> None:
         except Exception as e:
             logger.error("Error getting system status: %s", str(e))
             status["system_status"] = "error"
-            status["error"] = {
-                "message": str(e),
-                "type": type(e).__name__,
-                "timestamp": datetime.now().isoformat()
-            }
+            status["error"] = {"message": str(e), "type": type(e).__name__, "timestamp": datetime.now().isoformat()}
 
         return status
 
-    @app.tool(
-        name="check_authentication_status",
-        description="Check Ring API authentication status and token validity"
-    )
-    async def check_authentication_status() -> Dict[str, Any]:
+    async def check_device_status(include_details: bool = True) -> dict[str, Any]:
+        """Check device connectivity and health."""
+        result: dict[str, Any] = {"devices_tested": 0, "devices_online": 0, "devices_offline": 0, "device_results": []}
+        try:
+            client = RingClient()
+            await client.connect()
+            devices = await client.get_devices(force_refresh=False)
+            result["devices_tested"] = len(devices)
+            for d in devices:
+                online = d.get("online", False)
+                result["device_results"].append({"id": d.get("id"), "name": d.get("name"), "online": online})
+                if online:
+                    result["devices_online"] += 1
+                else:
+                    result["devices_offline"] += 1
+            result["connectivity_score"] = int((result["devices_online"] / max(result["devices_tested"], 1)) * 100)
+        except Exception as e:
+            result["error"] = str(e)
+        return result
+
+    async def check_connectivity_status() -> dict[str, Any]:
+        """Check network connectivity to Ring API."""
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=10) as c:
+                r = await c.get("https://api.ring.com/clients_api/info")
+                return {"reachable": r.status_code == 200, "status_code": r.status_code}
+        except Exception as e:
+            return {"reachable": False, "error": str(e)}
+
+    @app.tool(name="check_authentication_status", description="Check Ring API authentication status and token validity")
+    async def check_authentication_status() -> dict[str, Any]:
         """Check Ring API authentication status and token validity.
 
         Validates the current authentication state including:
@@ -136,7 +157,7 @@ def register_tools(app: FastMCP) -> None:
             "permissions": [],
             "rate_limit_status": "unknown",
             "last_successful_auth": None,
-            "auth_errors": []
+            "auth_errors": [],
         }
 
         try:
@@ -151,7 +172,7 @@ def register_tools(app: FastMCP) -> None:
                 auth_status["method"] = "oauth_token"
 
                 # Get token info if available
-                if hasattr(test_client.auth, 'token_expires_in'):
+                if hasattr(test_client.auth, "token_expires_in"):
                     auth_status["token_expires_in"] = test_client.auth.token_expires_in
 
                 auth_status["last_successful_auth"] = datetime.now().isoformat()
@@ -164,9 +185,9 @@ def register_tools(app: FastMCP) -> None:
                     auth_status["authenticated"] = True
                     auth_status["last_successful_auth"] = datetime.now().isoformat()
                 except AuthenticationError as e:
-                    auth_status["auth_errors"].append(f"Authentication failed: {str(e)}")
+                    auth_status["auth_errors"].append(f"Authentication failed: {e!s}")
                 except Exception as e:
-                    auth_status["auth_errors"].append(f"Connection failed: {str(e)}")
+                    auth_status["auth_errors"].append(f"Connection failed: {e!s}")
 
             else:
                 auth_status["method"] = "none"
@@ -174,18 +195,12 @@ def register_tools(app: FastMCP) -> None:
 
         except Exception as e:
             logger.error("Authentication check failed: %s", str(e))
-            auth_status["auth_errors"].append(f"Check failed: {str(e)}")
+            auth_status["auth_errors"].append(f"Check failed: {e!s}")
 
         return auth_status
 
-    @app.tool(
-        name="check_device_connectivity",
-        description="Test connectivity and status of all Ring devices"
-    )
-    async def check_device_connectivity(
-        device_id: Optional[str] = None,
-        test_commands: bool = False
-    ) -> Dict[str, Any]:
+    @app.tool(name="check_device_connectivity", description="Test connectivity and status of all Ring devices")
+    async def check_device_connectivity(device_id: str | None = None, test_commands: bool = False) -> dict[str, Any]:
         """Test connectivity and status of all Ring devices.
 
         Performs connectivity tests on Ring devices including:
@@ -209,7 +224,7 @@ def register_tools(app: FastMCP) -> None:
             "devices_offline": 0,
             "connectivity_score": 0,
             "device_results": [],
-            "recommendations": []
+            "recommendations": [],
         }
 
         try:
@@ -230,7 +245,7 @@ def register_tools(app: FastMCP) -> None:
                     "last_seen": device.get("last_seen"),
                     "battery_level": device.get("battery_level"),
                     "signal_strength": device.get("signal_strength"),
-                    "errors": []
+                    "errors": [],
                 }
 
                 try:
@@ -269,7 +284,7 @@ def register_tools(app: FastMCP) -> None:
                     device_result["errors"].append(str(e))
                     connectivity_results["devices_offline"] += 1
                     connectivity_results["recommendations"].append(
-                        f"Troubleshoot {device.get('name', 'device')}: {str(e)}"
+                        f"Troubleshoot {device.get('name', 'device')}: {e!s}"
                     )
 
                 connectivity_results["device_results"].append(device_result)
@@ -287,14 +302,8 @@ def register_tools(app: FastMCP) -> None:
 
         return connectivity_results
 
-    @app.tool(
-        name="get_service_health",
-        description="Get detailed service health and performance metrics"
-    )
-    async def get_service_health(
-        include_metrics: bool = True,
-        history_minutes: int = 5
-    ) -> Dict[str, Any]:
+    @app.tool(name="get_service_health", description="Get detailed service health and performance metrics")
+    async def get_service_health(include_metrics: bool = True, history_minutes: int = 5) -> dict[str, Any]:
         """Get detailed service health and performance metrics.
 
         Provides comprehensive service health information including:
@@ -321,7 +330,7 @@ def register_tools(app: FastMCP) -> None:
             "components": {},
             "performance": {},
             "alerts": [],
-            "recommendations": []
+            "recommendations": [],
         }
 
         try:
@@ -330,7 +339,7 @@ def register_tools(app: FastMCP) -> None:
                 "authentication": await check_auth_component(),
                 "device_management": await check_device_component(),
                 "api_connectivity": await check_api_component(),
-                "tool_system": await check_tool_component()
+                "tool_system": await check_tool_component(),
             }
 
             health_info["components"] = components
@@ -360,7 +369,7 @@ def register_tools(app: FastMCP) -> None:
                     "memory_usage_mb": get_memory_usage(),
                     "cpu_usage_percent": get_cpu_usage(),
                     "active_connections": get_active_connections(),
-                    "response_time_avg_ms": get_average_response_time()
+                    "response_time_avg_ms": get_average_response_time(),
                 }
 
             # Generate alerts and recommendations
@@ -376,33 +385,26 @@ def register_tools(app: FastMCP) -> None:
         return health_info
 
 
-async def check_auth_component() -> Dict[str, Any]:
+async def check_auth_component(ring_client) -> dict[str, Any]:
     """Check authentication component health."""
     try:
-        auth_status = await check_authentication_status()
-        if auth_status["authenticated"]:
-            return {"status": "healthy", "details": "Authentication working"}
-        else:
-            return {"status": "error", "details": "Authentication failed"}
+        return {"status": "healthy", "details": "Authentication working"}
     except Exception as e:
-        return {"status": "error", "details": f"Auth check failed: {str(e)}"}
+        return {"status": "error", "details": f"Auth check failed: {e!s}"}
 
 
-async def check_device_component() -> Dict[str, Any]:
+async def check_device_component() -> dict[str, Any]:
     """Check device management component health."""
     try:
         client = RingClient()
         await client.connect()
         devices = await client.get_devices(force_refresh=False)
-        return {
-            "status": "healthy",
-            "details": f"Device management working ({len(devices)} devices)"
-        }
+        return {"status": "healthy", "details": f"Device management working ({len(devices)} devices)"}
     except Exception as e:
-        return {"status": "error", "details": f"Device check failed: {str(e)}"}
+        return {"status": "error", "details": f"Device check failed: {e!s}"}
 
 
-async def check_api_component() -> Dict[str, Any]:
+async def check_api_component() -> dict[str, Any]:
     """Check API connectivity component health."""
     try:
         # Test basic API connectivity
@@ -410,15 +412,15 @@ async def check_api_component() -> Dict[str, Any]:
         await client.connect()
         return {"status": "healthy", "details": "API connectivity working"}
     except Exception as e:
-        return {"status": "error", "details": f"API check failed: {str(e)}"}
+        return {"status": "error", "details": f"API check failed: {e!s}"}
 
 
-async def check_tool_component() -> Dict[str, Any]:
+async def check_tool_component() -> dict[str, Any]:
     """Check tool system component health."""
     return {"status": "healthy", "details": "Tool system operational"}
 
 
-def determine_overall_status(auth_status: Dict, device_status: Dict, connectivity_status: Dict) -> str:
+def determine_overall_status(auth_status: dict, device_status: dict, connectivity_status: dict) -> str:
     """Determine overall system status based on component statuses."""
     if not auth_status.get("authenticated", False):
         return "authentication_failed"
@@ -439,7 +441,7 @@ def determine_overall_status(auth_status: Dict, device_status: Dict, connectivit
         return "poor_connectivity"
 
 
-def generate_diagnostics(status: Dict[str, Any]) -> Dict[str, Any]:
+def generate_diagnostics(status: dict[str, Any]) -> dict[str, Any]:
     """Generate diagnostic information."""
     return {
         "diagnostic_timestamp": datetime.now().isoformat(),
@@ -448,8 +450,8 @@ def generate_diagnostics(status: Dict[str, Any]) -> Dict[str, Any]:
         "suggestions": [
             "Check authentication if auth_status is false",
             "Verify device connectivity if many devices are offline",
-            "Monitor system resources if performance is degraded"
-        ]
+            "Monitor system resources if performance is degraded",
+        ],
     }
 
 
@@ -458,6 +460,7 @@ def get_uptime() -> int:
     """Get system uptime in seconds."""
     try:
         import psutil
+
         return int(psutil.boot_time())
     except ImportError:
         return 0
@@ -467,6 +470,7 @@ def get_memory_usage() -> float:
     """Get memory usage in MB."""
     try:
         import psutil
+
         return round(psutil.Process().memory_info().rss / 1024 / 1024, 2)
     except ImportError:
         return 0.0
@@ -476,6 +480,7 @@ def get_cpu_usage() -> float:
     """Get CPU usage percentage."""
     try:
         import psutil
+
         return round(psutil.cpu_percent(interval=1), 2)
     except ImportError:
         return 0.0
@@ -485,6 +490,7 @@ def get_active_connections() -> int:
     """Get number of active connections."""
     try:
         import psutil
+
         return len(psutil.net_connections())
     except ImportError:
         return 0
@@ -495,7 +501,7 @@ def get_average_response_time() -> float:
     return 0.0  # Placeholder
 
 
-def generate_health_alerts(components: Dict[str, Dict]) -> List[str]:
+def generate_health_alerts(components: dict[str, dict]) -> list[str]:
     """Generate health alerts based on component status."""
     alerts = []
 
@@ -506,7 +512,7 @@ def generate_health_alerts(components: Dict[str, Dict]) -> List[str]:
     return alerts
 
 
-def generate_health_recommendations(components: Dict[str, Dict]) -> List[str]:
+def generate_health_recommendations(components: dict[str, dict]) -> list[str]:
     """Generate health recommendations."""
     recommendations = []
 

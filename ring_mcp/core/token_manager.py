@@ -4,30 +4,29 @@ Token Manager for Ring MCP.
 This module provides secure token storage and refresh functionality for Ring API tokens.
 It handles encryption, decryption, and automatic token refresh.
 """
+
 import asyncio
+import base64
 import json
 import logging
 import os
-import base64
-import aiofiles
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Optional, Any, Union, Tuple
+from typing import Any
 
+import aiofiles
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 logger = logging.getLogger(__name__)
 
+
 class TokenManager:
     """Manages secure storage and refresh of Ring API tokens."""
 
     def __init__(
-        self,
-        storage_path: Optional[Union[str, Path]] = None,
-        encryption_key: Optional[bytes] = None,
-        salt: Optional[bytes] = None
+        self, storage_path: str | Path | None = None, encryption_key: bytes | None = None, salt: bytes | None = None
     ):
         """Initialize the TokenManager.
 
@@ -47,14 +46,10 @@ class TokenManager:
 
         # Initialize encryption
         self.fernet = self._init_encryption(encryption_key, salt)
-        self._tokens: Dict[str, Dict[str, Any]] = {}
+        self._tokens: dict[str, dict[str, Any]] = {}
         self._refresh_lock = asyncio.Lock()
 
-    def _init_encryption(
-        self,
-        encryption_key: Optional[bytes] = None,
-        salt: Optional[bytes] = None
-    ) -> Fernet:
+    def _init_encryption(self, encryption_key: bytes | None = None, salt: bytes | None = None) -> Fernet:
         """Initialize the encryption system.
 
         Args:
@@ -177,7 +172,7 @@ class TokenManager:
                 await f.write(encrypted_data)
 
             # Atomically replace the old file
-            if os.name == 'nt':  # Windows
+            if os.name == "nt":  # Windows
                 # On Windows, we need to remove the destination file first
                 if os.path.exists(self.storage_path):
                     os.replace(temp_path, self.storage_path)
@@ -203,7 +198,7 @@ class TokenManager:
                     pass
             return False
 
-    async def get_token(self, username: str) -> Optional[Dict[str, Any]]:
+    async def get_token(self, username: str) -> dict[str, Any] | None:
         """Get a token for the specified username.
 
         Args:
@@ -217,15 +212,15 @@ class TokenManager:
             return None
 
         # Check if the token is expired or about to expire
-        expires_at = datetime.fromisoformat(token_data.get('expires_at', ''))
-        refresh_token = token_data.get('refresh_token')
+        expires_at = datetime.fromisoformat(token_data.get("expires_at", ""))
+        refresh_token = token_data.get("refresh_token")
 
         # If the token is expired or will expire in the next 5 minutes, try to refresh it
         if expires_at < (datetime.utcnow() + timedelta(minutes=5)) and refresh_token:
             async with self._refresh_lock:
                 # Check again in case another coroutine refreshed it
                 token_data = self._tokens.get(username, {})
-                expires_at = datetime.fromisoformat(token_data.get('expires_at', ''))
+                expires_at = datetime.fromisoformat(token_data.get("expires_at", ""))
 
                 if expires_at < (datetime.utcnow() + timedelta(minutes=5)):
                     logger.info("Token for %s is expired or about to expire, refreshing...", username)
@@ -234,14 +229,14 @@ class TokenManager:
                         from .ring_client_modern import RingClient
 
                         # Create a temporary client to refresh the token
-                        client = RingClient(token=token_data['access_token'])
+                        client = RingClient(token=token_data["access_token"])
                         await client.connect()
 
                         # Get the new token from the client
-                        if client.token and client.token != token_data['access_token']:
+                        if client.token and client.token != token_data["access_token"]:
                             # Update the token data
-                            token_data['access_token'] = client.token
-                            token_data['expires_at'] = (datetime.utcnow() + timedelta(hours=1)).isoformat()
+                            token_data["access_token"] = client.token
+                            token_data["expires_at"] = (datetime.utcnow() + timedelta(hours=1)).isoformat()
 
                             # Save the updated tokens
                             self._tokens[username] = token_data
@@ -256,11 +251,7 @@ class TokenManager:
         return token_data
 
     async def save_token(
-        self,
-        username: str,
-        access_token: str,
-        refresh_token: Optional[str] = None,
-        expires_in: int = 3600
+        self, username: str, access_token: str, refresh_token: str | None = None, expires_in: int = 3600
     ) -> bool:
         """Save a token for the specified username.
 
@@ -276,11 +267,11 @@ class TokenManager:
         expires_at = (datetime.utcnow() + timedelta(seconds=expires_in)).isoformat()
 
         self._tokens[username] = {
-            'access_token': access_token,
-            'refresh_token': refresh_token,
-            'expires_at': expires_at,
-            'username': username,
-            'created_at': datetime.utcnow().isoformat()
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_at": expires_at,
+            "username": username,
+            "created_at": datetime.utcnow().isoformat(),
         }
 
         return await self.save_tokens()
@@ -299,7 +290,7 @@ class TokenManager:
             return await self.save_tokens()
         return True
 
-    async def get_all_tokens(self) -> Dict[str, Dict[str, Any]]:
+    async def get_all_tokens(self) -> dict[str, dict[str, Any]]:
         """Get all stored tokens.
 
         Returns:

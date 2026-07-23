@@ -3,23 +3,24 @@ Ring MCP - Setup Configuration
 
 This file contains the package configuration for the Ring MCP server.
 """
-import os
-from pathlib import Path
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 # Read the README for the long description
-with open("README.md", "r", encoding="utf-8") as fh:
+with open("README.md", encoding="utf-8") as fh:
     long_description = fh.read()
+
 
 # Read requirements from requirements.txt
 def read_requirements():
     requirements = []
-    with open('requirements.txt', 'r', encoding='utf-8') as f:
+    with open("requirements.txt", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line and not line.startswith('#'):
+            if line and not line.startswith("#"):
                 requirements.append(line)
     return requirements
+
 
 setup(
     name="ring-mcp",
@@ -30,7 +31,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/yourusername/ring-mcp",
-    packages=find_packages(include=['ring_mcp', 'ring_mcp.*']),
+    packages=find_packages(include=["ring_mcp", "ring_mcp.*"]),
     package_data={
         "ring_mcp": ["*.json", "*.yaml", "*.yml"],
     },

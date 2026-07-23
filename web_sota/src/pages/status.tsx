@@ -1,8 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Shield, Wifi, Battery, Bell, RefreshCw, Loader2 } from "lucide-react";
-import { api, type RingDevice } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { type RingDevice, api } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Activity,
+  Battery,
+  Bell,
+  Loader2,
+  RefreshCw,
+  Shield,
+  Wifi,
+} from "lucide-react";
 
 function useStatus() {
   return useQuery({
@@ -59,8 +67,12 @@ export function Status() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Security Status</h2>
-          <p className="text-slate-400">Ring devices and system status from API</p>
+          <h2 className="text-2xl font-bold tracking-tight text-white">
+            Security Status
+          </h2>
+          <p className="text-slate-400">
+            Ring devices and system status from API
+          </p>
         </div>
         <Button
           variant="outline"
@@ -69,7 +81,11 @@ export function Status() {
           onClick={refetch}
           disabled={isLoading}
         >
-          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
           <span className="ml-2">Refresh</span>
         </Button>
       </div>
@@ -78,7 +94,11 @@ export function Status() {
         <Card className="border-red-900/50 bg-red-950/20">
           <CardContent className="pt-4">
             <p className="text-red-400 text-sm">
-              {statusError instanceof Error ? statusError.message : devicesError instanceof Error ? devicesError.message : "Failed to load. Configure Ring credentials in Settings and ensure the backend is running (web_sota\\start.ps1)."}
+              {statusError instanceof Error
+                ? statusError.message
+                : devicesError instanceof Error
+                  ? devicesError.message
+                  : "Failed to load. Configure Ring credentials in Settings and ensure the backend is running (web_sota\\start.ps1)."}
             </p>
           </CardContent>
         </Card>
@@ -88,7 +108,8 @@ export function Status() {
         <Card className="border-amber-900/50 bg-amber-950/20">
           <CardContent className="pt-4">
             <p className="text-amber-400 text-sm">
-              Not authenticated. Add your Ring email and password in Settings, then click &quot;Save Ring credentials&quot;.
+              Not authenticated. Add your Ring email and password in Settings,
+              then click &quot;Save Ring credentials&quot;.
             </p>
           </CardContent>
         </Card>
@@ -98,38 +119,54 @@ export function Status() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="border-slate-800 bg-slate-950/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-200">Total devices</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-200">
+                Total devices
+              </CardTitle>
               <Shield className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{status.total_devices}</div>
+              <div className="text-2xl font-bold text-white">
+                {status.total_devices}
+              </div>
             </CardContent>
           </Card>
           <Card className="border-slate-800 bg-slate-950/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-200">Online</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-200">
+                Online
+              </CardTitle>
               <Wifi className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{status.online_devices}</div>
+              <div className="text-2xl font-bold text-white">
+                {status.online_devices}
+              </div>
             </CardContent>
           </Card>
           <Card className="border-slate-800 bg-slate-950/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-200">Doorbells</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-200">
+                Doorbells
+              </CardTitle>
               <Bell className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{status.doorbells}</div>
+              <div className="text-2xl font-bold text-white">
+                {status.doorbells}
+              </div>
             </CardContent>
           </Card>
           <Card className="border-slate-800 bg-slate-950/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-200">Cameras</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-200">
+                Cameras
+              </CardTitle>
               <Activity className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{status.cameras}</div>
+              <div className="text-2xl font-bold text-white">
+                {status.cameras}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -139,7 +176,9 @@ export function Status() {
         <CardHeader>
           <CardTitle className="text-white">Devices</CardTitle>
           {devices.length === 0 && !isLoading && (
-            <p className="text-slate-400 text-sm">No devices. Configure Ring in Settings and refresh.</p>
+            <p className="text-slate-400 text-sm">
+              No devices. Configure Ring in Settings and refresh.
+            </p>
           )}
         </CardHeader>
         <CardContent>
@@ -155,7 +194,9 @@ export function Status() {
                 <DeviceRow
                   key={d.id}
                   device={d}
-                  onArm={(status) => setArmMutation.mutate({ deviceId: d.id, status })}
+                  onArm={(status) =>
+                    setArmMutation.mutate({ deviceId: d.id, status })
+                  }
                   onChime={() => chimeMutation.mutate(d.id)}
                   armLoading={setArmMutation.isPending}
                   chimeLoading={chimeMutation.isPending}
@@ -191,7 +232,11 @@ function DeviceRow({
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3 last:border-0 last:pb-0">
       <div className="flex items-center gap-3">
         <span className="font-medium text-white">{device.name}</span>
-        <span className={online ? "text-emerald-500 text-sm" : "text-slate-500 text-sm"}>
+        <span
+          className={
+            online ? "text-emerald-500 text-sm" : "text-slate-500 text-sm"
+          }
+        >
           {online ? "ONLINE" : "OFFLINE"}
         </span>
         {device.battery_life != null && (

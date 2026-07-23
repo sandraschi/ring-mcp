@@ -258,3 +258,7 @@ docs/site/
 .github/workflows/logs/
 
 _dashboard/
+
+# Assessment reports
+reports/
+*.mcpb

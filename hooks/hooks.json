@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "",
+      "hooks": [{
+        "type": "text",
+        "text": "## Session Context (Ring MCP)\n\nYou have access to Ring doorbells, security cameras, burglar alarms, and fire safety devices through the Ring API.\n\n**Before starting work:**\n1. Check system health: `health_check()` - verifies API connectivity\n2. List your devices: `get_devices()` - discover what's available\n\n**At end of work, save insights:**\n- Arm alarms if the user requested security changes\n- Document any device status changes or motion events detected"
+      }]
+    }]
+  }
+}

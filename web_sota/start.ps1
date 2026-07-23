@@ -15,6 +15,10 @@ if (-not (Test-Path -LiteralPath $FleetStartPath)) {
 $FleetStart = Initialize-FleetStartMode @PSBoundParameters
 Enter-FleetHeadlessConsole -Headless:$Headless -BackendOnly:$BackendOnly
 
+# Webapp Start - Standardized SOTA
+$WebPort = 10728
+$BackendPort = 10729
+
 $portResolve = @{
     Ports      = @($WebPort, $BackendPort)
     Label      = "ring-mcp"
@@ -29,9 +33,6 @@ if ($ReuseIfRunning) {
 $portState = Resolve-FleetPortConflict @portResolve
 if ($portState.Action -eq 'Blocked') { exit 1 }
 if ($portState.Reuse) { return }
-# Webapp Start - Standardized SOTA (Auto-Repaired V2.5)
-$WebPort = 10728
-$BackendPort = 10729
 
 
 

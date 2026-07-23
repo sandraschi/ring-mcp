@@ -4,12 +4,12 @@ End-to-end workflow tests for Ring MCP.
 These tests simulate complete user workflows from device discovery
 to monitoring and control operations, using both mock and real devices.
 """
-import pytest
+
 import asyncio
-import time
-from typing import List, Dict, Any
-from unittest.mock import patch, AsyncMock
 import logging
+import time
+
+import pytest
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +69,7 @@ class TestCompleteWorkflowsMock:
         for device in devices:
             device_id = device["id"]
             details = await mock_ring_client.get_device(device_id)
-            initial_states[device_id] = {
-                "online": details.get("online"),
-                "battery": details.get("battery_life")
-            }
+            initial_states[device_id] = {"online": details.get("online"), "battery": details.get("battery_life")}
 
         # Step 3: Simulate time passing and re-check
         await asyncio.sleep(0.1)  # Minimal delay for testing
@@ -81,10 +78,7 @@ class TestCompleteWorkflowsMock:
         for device in devices:
             device_id = device["id"]
             details = await mock_ring_client.get_device(device_id)
-            final_states[device_id] = {
-                "online": details.get("online"),
-                "battery": details.get("battery_life")
-            }
+            final_states[device_id] = {"online": details.get("online"), "battery": details.get("battery_life")}
 
         # Step 4: Verify monitoring data consistency
         for device_id in initial_states:
@@ -196,7 +190,9 @@ class TestWorkflowPerformance:
 
         # Performance should be acceptable
         max_expected_time = len(devices) * 0.5  # 0.5s per device max
-        assert total_time < max_expected_time, f"Bulk status check took {total_time:.2f}s (max expected: {max_expected_time:.2f}s)"
+        assert total_time < max_expected_time, (
+            f"Bulk status check took {total_time:.2f}s (max expected: {max_expected_time:.2f}s)"
+        )
 
         logger.info(".2f")
 
@@ -274,7 +270,7 @@ class TestWorkflowErrorRecovery:
             # First call should fail
             try:
                 await mock_ring_client.get_devices()
-                assert False, "First call should have failed"
+                raise AssertionError("First call should have failed")
             except Exception as e:
                 assert "Network temporarily unavailable" in str(e)
 
@@ -285,7 +281,7 @@ class TestWorkflowErrorRecovery:
             # Third call fails again
             try:
                 await mock_ring_client.get_devices()
-                assert False, "Third call should have failed"
+                raise AssertionError("Third call should have failed")
             except Exception as e:
                 assert "Network still unavailable" in str(e)
 
@@ -320,7 +316,7 @@ class TestRealDeviceWorkflows:
                 "has_battery": details.get("battery_life") is not None,
                 "battery_level": details.get("battery_life"),
                 "firmware": details.get("firmware"),
-                "last_update": details.get("last_update")
+                "last_update": details.get("last_update"),
             }
 
         # Step 3: Validate inspection results
@@ -359,7 +355,7 @@ class TestRealDeviceWorkflows:
             baseline_states[device_id] = {
                 "online": details.get("online"),
                 "battery": details.get("battery_life"),
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
 
         # Step 2: Monitor devices over time (short interval for testing)
@@ -374,11 +370,9 @@ class TestRealDeviceWorkflows:
                 device_id = device["id"]
                 details = await real_ring_client.get_device(device_id)
 
-                monitoring_data[device_id].append({
-                    "timestamp": time.time(),
-                    "online": details.get("online"),
-                    "battery": details.get("battery_life")
-                })
+                monitoring_data[device_id].append(
+                    {"timestamp": time.time(), "online": details.get("online"), "battery": details.get("battery_life")}
+                )
 
             await asyncio.sleep(check_interval)
 

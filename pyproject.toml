@@ -7,7 +7,7 @@ name = "ring-mcp"
 version = "1.0.3"
 description = "Ring Security Ecosystem MCP - Universal control for Ring doorbell, burglar alarm, fire alarm, and cameras"
 authors = [
-    {name = "Sandra", email = "sandra@example.com"}
+    {name = "Sandra", email = "sandraschipal@gmail.com"}
 ]
 requires-python = ">=3.12"
 classifiers = [
@@ -35,7 +35,7 @@ keywords = [
     "monitoring", "automation", "home-security", "iot", "smart-home", "surveillance"
 ]
 dependencies = [
-    "fastmcp>=3.2.0", # Fleet: FastMCP 3.2+ (MCP 3.2 ecosystem)
+    "fastmcp>=3.4.4,<4", # Fleet: FastMCP 3.4.4+ (MCP 3.2 ecosystem)
     "fastapi>=0.115.0", # HTTP server + composition (not bundled by fastmcp 3.2)
     "ring-doorbell>=0.8.0", # Real Ring integration
     "requests>=2.31.0", # HTTP client (ring_client)

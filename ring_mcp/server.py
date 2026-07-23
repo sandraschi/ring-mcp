@@ -5,19 +5,19 @@ This module provides a FastMCP server implementation for controlling Ring device
 with composition and proxy capabilities. Aligned to FastMCP 3.2+ (sampling,
 agentic workflows, prompts).
 """
-import asyncio
-import logging
-import time
-import os
-from typing import Any, Dict, List, Optional, Callable, Awaitable
 
+import logging
+import os
+import time
+from collections.abc import Awaitable, Callable
+from typing import Any
+
+import structlog
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.server import create_proxy
+from prometheus_client import Counter, Gauge, Histogram, start_http_server
 from pydantic import BaseModel, Field
-from prometheus_client import Counter, Histogram, Gauge, start_http_server
-import structlog
-import pythonjsonlogger
 
 from .core.ring_client_modern import RingClient
 from .ring_mqtt_bridge import get_ring_mqtt_bridge
@@ -31,20 +31,21 @@ def create_fastapi_app_with_docs() -> FastAPI:
         version="3.2.0",
         docs_url="/docs",
         redoc_url="/redoc",
-        openapi_url="/openapi.json"
+        openapi_url="/openapi.json",
     )
-from .core.exceptions import (
-    RingError,
-    AuthenticationError,
-    DeviceNotFoundError,
-    StreamingError,
-    RateLimitError,
-)
-from .composition import create_composed_app
+
 
 # Configure structured logging with file output for monitoring
 import logging.config
 from pathlib import Path
+
+from .core.exceptions import (
+    AuthenticationError,
+    DeviceNotFoundError,
+    RateLimitError,
+    RingError,
+    StreamingError,
+)
 
 # Create log directory
 log_dir = Path("logs")
@@ -59,9 +60,7 @@ LOGGING_CONFIG = {
             "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
             "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
         },
-        "detailed": {
-            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        },
+        "detailed": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
     },
     "handlers": {
         "file_info": {
@@ -130,7 +129,8 @@ structlog.configure(
 logger = structlog.get_logger(__name__)
 
 # Port management with graceful termination of previous instances
-from ring_mcp.core.port_manager import get_ring_mcp_port, print_port_info
+from ring_mcp.core.port_manager import get_ring_mcp_port
+
 RING_MCP_PORT = get_ring_mcp_port()
 
 # Initialize FastMCP 3.2+
@@ -152,47 +152,54 @@ if bridge_urls:
                 pass
 
 # Prometheus metrics
-ring_api_calls_total = Counter('ring_api_calls_total', 'Total Ring API calls', ['endpoint', 'status'])
-ring_api_duration = Histogram('ring_api_duration_seconds', 'Ring API call duration', ['endpoint'])
-ring_device_status = Gauge('ring_device_status', 'Ring device status', ['device_id', 'device_type', 'status'])
-ring_device_battery = Gauge('ring_device_battery_percent', 'Ring device battery level', ['device_id', 'device_type'])
-ring_device_online = Gauge('ring_device_online', 'Ring device online status', ['device_id', 'device_type'])
-ring_security_armed = Gauge('ring_security_armed', 'Security system armed status', ['location'])
-ring_tool_calls_total = Counter('ring_tool_calls_total', 'Total MCP tool calls', ['tool_name'])
-ring_tool_duration = Histogram('ring_tool_duration_seconds', 'MCP tool execution time', ['tool_name'])
-ring_active_connections = Gauge('ring_active_connections', 'Active MCP connections')
+ring_api_calls_total = Counter("ring_api_calls_total", "Total Ring API calls", ["endpoint", "status"])
+ring_api_duration = Histogram("ring_api_duration_seconds", "Ring API call duration", ["endpoint"])
+ring_device_status = Gauge("ring_device_status", "Ring device status", ["device_id", "device_type", "status"])
+ring_device_battery = Gauge("ring_device_battery_percent", "Ring device battery level", ["device_id", "device_type"])
+ring_device_online = Gauge("ring_device_online", "Ring device online status", ["device_id", "device_type"])
+ring_security_armed = Gauge("ring_security_armed", "Security system armed status", ["location"])
+ring_tool_calls_total = Counter("ring_tool_calls_total", "Total MCP tool calls", ["tool_name"])
+ring_tool_duration = Histogram("ring_tool_duration_seconds", "MCP tool execution time", ["tool_name"])
+ring_active_connections = Gauge("ring_active_connections", "Active MCP connections")
+
 
 # Models for request/response validation
 class DeviceInfo(BaseModel):
     """Model for device information."""
+
     id: str = Field(..., description="Unique device identifier")
     name: str = Field(..., description="Device name")
     type: str = Field(..., description="Device type/family")
     model: str = Field(..., description="Device model")
-    firmware: Optional[str] = Field(None, description="Device firmware version")
-    battery_life: Optional[int] = Field(None, description="Battery percentage (0-100)")
+    firmware: str | None = Field(None, description="Device firmware version")
+    battery_life: int | None = Field(None, description="Battery percentage (0-100)")
     online: bool = Field(..., description="Whether the device is currently online")
-    address: Optional[str] = Field(None, description="Device location/address")
-    timezone: Optional[str] = Field(None, description="Device timezone")
+    address: str | None = Field(None, description="Device location/address")
+    timezone: str | None = Field(None, description="Device timezone")
     has_subscription: bool = Field(False, description="Whether the device has an active subscription")
     last_update: str = Field(..., description="ISO timestamp of last update")
 
+
 class EventInfo(BaseModel):
     """Model for device event information."""
+
     id: str = Field(..., description="Event identifier")
     created_at: str = Field(..., description="Event timestamp in ISO format")
     answered: bool = Field(False, description="Whether the event was answered")
-    kind: Optional[str] = Field(None, description="Type of event")
-    recording_status: Optional[str] = Field(None, description="Status of recording if available")
+    kind: str | None = Field(None, description="Type of event")
+    recording_status: str | None = Field(None, description="Status of recording if available")
+
 
 class ErrorResponse(BaseModel):
     """Standard error response model."""
+
     error: bool = Field(True, description="Indicates this is an error response")
     message: str = Field(..., description="Error message")
-    code: Optional[str] = Field(None, description="Error code if available")
+    code: str | None = Field(None, description="Error code if available")
+
 
 # Helper function to handle errors
-def handle_error(e: Exception) -> Dict[str, Any]:
+def handle_error(e: Exception) -> dict[str, Any]:
     """Convert exceptions to error responses."""
     if isinstance(e, AuthenticationError):
         status_code = 401
@@ -207,14 +214,10 @@ def handle_error(e: Exception) -> Dict[str, Any]:
         status_code = 500
         error_code = "internal_error"
 
-    logger.error("Ring MCP Error", error=str(e), error_code=error_code, status_code=status_code, exc_info=True)
+    logger.exception("Ring MCP Error: %s [%s]", str(e), error_code)
 
-    return {
-        "error": True,
-        "message": str(e),
-        "code": error_code,
-        "status_code": status_code
-    }
+    return {"error": True, "message": str(e), "code": error_code, "status_code": status_code}
+
 
 def track_ring_api_call(endpoint: str, success: bool = True):
     """Track Ring API calls for metrics."""
@@ -222,8 +225,10 @@ def track_ring_api_call(endpoint: str, success: bool = True):
     ring_api_calls_total.labels(endpoint=endpoint, status=status).inc()
     ring_api_duration.labels(endpoint=endpoint).observe(time.time())
 
+
 def track_tool_call(tool_name: str):
     """Decorator to track MCP tool calls."""
+
     def decorator(func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
         async def wrapper(*args, **kwargs):
             ring_tool_calls_total.labels(tool_name=tool_name).inc()
@@ -232,14 +237,18 @@ def track_tool_call(tool_name: str):
                 result = await func(*args, **kwargs)
                 ring_tool_duration.labels(tool_name=tool_name).observe(time.time() - start_time)
                 return result
-            except Exception as e:
+            except Exception:
                 ring_tool_duration.labels(tool_name=tool_name).observe(time.time() - start_time)
                 raise
+
         return wrapper
+
     return decorator
 
+
 # Global Ring client instance
-_ring_client: Optional[RingClient] = None
+_ring_client: RingClient | None = None
+
 
 def get_ring_client() -> RingClient:
     """Get or create a Ring client instance."""
@@ -247,6 +256,7 @@ def get_ring_client() -> RingClient:
     if _ring_client is None:
         _ring_client = RingClient()
     return _ring_client
+
 
 def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
     """Register Ring MCP tools with the FastMCP application (FastMCP 3.2+).
@@ -260,58 +270,61 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
     # Request/Response models for FastMCP 3.2+
     class DeviceID(BaseModel):
         """Device identifier model."""
+
         device_id: str = Field(..., description="The ID of the device")
 
     class DeviceListResponse(BaseModel):
         """Response model for device listing."""
-        devices: List[Dict[str, Any]] = Field(..., description="List of devices")
+
+        devices: list[dict[str, Any]] = Field(..., description="List of devices")
 
     class DeviceResponse(BaseModel):
         """Response model for device details."""
-        device: Dict[str, Any] = Field(..., description="Device details")
+
+        device: dict[str, Any] = Field(..., description="Device details")
 
     class EventListResponse(BaseModel):
         """Response model for event listing."""
-        events: List[Dict[str, Any]] = Field(..., description="List of events")
+
+        events: list[dict[str, Any]] = Field(..., description="List of events")
 
     class StreamURLResponse(BaseModel):
         """Response model for stream URLs."""
+
         url: str = Field(..., description="Stream URL")
 
     class StatusResponse(BaseModel):
         """Response model for status updates."""
+
         success: bool = Field(..., description="Whether the operation was successful")
         message: str = Field(..., description="Status message")
-    
+
     def handle_ring_errors(func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
         """Decorator to handle Ring API errors consistently."""
+
         async def wrapper(*args, **kwargs):
             try:
                 return await func(*args, **kwargs)
             except AuthenticationError as e:
-                raise ValueError(f"Authentication failed: {str(e)}")
+                raise ValueError(f"Authentication failed: {e!s}")
             except DeviceNotFoundError as e:
-                raise ValueError(f"Device not found: {str(e)}")
+                raise ValueError(f"Device not found: {e!s}")
             except RateLimitError as e:
-                raise ValueError(f"Rate limit exceeded: {str(e)}")
+                raise ValueError(f"Rate limit exceeded: {e!s}")
             except StreamingError as e:
-                raise ValueError(f"Streaming error: {str(e)}")
+                raise ValueError(f"Streaming error: {e!s}")
             except RingError as e:
-                raise ValueError(f"Ring API error: {str(e)}")
+                raise ValueError(f"Ring API error: {e!s}")
             except Exception as e:
                 logger.error("Unexpected error: %s", str(e), exc_info=True)
-                raise ValueError(f"Internal server error: {str(e)}")
+                raise ValueError(f"Internal server error: {e!s}")
+
         return wrapper
-    
-    @app.tool(
-        name="get_devices",
-        description="Get a list of all Ring devices"
-    )
+
+    @app.tool(name="get_devices", description="Get a list of all Ring devices")
     @track_tool_call("get_devices")
     @handle_ring_errors
-    async def get_devices(
-        force_refresh: bool = False
-    ) -> DeviceListResponse:
+    async def get_devices(force_refresh: bool = False) -> DeviceListResponse:
         """Get a comprehensive list of all Ring devices with real-time status.
 
         PORTMANTEAU PATTERN RATIONALE:
@@ -390,29 +403,26 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
 
             # Track device metrics
             for device in devices:
-                device_id = device.get('id', 'unknown')
-                device_type = device.get('type', 'unknown')
-                battery = device.get('battery_life')
+                device_id = device.get("id", "unknown")
+                device_type = device.get("type", "unknown")
+                battery = device.get("battery_life")
 
-                ring_device_online.labels(device_id=device_id, device_type=device_type).set(1 if device.get('online', False) else 0)
+                ring_device_online.labels(device_id=device_id, device_type=device_type).set(
+                    1 if device.get("online", False) else 0
+                )
 
                 if battery is not None:
                     ring_device_battery.labels(device_id=device_id, device_type=device_type).set(battery)
 
             return DeviceListResponse(devices=devices)
-        except Exception as e:
+        except Exception:
             track_ring_api_call("get_devices", success=False)
             raise
-    
-    @app.tool(
-        name="get_device_details",
-        description="Get detailed information about a specific device"
-    )
+
+    @app.tool(name="get_device_details", description="Get detailed information about a specific device")
     @track_tool_call("get_device_details")
     @handle_ring_errors
-    async def get_device_details(
-        device_id: str
-    ) -> DeviceResponse:
+    async def get_device_details(device_id: str) -> DeviceResponse:
         """Get comprehensive details and real-time status for a specific Ring device.
 
         PORTMANTEAU PATTERN RATIONALE:
@@ -488,27 +498,23 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 raise DeviceNotFoundError(f"Device {device_id} not found")
 
             # Track device status
-            device_type = device.get('type', 'unknown')
-            battery = device.get('battery_life')
-            ring_device_online.labels(device_id=device_id, device_type=device_type).set(1 if device.get('online', False) else 0)
+            device_type = device.get("type", "unknown")
+            battery = device.get("battery_life")
+            ring_device_online.labels(device_id=device_id, device_type=device_type).set(
+                1 if device.get("online", False) else 0
+            )
 
             if battery is not None:
                 ring_device_battery.labels(device_id=device_id, device_type=device_type).set(battery)
 
             return DeviceResponse(device=device)
-        except Exception as e:
+        except Exception:
             track_ring_api_call("get_device_details", success=False)
             raise
-    
-    @app.tool(
-        name="get_device_events",
-        description="Get recent events for a specific device"
-    )
+
+    @app.tool(name="get_device_events", description="Get recent events for a specific device")
     @handle_ring_errors
-    async def get_device_events(
-        device_id: str,
-        limit: int = 10
-    ) -> EventListResponse:
+    async def get_device_events(device_id: str, limit: int = 10) -> EventListResponse:
         """Retrieve recent activity events and motion history for a Ring device.
 
         PORTMANTEAU PATTERN RATIONALE:
@@ -589,15 +595,10 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
         """
         events = await ring_client.get_device_events(device_id, limit=limit)
         return EventListResponse(events=events)
-    
-    @app.tool(
-        name="get_live_stream_url",
-        description="Get a live stream URL for a camera device"
-    )
+
+    @app.tool(name="get_live_stream_url", description="Get a live stream URL for a camera device")
     @handle_ring_errors
-    async def get_live_stream_url(
-        device_id: str
-    ) -> StreamURLResponse:
+    async def get_live_stream_url(device_id: str) -> StreamURLResponse:
         """Generate a temporary live stream URL for Ring camera viewing.
 
         PORTMANTEAU PATTERN RATIONALE:
@@ -668,17 +669,11 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
         """
         url = await ring_client.get_live_stream_url(device_id)
         return StreamURLResponse(url=url)
-    
-    @app.tool(
-        name="set_arm_status",
-        description="Arm or disarm a security device"
-    )
+
+    @app.tool(name="set_arm_status", description="Arm or disarm a security device")
     @track_tool_call("set_arm_status")
     @handle_ring_errors
-    async def set_arm_status(
-        device_id: str,
-        status: bool
-    ) -> StatusResponse:
+    async def set_arm_status(device_id: str, status: bool) -> StatusResponse:
         """Arm or disarm Ring security systems and alarm devices (CRITICAL SECURITY OPERATION).
 
         PORTMANTEAU PATTERN RATIONALE:
@@ -785,21 +780,15 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
 
             action = "armed" if status else "disarmed"
             return StatusResponse(
-                success=success,
-                message=f"Device {device_id} {action} {'successfully' if success else 'failed'}"
+                success=success, message=f"Device {device_id} {action} {'successfully' if success else 'failed'}"
             )
-        except Exception as e:
+        except Exception:
             track_ring_api_call("set_arm_status", success=False)
             raise
-    
-    @app.tool(
-        name="trigger_chime",
-        description="Trigger a doorbell chime"
-    )
+
+    @app.tool(name="trigger_chime", description="Trigger a doorbell chime")
     @handle_ring_errors
-    async def trigger_chime(
-        device_id: str
-    ) -> StatusResponse:
+    async def trigger_chime(device_id: str) -> StatusResponse:
         """Manually trigger doorbell chime for testing and signaling purposes.
 
         PORTMANTEAU PATTERN RATIONALE:
@@ -875,14 +864,10 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
         """
         success = await ring_client.trigger_chime(device_id)
         return StatusResponse(
-            success=success,
-            message=f"Chime {'triggered successfully' if success else 'failed to trigger'}"
+            success=success, message=f"Chime {'triggered successfully' if success else 'failed to trigger'}"
         )
-    
-    @app.tool(
-        name="health_check",
-        description="Check the health of the Ring MCP service"
-    )
+
+    @app.tool(name="health_check", description="Check the health of the Ring MCP service")
     @handle_ring_errors
     async def health_check() -> StatusResponse:
         """Perform comprehensive health check of Ring MCP service and Ring connectivity.
@@ -969,19 +954,60 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
         try:
             # Try to get devices as a health check
             await ring_client.get_devices(force_refresh=False)
-            return StatusResponse(
-                success=True,
-                message="Ring MCP service is healthy"
-            )
+            return StatusResponse(success=True, message="Ring MCP service is healthy")
         except Exception as e:
             logger.error("Health check failed: %s", str(e))
-            return StatusResponse(
-                success=False,
-                message=f"Health check failed: {str(e)}"
-            )
+            return StatusResponse(success=False, message=f"Health check failed: {e!s}")
+
+    @app.tool(app=True, name="show_devices_card", description="Show all Ring devices as a rich card")
+    async def show_devices_card() -> dict:
+        """Show all Ring devices as a rich in-chat Prefab card.
+
+        ## Return Format
+        {"content": "...", "structured_content": {"prefab": true, "title": "...", "sections": [...]}}
+        """
+        try:
+            from prefab_ui import PrefabApp
+            from prefab_ui.components import Div, Heading, Row
+            devices = await ring_client.get_devices(force_refresh=False)
+            with PrefabApp(title="Ring Devices") as app_card:
+                Heading(f"{len(devices)} Devices")
+                for d in devices:
+                    online = d.get("online", False)
+                    bat = d.get("battery_life")
+                    status = f"{'Online' if online else 'Offline'}"
+                    if bat is not None:
+                        status += f" | Battery: {bat}%"
+                    Div(Row(label=d.get("name", "?"), value=status))
+            return {"content": f"Found {len(devices)} devices", "structured_content": app_card}
+        except Exception as e:
+            return {"content": f"Error: {e!s}"}
+
+    @app.tool(app=True, name="show_health_card", description="Show Ring MCP health as a rich card")
+    async def show_health_card() -> dict:
+        """Show Ring MCP service health as a rich in-chat Prefab card.
+
+        ## Return Format
+        {"content": "...", "structured_content": {"prefab": true, "title": "...", "sections": [...]}}
+        """
+        try:
+            from prefab_ui import PrefabApp
+            from prefab_ui.components import Div, Heading, Row
+            with PrefabApp(title="Ring MCP Health") as app_card:
+                Heading("System Health")
+                Div(Row(label="API Status", value="Checking..."))
+                try:
+                    await ring_client.get_devices(force_refresh=False)
+                    Div(Row(label="API Connectivity", value="Connected"))
+                except Exception:
+                    Div(Row(label="API Connectivity", value="Disconnected"))
+            return {"content": "Ring MCP health check", "structured_content": app_card}
+        except Exception as e:
+            return {"content": f"Error: {e!s}"}
+
 
 # Register all tools on the global app instance
-def register_all_tools_on_app(app: FastMCP, ring_client: Optional[RingClient] = None):
+def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = None):
     """Register all Ring MCP tools on a specific app instance."""
     try:
         from .tools import (
@@ -992,7 +1018,7 @@ def register_all_tools_on_app(app: FastMCP, ring_client: Optional[RingClient] = 
             help_tool,
             monitoring_tools,
             security_system_tools,
-            status_tool
+            status_tool,
         )
 
         # Register tools from each module
@@ -1004,6 +1030,26 @@ def register_all_tools_on_app(app: FastMCP, ring_client: Optional[RingClient] = 
         monitoring_tools.register_tools(app)
         security_system_tools.register_tools(app)
         status_tool.register_tools(app)
+
+        # Register shutdown tool
+        @app.tool(
+            name="ring_shutdown",
+            description="Gracefully shut down the Ring MCP server",
+        )
+        async def ring_shutdown() -> dict:
+            """Gracefully shut down the Ring MCP server.
+
+            ## Return Format
+            {"success": true, "message": "Server shutting down..."}
+
+            ## Examples
+            await ring_shutdown()
+            """
+            import asyncio
+            import os
+            logger.warning("Ring MCP server shutdown requested via tool")
+            asyncio.get_event_loop().call_later(1, os._exit, 0)
+            return {"success": True, "message": "Server shutting down..."}
 
         logger.info("All Ring MCP tools registered successfully on app instance")
 
@@ -1017,7 +1063,8 @@ def register_all_tools():
     """Register all Ring MCP tools on the global app instance (for backward compatibility)."""
     register_all_tools_on_app(app)
 
-def create_app(ring_client: Optional[RingClient] = None) -> FastMCP:
+
+def create_app(ring_client: RingClient | None = None) -> FastMCP:
     """Create and configure the FastMCP application with composition support.
 
     This function creates the main FastMCP application instance and registers
@@ -1032,8 +1079,7 @@ def create_app(ring_client: Optional[RingClient] = None) -> FastMCP:
     """
     # Create a new FastMCP app instance
     new_app = FastMCP(
-        name="Ring MCP Server",
-        instructions="Comprehensive Ring Security System Management with FastMCP 2.12"
+        name="Ring MCP Server", instructions="Comprehensive Ring Security System Management with FastMCP 2.12"
     )
 
     # Register all tools on the new app instance
@@ -1046,12 +1092,10 @@ def create_app(ring_client: Optional[RingClient] = None) -> FastMCP:
 
     return new_app
 
+
 if __name__ == "__main__":
     # Configure structured logging for FastMCP 2.12
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Configure structlog for JSON logging
     structlog.configure(
@@ -1064,7 +1108,7 @@ if __name__ == "__main__":
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer()
+            structlog.processors.JSONRenderer(),
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),

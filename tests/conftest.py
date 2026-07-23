@@ -8,15 +8,17 @@ This module provides:
 - Mock data generators and utilities
 - Test configuration management
 """
+
 import asyncio
 import json
+import logging
 import os
+from pathlib import Path
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 import pytest_asyncio
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Callable
-from unittest.mock import AsyncMock, MagicMock, patch
-import logging
 
 # Configure test logging
 logging.basicConfig(level=logging.INFO)
@@ -29,11 +31,12 @@ TEST_CONFIG = {
     "device_scan_timeout": 30,
     "test_data_dir": Path(__file__).parent / "test_data",
     "mock_data_file": Path(__file__).parent / "test_data" / "mock_devices.json",
-    "real_device_cache": Path(__file__).parent / "test_data" / ".real_devices_cache.json"
+    "real_device_cache": Path(__file__).parent / "test_data" / ".real_devices_cache.json",
 }
 
 # Create test data directory
 TEST_CONFIG["test_data_dir"].mkdir(exist_ok=True)
+
 
 # Test device data structures
 class TestDeviceData:
@@ -50,7 +53,7 @@ class TestDeviceData:
         "address": "123 Main St",
         "timezone": "America/New_York",
         "has_subscription": True,
-        "last_update": "2025-01-18T10:30:00Z"
+        "last_update": "2025-01-18T10:30:00Z",
     }
 
     CAMERA_DATA = {
@@ -64,7 +67,7 @@ class TestDeviceData:
         "address": "123 Main St",
         "timezone": "America/New_York",
         "has_subscription": True,
-        "last_update": "2025-01-18T10:30:00Z"
+        "last_update": "2025-01-18T10:30:00Z",
     }
 
     ALARM_DATA = {
@@ -78,7 +81,7 @@ class TestDeviceData:
         "address": "123 Main St",
         "timezone": "America/New_York",
         "has_subscription": True,
-        "last_update": "2025-01-18T10:30:00Z"
+        "last_update": "2025-01-18T10:30:00Z",
     }
 
     EVENT_DATA = [
@@ -87,25 +90,26 @@ class TestDeviceData:
             "created_at": "2025-01-18T10:30:00Z",
             "answered": False,
             "kind": "motion",
-            "recording_status": "ready"
+            "recording_status": "ready",
         },
         {
             "id": "event-002",
             "created_at": "2025-01-18T10:25:00Z",
             "answered": True,
             "kind": "doorbell",
-            "recording_status": "ready"
-        }
+            "recording_status": "ready",
+        },
     ]
 
-def detect_test_environment() -> Dict[str, Any]:
+
+def detect_test_environment() -> dict[str, Any]:
     """Detect test environment and capabilities."""
     env_info = {
         "mock_mode": True,
         "real_devices_available": False,
         "ring_credentials_configured": False,
         "real_device_count": 0,
-        "detected_devices": []
+        "detected_devices": [],
     }
 
     # Check for Ring credentials
@@ -126,7 +130,7 @@ def detect_test_environment() -> Dict[str, Any]:
     # Check for real device cache
     if TEST_CONFIG["real_device_cache"].exists():
         try:
-            with open(TEST_CONFIG["real_device_cache"], 'r') as f:
+            with open(TEST_CONFIG["real_device_cache"]) as f:
                 cache_data = json.load(f)
                 env_info["real_devices_available"] = cache_data.get("available", False)
                 env_info["real_device_count"] = cache_data.get("count", 0)
@@ -136,33 +140,32 @@ def detect_test_environment() -> Dict[str, Any]:
 
     return env_info
 
-def save_real_device_cache(devices: List[Dict[str, Any]]) -> None:
+
+def save_real_device_cache(devices: list[dict[str, Any]]) -> None:
     """Save detected real devices to cache."""
     cache_data = {
         "available": len(devices) > 0,
         "count": len(devices),
         "devices": devices,
-        "timestamp": "2025-01-18T10:30:00Z"
+        "timestamp": "2025-01-18T10:30:00Z",
     }
 
-    with open(TEST_CONFIG["real_device_cache"], 'w') as f:
+    with open(TEST_CONFIG["real_device_cache"], "w") as f:
         json.dump(cache_data, f, indent=2)
 
-def load_mock_device_data() -> List[Dict[str, Any]]:
+
+def load_mock_device_data() -> list[dict[str, Any]]:
     """Load mock device data from file or generate defaults."""
     if TEST_CONFIG["mock_data_file"].exists():
         try:
-            with open(TEST_CONFIG["mock_data_file"], 'r') as f:
+            with open(TEST_CONFIG["mock_data_file"]) as f:
                 return json.load(f)
         except Exception as e:
             logger.warning(f"Failed to load mock data: {e}")
 
     # Generate default mock data
-    return [
-        TestDeviceData.DOORBELL_DATA,
-        TestDeviceData.CAMERA_DATA,
-        TestDeviceData.ALARM_DATA
-    ]
+    return [TestDeviceData.DOORBELL_DATA, TestDeviceData.CAMERA_DATA, TestDeviceData.ALARM_DATA]
+
 
 def create_mock_ring_client() -> MagicMock:
     """Create a comprehensive mock Ring client."""
@@ -180,7 +183,8 @@ def create_mock_ring_client() -> MagicMock:
 
     return mock_client
 
-async def discover_real_devices() -> List[Dict[str, Any]]:
+
+async def discover_real_devices() -> list[dict[str, Any]]:
     """Attempt to discover real Ring devices."""
     try:
         from ring_mcp.core.ring_client_modern import RingClient
@@ -200,20 +204,20 @@ async def discover_real_devices() -> List[Dict[str, Any]]:
 
         # Attempt to get devices with timeout
         devices = await asyncio.wait_for(
-            client.get_devices(force_refresh=True),
-            timeout=TEST_CONFIG["device_scan_timeout"]
+            client.get_devices(force_refresh=True), timeout=TEST_CONFIG["device_scan_timeout"]
         )
 
         logger.info(f"Discovered {len(devices)} real Ring devices")
         save_real_device_cache(devices)
         return devices
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.warning("Real device discovery timed out")
         return []
     except Exception as e:
         logger.warning(f"Real device discovery failed: {e}")
         return []
+
 
 # Pytest fixtures
 @pytest.fixture(scope="session")
@@ -221,35 +225,42 @@ def test_environment():
     """Provide test environment information."""
     return detect_test_environment()
 
+
 @pytest.fixture(scope="session")
 def mock_device_data():
     """Provide mock device test data."""
     return load_mock_device_data()
+
 
 @pytest.fixture
 def mock_ring_client():
     """Provide a comprehensive mock Ring client."""
     return create_mock_ring_client()
 
+
 @pytest.fixture
 def sample_doorbell():
     """Provide sample doorbell device data."""
     return TestDeviceData.DOORBELL_DATA.copy()
+
 
 @pytest.fixture
 def sample_camera():
     """Provide sample camera device data."""
     return TestDeviceData.CAMERA_DATA.copy()
 
+
 @pytest.fixture
 def sample_alarm():
     """Provide sample alarm device data."""
     return TestDeviceData.ALARM_DATA.copy()
 
+
 @pytest.fixture
 def sample_events():
     """Provide sample event data."""
     return TestDeviceData.EVENT_DATA.copy()
+
 
 @pytest_asyncio.fixture
 async def real_devices(test_environment):
@@ -262,6 +273,7 @@ async def real_devices(test_environment):
 
     return test_environment["detected_devices"]
 
+
 @pytest_asyncio.fixture
 async def real_ring_client(test_environment):
     """Provide real Ring client if credentials available."""
@@ -272,12 +284,15 @@ async def real_ring_client(test_environment):
         pytest.skip("Ring credentials not configured")
 
     from ring_mcp.core.ring_client_modern import RingClient
+
     return RingClient()
+
 
 @pytest.fixture
 def device_discovery_enabled(test_environment):
     """Mark tests that require device discovery."""
     return not test_environment["mock_mode"]
+
 
 # Test configuration markers
 def pytest_configure(config):
@@ -286,6 +301,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "real_devices: Tests that require real Ring devices")
     config.addinivalue_line("markers", "device_discovery: Tests that involve device discovery")
     config.addinivalue_line("markers", "integration: Integration tests")
+
 
 def pytest_collection_modifyitems(config, items):
     """Modify test collection based on environment."""
@@ -303,6 +319,7 @@ def pytest_collection_modifyitems(config, items):
         # Integration tests also require real Ring; skip only in explicit mock mode
         if "integration" in item.keywords and env["mock_mode"]:
             item.add_marker(pytest.mark.skip(reason="Integration tests skipped in mock mode"))
+
 
 # Environment setup
 @pytest.fixture(scope="session", autouse=True)
@@ -330,8 +347,9 @@ def setup_test_environment():
 
     return env
 
+
 # Utility functions for tests
-def assert_device_structure(device: Dict[str, Any]):
+def assert_device_structure(device: dict[str, Any]):
     """Assert that a device has the expected structure."""
     required_fields = ["id", "name", "type", "online"]
     for field in required_fields:
@@ -342,27 +360,30 @@ def assert_device_structure(device: Dict[str, Any]):
     assert isinstance(device["type"], str), "Device type must be string"
     assert isinstance(device["online"], bool), "Device online status must be boolean"
 
-def assert_event_structure(event: Dict[str, Any]):
+
+def assert_event_structure(event: dict[str, Any]):
     """Assert that an event has the expected structure."""
     required_fields = ["id", "created_at", "kind"]
     for field in required_fields:
         assert field in event, f"Event missing required field: {field}"
 
-def create_mock_response(success: bool = True, message: str = "", **kwargs) -> Dict[str, Any]:
+
+def create_mock_response(success: bool = True, message: str = "", **kwargs) -> dict[str, Any]:
     """Create a mock API response."""
     response = {"success": success, "message": message}
     response.update(kwargs)
     return response
 
+
 # Export utilities for use in tests
 __all__ = [
     "TEST_CONFIG",
     "TestDeviceData",
-    "detect_test_environment",
-    "load_mock_device_data",
-    "create_mock_ring_client",
-    "discover_real_devices",
     "assert_device_structure",
     "assert_event_structure",
-    "create_mock_response"
+    "create_mock_response",
+    "create_mock_ring_client",
+    "detect_test_environment",
+    "discover_real_devices",
+    "load_mock_device_data",
 ]

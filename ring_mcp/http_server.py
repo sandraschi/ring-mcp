@@ -6,6 +6,7 @@ allowing web applications and other HTTP clients to access Ring device controls.
 
 The server runs alongside the stdio MCP server, providing dual transport support.
 """
+
 import asyncio
 import json
 import logging
@@ -13,29 +14,36 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, AsyncGenerator, Awaitable, Callable, Dict, Optional
+from typing import Any
 
 
 def _utc_iso() -> str:
     """RFC 3339 UTC timestamp for JSON (no fake static dates)."""
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
+
+import structlog
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
-import structlog
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ring_mcp.api_log_buffer import append_log, attach_ring_mcp_loggers, get_logs
+from ring_mcp.core.exceptions import (
+    AuthenticationError,
+    DeviceNotFoundError,
+    StreamingError,
+)
+from ring_mcp.core.port_manager import FLEET_RING_HTTP_API_PORT
 from ring_mcp.core.ring_client_modern import RingClient
-from ring_mcp.ring_mqtt_bridge import get_ring_mqtt_bridge
 from ring_mcp.local_llm import (
     chat_completion,
     default_model_env,
@@ -43,19 +51,14 @@ from ring_mcp.local_llm import (
     llm_base_url,
     probe_startup_log,
 )
-from ring_mcp.core.port_manager import FLEET_RING_HTTP_API_PORT
-from ring_mcp.core.exceptions import (
-    AuthenticationError,
-    DeviceNotFoundError,
-    StreamingError,
-)
+from ring_mcp.ring_mqtt_bridge import get_ring_mqtt_bridge
 
 # Configure structured logging
 logger = structlog.get_logger(__name__)
 
 # Global Ring client instance (lazy initialization)
-ring_client: Optional[RingClient] = None
-auth_credentials: Optional[Dict[str, str]] = None
+ring_client: RingClient | None = None
+auth_credentials: dict[str, str] | None = None
 
 
 def _has_ring_credentials() -> bool:
@@ -89,14 +92,14 @@ def get_ring_client() -> RingClient:
         logger.info("Initializing Ring client for HTTP server")
         if auth_credentials:
             ring_client = RingClient(
-                username=auth_credentials.get('username'),
-                password=auth_credentials.get('password')
+                username=auth_credentials.get("username"), password=auth_credentials.get("password")
             )
             logger.info("Ring client initialized with provided credentials")
         else:
             ring_client = RingClient()
             logger.info("Ring client initialized without credentials")
     return ring_client
+
 
 # Create FastAPI application
 app = FastAPI(
@@ -109,25 +112,31 @@ app = FastAPI(
     lifespan=_app_lifespan,
 )
 
-# Add CORS middleware for web app access
+# Add CORS middleware for web app + Tauri access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000", "http://localhost:11110",
-        "http://127.0.0.1:3000", "http://127.0.0.1:11110",
-        "http://localhost:10728", "http://127.0.0.1:10728",
-        "http://localhost:10706", "http://127.0.0.1:10706",
+        "http://localhost:10728",
+        "http://127.0.0.1:10728",
+        "http://localhost:10706",
+        "http://127.0.0.1:10706",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:11110",
+        "http://127.0.0.1:11110",
+        "http://tauri.localhost",
+        "https://tauri.localhost",
+        "tauri://localhost",
     ],
+    allow_origin_regex=r"https?://(?:[a-zA-Z0-9-]+\.ts\.net|.*?\.tail-[a-f0-9]+\.ts\.net|tauri\.localhost|localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$|^tauri://localhost$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
 @app.middleware("http")
-async def _request_log_middleware(
-    request: Request, call_next: Callable[[Request], Awaitable[Any]]
-):
+async def _request_log_middleware(request: Request, call_next: Callable[[Request], Awaitable[Any]]):
     t0 = time.perf_counter()
     response = await call_next(request)
     # Avoid feeding the log viewer poll back into the buffer (noise + recursion vibe).
@@ -150,32 +159,25 @@ async def authentication_error_handler(request: Request, exc: AuthenticationErro
         content={
             "error": True,
             "message": "Authentication failed - please check your Ring credentials",
-            "code": "AUTHENTICATION_ERROR"
-        }
+            "code": "AUTHENTICATION_ERROR",
+        },
     )
+
 
 @app.exception_handler(DeviceNotFoundError)
 async def device_not_found_handler(request: Request, exc: DeviceNotFoundError):
     return JSONResponse(
-        status_code=404,
-        content={
-            "error": True,
-            "message": f"Device not found: {str(exc)}",
-            "code": "DEVICE_NOT_FOUND"
-        }
+        status_code=404, content={"error": True, "message": f"Device not found: {exc!s}", "code": "DEVICE_NOT_FOUND"}
     )
+
 
 @app.exception_handler(Exception)
 async def general_error_handler(request: Request, exc: Exception):
     logger.error("API Error", error=str(exc), path=request.url.path, exc_info=True)
     return JSONResponse(
-        status_code=500,
-        content={
-            "error": True,
-            "message": "Internal server error",
-            "code": "INTERNAL_ERROR"
-        }
+        status_code=500, content={"error": True, "message": "Internal server error", "code": "INTERNAL_ERROR"}
     )
+
 
 # API Routes
 class RingAuthConfigureBody(BaseModel):
@@ -183,7 +185,7 @@ class RingAuthConfigureBody(BaseModel):
 
     username: str = Field(..., min_length=1)
     password: str = Field(..., min_length=1)
-    two_factor_code: Optional[str] = Field(
+    two_factor_code: str | None = Field(
         default=None,
         description="SMS/email verification code when Ring requires 2FA",
     )
@@ -194,11 +196,11 @@ class ArmRequestBody(BaseModel):
 
     model_config = {"extra": "ignore"}
 
-    status: Optional[bool] = Field(
+    status: bool | None = Field(
         default=None,
         description="Legacy: True = arm away, False = disarm (ring-mqtt panels); Ring python client path",
     )
-    mode: Optional[str] = Field(
+    mode: str | None = Field(
         default=None,
         description="ring-mqtt: disarm | arm_home | arm_away",
     )
@@ -299,10 +301,9 @@ async def configure_auth(credentials: RingAuthConfigureBody):
     except Exception as e:
         auth_credentials = None
         ring_client = None
-        logger.error(f"Failed to configure authentication: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to configure authentication: {str(e)}"
-        ) from e
+        logger.error(f"Failed to configure authentication: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to configure authentication: {e!s}") from e
+
 
 @app.get("/api/v1/health")
 async def health_check():
@@ -348,7 +349,7 @@ async def health_check():
                     "alarm_panels_seen": len(mqtt_alarms),
                     "last_error": bridge.last_error,
                 },
-            }
+            },
         }
     except AuthenticationError:
         bridge = get_ring_mqtt_bridge()
@@ -366,14 +367,14 @@ async def health_check():
                     "alarm_panels_seen": len(bridge.list_alarm_devices()) if bridge.enabled else 0,
                     "last_error": bridge.last_error,
                 },
-            }
+            },
         }
     except Exception as e:
         logger.error("Health check failed", error=str(e))
         bridge = get_ring_mqtt_bridge()
         return {
             "success": False,
-            "message": f"Health check failed: {str(e)}",
+            "message": f"Health check failed: {e!s}",
             "health_status": {
                 "api_connected": False,
                 "devices_accessible": len(bridge.list_alarm_devices()) if bridge.enabled else 0,
@@ -385,7 +386,7 @@ async def health_check():
                     "alarm_panels_seen": len(bridge.list_alarm_devices()) if bridge.enabled else 0,
                     "last_error": bridge.last_error,
                 },
-            }
+            },
         }
 
 
@@ -400,7 +401,7 @@ class LlmChatRequestBody(BaseModel):
     """POST /api/v1/llm/chat — proxied to local Ollama (default 127.0.0.1:11434)."""
 
     messages: list[LlmChatMessage] = Field(..., min_length=1)
-    model: Optional[str] = Field(
+    model: str | None = Field(
         default=None,
         description="Model id; defaults to first from GET /api/v1/llm/models",
     )
@@ -455,16 +456,13 @@ async def get_devices(force_refresh: bool = False):
         if bridge.enabled:
             devices = [*devices, *bridge.list_alarm_devices()]
 
-        return {
-            "success": True,
-            "devices": devices,
-            "count": len(devices)
-        }
+        return {"success": True, "devices": devices, "count": len(devices)}
     except AuthenticationError:
         raise
     except Exception as e:
         logger.error("Failed to get devices", error=str(e))
         raise
+
 
 @app.get("/api/v1/devices/{device_id}")
 async def get_device(device_id: str):
@@ -480,15 +478,13 @@ async def get_device(device_id: str):
         if not device:
             raise DeviceNotFoundError(f"Device {device_id} not found")
 
-        return {
-            "success": True,
-            "device": device
-        }
+        return {"success": True, "device": device}
     except AuthenticationError:
         raise
     except Exception as e:
         logger.error("Failed to get device", device_id=device_id, error=str(e))
         raise
+
 
 @app.get("/api/v1/devices/{device_id}/events")
 async def get_device_events(device_id: str, limit: int = 10):
@@ -497,16 +493,13 @@ async def get_device_events(device_id: str, limit: int = 10):
         client = get_ring_client()
         events = await client.get_device_events(device_id, limit=limit)
 
-        return {
-            "success": True,
-            "events": events,
-            "count": len(events)
-        }
+        return {"success": True, "events": events, "count": len(events)}
     except AuthenticationError:
         raise
     except Exception as e:
         logger.error("Failed to get device events", device_id=device_id, error=str(e))
         raise
+
 
 @app.get("/api/v1/devices/{device_id}/stream")
 async def get_live_stream_url(device_id: str):
@@ -515,10 +508,7 @@ async def get_live_stream_url(device_id: str):
         client = get_ring_client()
         stream_url = await client.get_live_stream_url(device_id)
 
-        return {
-            "success": True,
-            "url": stream_url
-        }
+        return {"success": True, "url": stream_url}
     except AuthenticationError:
         raise
     except Exception as e:
@@ -544,13 +534,19 @@ async def _stream_mjpeg_from_rtsp(device_id: str) -> AsyncGenerator[bytes, None]
             )
         proc = await asyncio.create_subprocess_exec(
             "ffmpeg",
-            "-rtsp_transport", "tcp",
-            "-i", rtsp_url,
-            "-f", "mjpeg",
-            "-q:v", "5",
-            "-r", "5",
+            "-rtsp_transport",
+            "tcp",
+            "-i",
+            rtsp_url,
+            "-f",
+            "mjpeg",
+            "-q:v",
+            "5",
+            "-r",
+            "5",
             "-an",
-            "-loglevel", "quiet",
+            "-loglevel",
+            "quiet",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
         )
@@ -581,7 +577,7 @@ async def _stream_mjpeg_from_rtsp(device_id: str) -> AsyncGenerator[bytes, None]
             proc.terminate()
             try:
                 await asyncio.wait_for(proc.wait(), timeout=2.0)
-            except (asyncio.TimeoutError, Exception):
+            except (TimeoutError, Exception):
                 proc.kill()
                 await proc.wait()
 
@@ -595,6 +591,129 @@ async def stream_live_mjpeg(device_id: str):
     )
 
 
+# REST-based WebRTC endpoints (simpler than WebSocket signaling)
+class WebRTCOfferRequest(BaseModel):
+    sdp_offer: str
+    device_id: str
+
+class WebRTCCandidateRequest(BaseModel):
+    candidate: str
+    device_id: str
+
+@app.post("/api/v1/webrtc/offer")
+async def create_webrtc_stream(request: WebRTCOfferRequest):
+    """Create WebRTC stream for live view and two-way talk.
+
+    Send browser's SDP offer, get Ring's SDP answer back (REST proxy pattern).
+    """
+    client = get_ring_client()
+    if not client or not client.is_initialized:
+        raise HTTPException(status_code=503, detail="Ring not initialized")
+    try:
+        doorbell = None
+        for db in client._ring.video_devices():
+            if str(db.id) == request.device_id:
+                doorbell = db
+                break
+        if not doorbell:
+            raise HTTPException(status_code=404, detail=f"Doorbell {request.device_id} not found")
+        sdp_answer = await doorbell.generate_webrtc_stream(request.sdp_offer, keep_alive_timeout=60)
+        return {"sdp_answer": sdp_answer, "device_id": request.device_id, "status": "stream_created"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to create WebRTC stream")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+@app.post("/api/v1/webrtc/candidate")
+async def send_ice_candidate(request: WebRTCCandidateRequest):
+    """Send ICE candidate to Ring for WebRTC connection."""
+    client = get_ring_client()
+    if not client or not client.is_initialized:
+        raise HTTPException(status_code=503, detail="Ring not initialized")
+    try:
+        doorbell = None
+        for db in client._ring.video_devices():
+            if str(db.id) == request.device_id:
+                doorbell = db
+                break
+        if not doorbell:
+            raise HTTPException(status_code=404, detail=f"Doorbell {request.device_id} not found")
+        await doorbell.on_webrtc_candidate(request.candidate)
+        return {"status": "candidate_sent"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to send ICE candidate")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+@app.post("/api/v1/webrtc/keepalive/{device_id}")
+async def keepalive_webrtc_stream(device_id: str):
+    """Keep WebRTC stream alive."""
+    client = get_ring_client()
+    if not client or not client.is_initialized:
+        raise HTTPException(status_code=503, detail="Ring not initialized")
+    try:
+        doorbell = None
+        for db in client._ring.video_devices():
+            if str(db.id) == device_id:
+                doorbell = db
+                break
+        if not doorbell:
+            raise HTTPException(status_code=404, detail=f"Doorbell {device_id} not found")
+        await doorbell.keep_alive_webrtc_stream()
+        return {"status": "keepalive_sent"}
+    except Exception as e:
+        logger.exception("Failed to send keepalive")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+@app.post("/api/v1/webrtc/close/{device_id}")
+async def close_webrtc_stream(device_id: str):
+    """Close WebRTC stream."""
+    client = get_ring_client()
+    if not client or not client.is_initialized:
+        raise HTTPException(status_code=503, detail="Ring not initialized")
+    try:
+        doorbell = None
+        for db in client._ring.video_devices():
+            if str(db.id) == device_id:
+                doorbell = db
+                break
+        if not doorbell:
+            raise HTTPException(status_code=404, detail=f"Doorbell {device_id} not found")
+        await doorbell.close_webrtc_stream()
+        return {"status": "stream_closed"}
+    except Exception as e:
+        logger.exception("Failed to close stream")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+@app.get("/api/v1/snapshot/{device_id}")
+async def get_doorbell_snapshot(device_id: str):
+    """Get a still snapshot from a Ring doorbell/camera.
+
+    Returns the snapshot image directly (requires Ring Protect subscription).
+    """
+    client = get_ring_client()
+    if not client or not client.is_initialized:
+        raise HTTPException(status_code=503, detail="Ring not initialized")
+    try:
+        doorbell = None
+        for db in client._ring.video_devices():
+            if str(db.id) == device_id:
+                doorbell = db
+                break
+        if not doorbell:
+            raise HTTPException(status_code=404, detail=f"Doorbell {device_id} not found")
+        import io
+        from fastapi.responses import StreamingResponse
+        snapshot_bytes = await doorbell.get_snapshot()
+        return StreamingResponse(io.BytesIO(snapshot_bytes), media_type="image/jpeg")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to get snapshot")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
 @app.websocket("/api/v1/devices/{device_id}/stream/webrtc")
 async def webrtc_signaling(websocket: WebSocket, device_id: str):
     """WebSocket relay for WebRTC signaling: browser sends SDP offer and ICE; backend relays Ring answer and ICE."""
@@ -606,7 +725,7 @@ async def webrtc_signaling(websocket: WebSocket, device_id: str):
         await websocket.send_json({"type": "error", "message": f"Not connected: {e}"})
         await websocket.close()
         return
-    session_id: Optional[str] = None
+    session_id: str | None = None
     try:
         while True:
             raw = await websocket.receive_text()
@@ -618,7 +737,7 @@ async def webrtc_signaling(websocket: WebSocket, device_id: str):
                     await websocket.send_json({"type": "error", "message": "Missing sdp in offer"})
                     continue
 
-                async def on_message(payload: Dict[str, Any]) -> None:
+                async def on_message(payload: dict[str, Any]) -> None:
                     try:
                         await websocket.send_json(payload)
                     except Exception:
@@ -654,6 +773,7 @@ async def webrtc_signaling(websocket: WebSocket, device_id: str):
                 await client.webrtc_close(device_id, session_id)
             except Exception as e:
                 logger.debug("WebRTC close ignored", error=str(e))
+
 
 @app.post("/api/v1/devices/{device_id}/arm")
 async def post_device_arm(device_id: str, body: ArmRequestBody):
@@ -710,12 +830,13 @@ async def post_device_arm(device_id: str, body: ArmRequestBody):
         logger.error("Failed to set arm status", device_id=device_id, error=str(e))
         raise
 
+
 @app.post("/api/v1/devices/{device_id}/intercom/start")
 async def intercom_start(device_id: str):
     """Start two-way audio (talk to visitor, e.g. tell delivery to leave package with neighbour)."""
     try:
         client = get_ring_client()
-        if hasattr(client, "start_intercom") and callable(getattr(client, "start_intercom")):
+        if hasattr(client, "start_intercom") and callable(client.start_intercom):
             await client.start_intercom(device_id)
             return {"success": True, "message": "Two-way audio started"}
         raise HTTPException(
@@ -734,7 +855,7 @@ async def intercom_stop(device_id: str):
     """Stop two-way audio."""
     try:
         client = get_ring_client()
-        if hasattr(client, "stop_intercom") and callable(getattr(client, "stop_intercom")):
+        if hasattr(client, "stop_intercom") and callable(client.stop_intercom):
             await client.stop_intercom(device_id)
             return {"success": True, "message": "Two-way audio stopped"}
         raise HTTPException(
@@ -760,11 +881,12 @@ async def trigger_doorbell_chime(device_id: str):
             "message": f"Doorbell chime {'triggered successfully' if result else 'failed to trigger'}",
             "operation": "chime",
             "timestamp": _utc_iso(),
-            "device_id": device_id
+            "device_id": device_id,
         }
     except Exception as e:
         logger.error("Failed to trigger chime", device_id=device_id, error=str(e))
         raise
+
 
 @app.get("/api/v1/status")
 async def get_system_status():
@@ -777,20 +899,20 @@ async def get_system_status():
             devices = [*devices, *bridge.list_alarm_devices()]
 
         # Categorize devices
-        doorbells = [d for d in devices if d.get('type') == 'doorbell']
-        cameras = [d for d in devices if d.get('type') == 'camera']
-        alarms = [d for d in devices if d.get('type') == 'alarm']
+        doorbells = [d for d in devices if d.get("type") == "doorbell"]
+        cameras = [d for d in devices if d.get("type") == "camera"]
+        alarms = [d for d in devices if d.get("type") == "alarm"]
 
         return {
             "success": True,
             "status": {
                 "total_devices": len(devices),
-                "online_devices": len([d for d in devices if d.get('online')]),
+                "online_devices": len([d for d in devices if d.get("online")]),
                 "doorbells": len(doorbells),
                 "cameras": len(cameras),
                 "alarms": len(alarms),
                 "last_updated": _utc_iso(),
-            }
+            },
         }
     except AuthenticationError:
         raise
@@ -798,12 +920,12 @@ async def get_system_status():
         logger.error("Failed to get system status", error=str(e))
         raise
 
+
 def main():
     """Run the HTTP server."""
     # Configure logging
     logging.basicConfig(
-        level=os.getenv("LOG_LEVEL", "INFO"),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     # Configure structlog for JSON logging
@@ -815,7 +937,7 @@ def main():
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer()
+            structlog.processors.JSONRenderer(),
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
@@ -832,13 +954,8 @@ def main():
     logger.info("Press Ctrl+C to stop")
 
     # Run the server
-    uvicorn.run(
-        "ring_mcp.http_server:app",
-        host=host,
-        port=port,
-        reload=False,
-        log_level="info"
-    )
+    uvicorn.run("ring_mcp.http_server:app", host=host, port=port, reload=False, log_level="info")
+
 
 if __name__ == "__main__":
     main()

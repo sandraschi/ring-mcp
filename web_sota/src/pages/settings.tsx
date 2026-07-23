@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { API_URL_STORAGE_KEY, api } from "@/lib/api";
+import { API_BASE, API_URL_STORAGE_KEY, api } from "@/lib/api";
 
 function getStoredApiUrl(): string {
   try {
@@ -31,7 +31,7 @@ function LLMSettings() {
   const [selectedModel, setSelectedModel] = useState("");
   const [status, setStatus] = useState<"loading"|"ready"|"error">("loading");
   useEffect(() => {
-    fetch("/api/llm/providers").then(r => r.json()).then(d => {
+    fetch(API_BASE + "/api/llm/providers").then(r => r.json()).then(d => {
       setProviders(d);
       const savedP = localStorage.getItem("llm_provider") || "ollama";
       const savedM = localStorage.getItem("llm_model") || "";

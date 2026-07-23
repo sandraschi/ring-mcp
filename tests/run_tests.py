@@ -5,13 +5,11 @@ Comprehensive test runner for Ring MCP.
 This script provides intelligent test execution based on environment capabilities,
 with options for mock-only, real device, and mixed testing scenarios.
 """
-import asyncio
-import os
-import sys
+
 import argparse
 import logging
+import sys
 from pathlib import Path
-from typing import List, Dict, Any, Optional
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -21,10 +19,7 @@ sys.path.insert(0, str(project_root))
 from tests.conftest import detect_test_environment
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -35,7 +30,7 @@ class TestRunner:
         self.env = detect_test_environment()
         self.project_root = project_root
 
-    def get_test_command(self, test_type: str, markers: Optional[List[str]] = None) -> List[str]:
+    def get_test_command(self, test_type: str, markers: list[str] | None = None) -> list[str]:
         """Generate pytest command for specific test type."""
         cmd = ["python", "-m", "pytest"]
 
@@ -67,7 +62,7 @@ class TestRunner:
 
         return cmd
 
-    def run_command(self, cmd: List[str]) -> int:
+    def run_command(self, cmd: list[str]) -> int:
         """Run a command and return exit code."""
         import subprocess
 
@@ -150,54 +145,53 @@ class TestRunner:
         """Run performance-focused tests."""
         logger.info("Running performance tests...")
         # Focus on tests that measure timing
-        cmd = [
-            "python", "-m", "pytest",
-            "tests/test_end_to_end.py::TestWorkflowPerformance",
-            "-v", "--tb=short"
-        ]
+        cmd = ["python", "-m", "pytest", "tests/test_end_to_end.py::TestWorkflowPerformance", "-v", "--tb=short"]
         return self.run_command(cmd)
 
     def run_smoke_tests(self) -> int:
         """Run quick smoke tests to verify basic functionality."""
         logger.info("Running smoke tests...")
         cmd = [
-            "python", "-m", "pytest",
+            "python",
+            "-m",
+            "pytest",
             "tests/test_basic.py",
             "tests/test_unit_mock.py::TestMockDeviceManagement::test_get_devices_success",
-            "-v", "--tb=short"
+            "-v",
+            "--tb=short",
         ]
         return self.run_command(cmd)
 
     def show_environment_info(self):
         """Display environment information."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("RING MCP TEST ENVIRONMENT")
-        print("="*60)
+        print("=" * 60)
 
         print(f"Mock Mode: {'[ENABLED]' if self.env['mock_mode'] else '[DISABLED]'}")
         print(f"Ring Credentials: {'[CONFIGURED]' if self.env['ring_credentials_configured'] else '[NOT CONFIGURED]'}")
         print(f"Real Devices Available: {'[YES]' if self.env['real_devices_available'] else '[NO]'}")
         print(f"Real Device Count: {self.env['real_device_count']}")
 
-        if self.env['detected_devices']:
+        if self.env["detected_devices"]:
             print("\nDetected Devices:")
-            for device in self.env['detected_devices'][:5]:  # Show first 5
-                online_status = "[ONLINE]" if device.get('online') else "[OFFLINE]"
+            for device in self.env["detected_devices"][:5]:  # Show first 5
+                online_status = "[ONLINE]" if device.get("online") else "[OFFLINE]"
                 print(f"  - {device.get('name', 'Unknown')} ({device.get('type', 'unknown')}) - {online_status}")
 
-            if len(self.env['detected_devices']) > 5:
+            if len(self.env["detected_devices"]) > 5:
                 print(f"  ... and {len(self.env['detected_devices']) - 5} more")
 
         # Test recommendations
         print("\nRecommended Test Commands:")
-        if self.env['mock_mode']:
+        if self.env["mock_mode"]:
             print("  python tests/run_tests.py unit        # Unit tests with mocks")
             print("  python tests/run_tests.py smoke       # Quick functionality check")
         else:
             print("  python tests/run_tests.py all         # Full test suite")
             print("  python tests/run_tests.py integration # Real device integration")
 
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
 
 def main():
@@ -206,13 +200,9 @@ def main():
     parser.add_argument(
         "test_type",
         choices=["unit", "integration", "device_discovery", "end_to_end", "all", "performance", "smoke", "info"],
-        help="Type of tests to run"
+        help="Type of tests to run",
     )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Enable verbose output"
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
 

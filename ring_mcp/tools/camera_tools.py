@@ -9,14 +9,15 @@ tool registration for Claude Desktop stdio communication.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any
 
 from fastmcp import FastMCP
+
 from ..core.ring_client import RingClient
-from ..core.exceptions import RingError, DeviceNotFoundError
 
 logger = logging.getLogger(__name__)
+
 
 def register_tools(app: FastMCP) -> None:
     """Register security camera management tools with the FastMCP application.
@@ -27,12 +28,9 @@ def register_tools(app: FastMCP) -> None:
     Args:
         app: FastMCP application instance
     """
-    
-    @app.tool(
-        name="get_camera_status",
-        description="Get comprehensive status of all Ring security cameras"
-    )
-    async def get_camera_status() -> Dict[str, Any]:
+
+    @app.tool(name="get_camera_status", description="Get comprehensive status of all Ring security cameras")
+    async def get_camera_status() -> dict[str, Any]:
         """Get comprehensive status of all Ring security cameras.
 
         Provides detailed information about camera health, connectivity, recording
@@ -50,62 +48,58 @@ def register_tools(app: FastMCP) -> None:
             async with RingClient() as client:
                 # Get all devices and filter for cameras
                 all_devices = await client.get_devices()
-                cameras = [device for device in all_devices if device.get('type') == 'camera']
+                cameras = [device for device in all_devices if device.get("type") == "camera"]
 
                 # Get detailed status for each camera
                 camera_details = []
                 for camera in cameras:
                     try:
                         # Get camera events for motion activity
-                        events = await client.get_device_events(camera['id'], limit=5)
+                        events = await client.get_device_events(camera["id"], limit=5)
 
                         camera_info = {
-                            "id": camera['id'],
-                            "name": camera['name'],
-                            "type": camera['type'],
-                            "model": camera['model'],
-                            "online": camera['online'],
-                            "battery_life": camera.get('battery_life'),
-                            "firmware": camera.get('firmware'),
-                            "address": camera.get('address'),
+                            "id": camera["id"],
+                            "name": camera["name"],
+                            "type": camera["type"],
+                            "model": camera["model"],
+                            "online": camera["online"],
+                            "battery_life": camera.get("battery_life"),
+                            "firmware": camera.get("firmware"),
+                            "address": camera.get("address"),
                             "recent_events": events,
                             "recording_enabled": True,  # Ring cameras typically record by default
-                            "motion_detection": True,   # Ring cameras have motion detection
-                            "last_update": camera['last_update']
+                            "motion_detection": True,  # Ring cameras have motion detection
+                            "last_update": camera["last_update"],
                         }
                         camera_details.append(camera_info)
                     except Exception as e:
                         logger.error(f"Error getting details for camera {camera['id']}: {e}")
                         # Still include the camera with basic info
-                        camera_details.append({
-                            "id": camera['id'],
-                            "name": camera['name'],
-                            "type": camera['type'],
-                            "online": camera['online'],
-                            "error": str(e)
-                        })
+                        camera_details.append(
+                            {
+                                "id": camera["id"],
+                                "name": camera["name"],
+                                "type": camera["type"],
+                                "online": camera["online"],
+                                "error": str(e),
+                            }
+                        )
 
                 return {
                     "success": True,
                     "cameras": camera_details,
                     "total_cameras": len(camera_details),
-                    "online_cameras": sum(1 for c in camera_details if c.get('online', False)),
-                    "cameras_with_issues": sum(1 for c in camera_details if c.get('error')),
-                    "last_updated": datetime.now().isoformat()
+                    "online_cameras": sum(1 for c in camera_details if c.get("online", False)),
+                    "cameras_with_issues": sum(1 for c in camera_details if c.get("error")),
+                    "last_updated": datetime.now().isoformat(),
                 }
 
         except Exception as e:
             logger.error(f"Error getting camera status: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
-    
-    @app.tool(
-        name="stream_all_cameras",
-        description="Start live streams from all available Ring cameras"
-    )
-    async def stream_all_cameras() -> Dict[str, Any]:
+            return {"success": False, "error": str(e)}
+
+    @app.tool(name="stream_all_cameras", description="Start live streams from all available Ring cameras")
+    async def stream_all_cameras() -> dict[str, Any]:
         """Start live streams from all available Ring cameras.
 
         Initiates simultaneous live video streams from all operational Ring cameras
@@ -123,7 +117,7 @@ def register_tools(app: FastMCP) -> None:
             async with RingClient() as client:
                 # Get all devices and filter for cameras
                 all_devices = await client.get_devices()
-                cameras = [device for device in all_devices if device.get('type') == 'camera']
+                cameras = [device for device in all_devices if device.get("type") == "camera"]
 
                 camera_streams = []
                 failed_cameras = []
@@ -131,20 +125,20 @@ def register_tools(app: FastMCP) -> None:
                 for camera in cameras:
                     try:
                         # Get stream URL for each camera
-                        stream_url = await client.get_live_stream_url(camera['id'])
-                        camera_streams.append({
-                            "camera_id": camera['id'],
-                            "camera_name": camera['name'],
-                            "stream_url": stream_url,
-                            "status": "active"
-                        })
+                        stream_url = await client.get_live_stream_url(camera["id"])
+                        camera_streams.append(
+                            {
+                                "camera_id": camera["id"],
+                                "camera_name": camera["name"],
+                                "stream_url": stream_url,
+                                "status": "active",
+                            }
+                        )
                     except Exception as e:
                         logger.error(f"Failed to get stream for camera {camera['id']}: {e}")
-                        failed_cameras.append({
-                            "camera_id": camera['id'],
-                            "camera_name": camera['name'],
-                            "error": str(e)
-                        })
+                        failed_cameras.append(
+                            {"camera_id": camera["id"], "camera_name": camera["name"], "error": str(e)}
+                        )
 
                 return {
                     "success": True,
@@ -152,12 +146,9 @@ def register_tools(app: FastMCP) -> None:
                     "total_streams": len(camera_streams),
                     "failed_cameras": failed_cameras,
                     "total_failed": len(failed_cameras),
-                    "stream_started_at": datetime.now().isoformat()
+                    "stream_started_at": datetime.now().isoformat(),
                 }
 
         except Exception as e:
             logger.error(f"Error starting camera streams: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}

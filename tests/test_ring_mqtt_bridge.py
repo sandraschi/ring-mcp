@@ -2,7 +2,7 @@
 
 import json
 
-from ring_mcp.ring_mqtt_bridge import RingMqttBridge, _ATTR_TOPIC_RE, _STATE_TOPIC_RE, _STATUS_TOPIC_RE
+from ring_mcp.ring_mqtt_bridge import _ATTR_TOPIC_RE, _STATE_TOPIC_RE, _STATUS_TOPIC_RE, RingMqttBridge
 
 
 def test_state_topic_regex_matches_ring_mqtt_layout():

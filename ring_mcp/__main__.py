@@ -3,6 +3,7 @@ Ring MCP - Main entry point.
 
 This module provides the main entry point for the Ring MCP server.
 """
+
 import asyncio
 import logging
 import os
@@ -15,13 +16,11 @@ logger = logging.getLogger(__name__)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Set up logging
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 # Import the server after setting up logging
 from ring_mcp.server import create_app  # noqa: E402
+
 
 def prompt_for_2fa_code() -> str:
     """Prompt the user to enter their 2FA code."""
@@ -33,10 +32,12 @@ def prompt_for_2fa_code() -> str:
             return code
         logging.error("Error: 2FA code cannot be empty")
 
+
 async def initialize_ring_client():
     """Initialize the Ring client with lazy authentication."""
     # Load environment variables from .env file if it exists
     from dotenv import load_dotenv
+
     load_dotenv()
 
     # For MCP server mode, we initialize the client but don't authenticate yet
@@ -47,10 +48,7 @@ async def initialize_ring_client():
     client = RingClient()
 
     # Check if we have credentials available
-    has_credentials = (
-        (os.getenv("RING_USERNAME") and os.getenv("RING_PASSWORD")) or
-        os.getenv("RING_TOKEN")
-    )
+    has_credentials = (os.getenv("RING_USERNAME") and os.getenv("RING_PASSWORD")) or os.getenv("RING_TOKEN")
 
     if has_credentials:
         logging.info("Ring credentials found - authentication will happen on first API call")
@@ -58,6 +56,7 @@ async def initialize_ring_client():
         logging.info("No Ring credentials found - tools will require manual authentication")
 
     return client
+
 
 def main():
     """Run the Ring MCP server."""
@@ -88,11 +87,8 @@ def main():
         logging.error(f"Error: {e}")
         sys.exit(1)
 
-if __name__ == "__main__":
-    if sys.version_info < (3, 7):
-        logging.error("Error: Python 3.7 or later is required")
-        sys.exit(1)
 
+if __name__ == "__main__":
     # Run the main function (now synchronous)
     try:
         main()

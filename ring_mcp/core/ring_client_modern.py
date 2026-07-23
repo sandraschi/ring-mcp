@@ -4,6 +4,7 @@ Modern Ring API Client using python-ring-doorbell.
 This module provides an asynchronous interface to Ring devices using the official
 python-ring-doorbell library, which handles the reverse-engineered Ring API.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -17,9 +18,9 @@ from typing import Any, cast
 
 import aiocache
 from ring_doorbell import Auth, Ring, RingChime, RingDoorBell, RingOther, RingStickUpCam
-from ring_doorbell.generic import RingGeneric
 from ring_doorbell.exceptions import AuthenticationError as RingDoorbellAuthenticationError
 from ring_doorbell.exceptions import Requires2FAError as RingRequires2FAError
+from ring_doorbell.generic import RingGeneric
 from ring_doorbell.webrtcstream import RingWebRtcMessage, RingWebRtcStream
 from tenacity import (
     retry,
@@ -32,6 +33,7 @@ from .exceptions import (
     AuthenticationError,
     DeviceNotFoundError,
     RateLimitError,
+    RingConnectionError,
     RingError,
     StreamingError,
 )
@@ -54,8 +56,10 @@ def _device_ui_category(device: RingGeneric) -> str:
         return "intercom"
     return "other"
 
+
 # Cache configuration
 CACHE_TTL = 300  # 5 minutes
+
 
 class RingClient:
     """Modern Ring client with async support and rate limiting."""
@@ -128,7 +132,7 @@ class RingClient:
 
     async def _load_saved_token(self) -> bool:
         """Load and validate a saved token from the token manager.
-        
+
         Returns:
             bool: True if a valid token was loaded, False otherwise
         """
@@ -163,7 +167,7 @@ class RingClient:
 
     def _on_token_updated(self, token: dict[str, Any]) -> None:
         """Callback when the token is updated by the Ring API.
-        
+
         Args:
             token: The updated token data
         """
@@ -179,7 +183,7 @@ class RingClient:
                     username=self.username,
                     access_token=token["access_token"],
                     refresh_token=token.get("refresh_token"),
-                    expires_in=token.get("expires_in", 3600)
+                    expires_in=token.get("expires_in", 3600),
                 )
             )
 
@@ -202,7 +206,7 @@ class RingClient:
                         continue
 
                     # Calculate when to refresh (5 minutes before expiration)
-                    expires_at = datetime.fromisoformat(token_data['expires_at'])
+                    expires_at = datetime.fromisoformat(token_data["expires_at"])
                     now = datetime.utcnow()
                     refresh_time = expires_at - timedelta(minutes=5)
 
@@ -228,7 +232,7 @@ class RingClient:
 
     async def connect(self, two_factor_callback: Callable[[], Awaitable[str]] | None = None) -> None:
         """Initialize connection to Ring API with support for 2FA and token management.
-        
+
         Args:
             two_factor_callback: Optional async callback function that will be called if 2FA is required.
                 The function should return the 2FA code as a string.
@@ -239,12 +243,7 @@ class RingClient:
 
         try:
             # First, try to use a saved token if available (skip when re-authenticating from Settings)
-            if (
-                not self.force_password_login
-                and not self.token
-                and self.username
-                and await self._load_saved_token()
-            ):
+            if not self.force_password_login and not self.token and self.username and await self._load_saved_token():
                 # Successfully loaded and validated a saved token
                 await self._start_token_refresh_task()
                 return
@@ -281,20 +280,14 @@ class RingClient:
                         else:
                             raise AuthenticationError("2FA is required but no callback provided")
                     except Exception as e:
-                        if (
-                            "Verification Code" in str(e)
-                            or "2FA" in str(e)
-                            or "verification" in str(e).lower()
-                        ):
+                        if "Verification Code" in str(e) or "2FA" in str(e) or "verification" in str(e).lower():
                             logger.info("2FA verification code required (message heuristic)")
                             if two_factor_callback and inspect.iscoroutinefunction(two_factor_callback):
                                 otp_val = await two_factor_callback()
                                 if not (otp_val and str(otp_val).strip()):
                                     raise AuthenticationError("2FA code is required but not provided")
                                 otp_clean = "".join(str(otp_val).strip().split())
-                                await self._auth.async_fetch_token(
-                                    self.username, self.password, otp_clean
-                                )
+                                await self._auth.async_fetch_token(self.username, self.password, otp_clean)
                                 logger.info("Successfully authenticated with Ring API (with 2FA)")
                             else:
                                 raise AuthenticationError("2FA is required but no callback provided")
@@ -309,13 +302,11 @@ class RingClient:
                     await self._token_manager.save_token(
                         username=self.username,
                         access_token=self.token,
-                        refresh_token=getattr(self._auth, 'refresh_token', None),
-                        expires_in=3600  # Default expiration
+                        refresh_token=getattr(self._auth, "refresh_token", None),
+                        expires_in=3600,  # Default expiration
                     )
             else:
-                raise AuthenticationError(
-                    "Either a valid token or username/password is required"
-                )
+                raise AuthenticationError("Either a valid token or username/password is required")
 
             # Initialize the Ring API client
             self._ring = Ring(self._auth)
@@ -389,26 +380,27 @@ class RingClient:
     )
     async def _make_request(self, method: str, endpoint: str, **kwargs) -> Any:
         """Make an authenticated request to the Ring API with retry logic.
-        
+
         Args:
             method: HTTP method (GET, POST, PUT, etc.)
             endpoint: API endpoint (without base URL)
             **kwargs: Additional arguments to pass to the request
-            
+
         Returns:
             The response from the API
-            
+
         Raises:
             AuthenticationError: If authentication fails
             RateLimitError: If rate limit is exceeded
             RingConnectionError: For network-related errors
             RingError: For other Ring API errors
         """
+
         @retry(
             stop=stop_after_attempt(3),
             wait=wait_exponential(multiplier=1, min=4, max=10),
             retry=retry_if_exception_type((RateLimitError, asyncio.TimeoutError)),
-            reraise=True
+            reraise=True,
         )
         async def _request():
             try:
@@ -420,11 +412,9 @@ class RingClient:
                 try:
                     response = await asyncio.wait_for(
                         asyncio.to_thread(
-                            getattr(self._auth, method.lower()),
-                            f"https://api.ring.com/clients_api{endpoint}",
-                            **kwargs
+                            getattr(self._auth, method.lower()), f"https://api.ring.com/clients_api{endpoint}", **kwargs
                         ),
-                        timeout=60.0  # 60 second timeout for API requests
+                        timeout=60.0,  # 60 second timeout for API requests
                     )
                 except TimeoutError as e:
                     raise RingConnectionError("Request to Ring API timed out") from e
@@ -435,8 +425,7 @@ class RingClient:
                         retry_after = int(response.get("retry_after", 60))
                         logger.warning("Rate limit exceeded. Retrying after %s seconds", retry_after)
                         raise RateLimitError(
-                            f"Rate limit exceeded. Try again in {retry_after} seconds.",
-                            retry_after=retry_after
+                            f"Rate limit exceeded. Try again in {retry_after} seconds.", retry_after=retry_after
                         )
                     elif response.get("code") == 401:
                         # Clear the auth token if it's invalid
@@ -458,7 +447,7 @@ class RingClient:
 
                 return response
 
-            except (requests.exceptions.RequestException, httpx.RequestError) as e:
+            except (OSError, TimeoutError) as e:
                 # Handle network-related errors
                 error_msg = str(e).lower()
                 if "timeout" in error_msg or "timed out" in error_msg:
@@ -495,9 +484,7 @@ class RingClient:
             # not device objects. Use all_devices for the flattened list.
             ring_devices = await asyncio.to_thread(lambda: self._ring.devices())
 
-            self._devices = {
-                str(device.id): device for device in ring_devices.all_devices
-            }
+            self._devices = {str(device.id): device for device in ring_devices.all_devices}
 
             logger.info("Updated device cache with %d devices", len(self._devices))
 
@@ -514,10 +501,10 @@ class RingClient:
 
     async def get_devices(self, force_refresh: bool = False) -> list[DeviceData]:
         """Get all Ring devices.
-        
+
         Args:
             force_refresh: If True, force refresh the device cache.
-            
+
         Returns:
             List of device dictionaries with their details.
         """
@@ -567,9 +554,7 @@ class RingClient:
         devices = await self.get_devices()
         return next((d for d in devices if d["id"] == device_id), None)
 
-    async def get_device_events(
-        self, device_id: str, limit: int = 10
-    ) -> list[dict[str, Any]]:
+    async def get_device_events(self, device_id: str, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent events for a device."""
         if not self._devices:
             await self._update_devices()
@@ -579,9 +564,7 @@ class RingClient:
             raise DeviceNotFoundError(f"Device {device_id} not found")
 
         try:
-            events = await asyncio.to_thread(
-                lambda: device.history(limit=limit, kind="alarm")
-            )
+            events = await asyncio.to_thread(lambda: device.history(limit=limit, kind="alarm"))
             return [
                 {
                     "id": str(e["id"]),
@@ -628,11 +611,13 @@ class RingClient:
                 asyncio.create_task(on_message({"type": "answer", "sdp": msg.answer}))
             if msg.candidate is not None:
                 asyncio.create_task(
-                    on_message({
-                        "type": "ice",
-                        "candidate": msg.candidate,
-                        "mlineindex": msg.sdp_m_line_index or 0,
-                    })
+                    on_message(
+                        {
+                            "type": "ice",
+                            "candidate": msg.candidate,
+                            "mlineindex": msg.sdp_m_line_index or 0,
+                        }
+                    )
                 )
 
         await device.generate_async_webrtc_stream(
@@ -681,9 +666,7 @@ class RingClient:
             raise RingError("Device does not support arming/disarming")
 
         try:
-            result = await asyncio.to_thread(
-                lambda: device.alarm.set_status("home" if status else "disarmed")
-            )
+            result = await asyncio.to_thread(lambda: device.alarm.set_status("home" if status else "disarmed"))
             # Invalidate cache
             await self.cache.delete(f"devices_{self.username}")
             return bool(result)
