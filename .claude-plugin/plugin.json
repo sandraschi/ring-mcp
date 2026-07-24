@@ -1,6 +1,6 @@
 {
   "name": "ring-mcp",
-  "version": "1.0.3",
-  "description": "Ring Security Ecosystem MCP - Universal control for Ring doorbell, burglar alarm, fire alarm, and cameras",
+  "version": "1.0.0",
+  "description": "Ring device management via MCP",
   "hooks": "../hooks/hooks.json"
 }

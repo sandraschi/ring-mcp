@@ -172,7 +172,7 @@ export function Doorbell() {
   }, [devices, loadEvents]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="doorbell-page">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-white">Doorbell & Camera</h1>
       </div>
@@ -190,8 +190,8 @@ export function Doorbell() {
         </Card>
       ) : (
         <>
-          {devices.map((d) => (
-            <Card key={d.id} className="border-slate-800 bg-slate-950/50">
+          {devices.map((d, i) => (
+            <Card key={d.id} className="border-slate-800 bg-slate-950/50" data-testid={`camera-${i}`}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white flex items-center gap-2">

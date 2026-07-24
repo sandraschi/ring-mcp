@@ -249,7 +249,7 @@ export function Settings() {
   }, [apiUrl, username, password, securityCode]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="settings-page">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-white">
           Configuration

@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import { Alarms } from "@/pages/alarms";
+import { ApiDocsPage } from "@/pages/api-docs";
 import { Apps } from "@/pages/apps";
 import { Chat } from "@/pages/chat";
 import { Dashboard } from "@/pages/dashboard";
@@ -29,6 +30,7 @@ function App() {
           <Route path="/apps" element={<Apps />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/api-docs" element={<ApiDocsPage />} />
           <Route path="/logger" element={<Logger />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

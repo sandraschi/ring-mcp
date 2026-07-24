@@ -4,6 +4,7 @@ import {
   Bot,
   ChevronLeft,
   ChevronRight,
+  Code2,
   Grid,
   HelpCircle,
   LayoutDashboard,
@@ -34,6 +35,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { href: "/chat", label: "Local AI", icon: Bot },
     { href: "/logger", label: "Logger", icon: ScrollText },
     { href: "/help", label: "Help", icon: HelpCircle },
+    { href: "/api-docs", label: "API Docs", icon: Code2 },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
