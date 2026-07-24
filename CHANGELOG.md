@@ -1,13 +1,3 @@
-
-## [Unreleased] — 2026-06-14
-
-### Added
-- Tauri 2.0 native wrapper with `bundle.resources` + `std::process::Command`
-- PyInstaller frozen backend embedded in NSIS installer
-- CUA-NSIS smoke test (`scripts/cua-smoke.py`, `scripts/cua-nsis-config.json`)
-- `just cua-nsis-test` recipe
-- Tauri CORS: `tauri://localhost` origins for WebView API access
-- `GET /api/v1/diagnostics` endpoint for CUA verification
 # Ring MCP Changelog
 
 All notable changes to this project will be documented in this file.
@@ -16,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+- API Docs page: Swagger/ReDoc toggle, quick-ref endpoints, iframe embed
+- `.claude-plugin/plugin.json` + `hooks/hooks.json`: session context injection
+- `data-testid` on alarms, doorbell, settings, API docs pages
+- `just serve`, `serve-web`, `build-web`, `test` recipes
+
+### Changed
+- **npm → bun**: deleted package-lock.json, committed bun.lock
+- **Sidebar**: collapse toggle moved from bottom to top (per WEBAPP_SOTA)
+- **start.bat**: PATH for winget/bun, pause on error
+- **start.ps1**: npm install → bun install
+- **data-testid** on sidebar nav links, dashboard KPIs, topbar
+- **glama.json**: updated to FastMCP 3.4+, active status
+- **AGENTS.md**: expanded with ports, key files, quick ref
+- **vite.config.ts**: proxy /docs, /openapi.json, /redoc to backend
 
 ### Removed
 - **Next.js `webapp/`**: Removed the legacy Next.js UI; the only supported browser UI is **`web_sota`** (`just dev`, `web_sota/start.ps1`). Dropped `just dev-webapp`.
