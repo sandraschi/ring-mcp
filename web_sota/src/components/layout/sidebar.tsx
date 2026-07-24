@@ -44,13 +44,21 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         collapsed ? "w-16" : "w-64",
       )}
     >
-      <div className="flex h-16 items-center border-b border-slate-800 px-4">
+      <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4">
         <div className="flex items-center gap-2 font-semibold text-slate-100">
           <Server className="h-6 w-6 text-blue-500" />
           {!collapsed && (
             <span className="animate-in fade-in duration-300">Ring MCP</span>
           )}
         </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          data-testid="sidebar-toggle"
+          className="flex items-center justify-center rounded-md p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+        >
+          {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+        </button>
       </div>
 
       <nav className="flex-1 space-y-1 p-2">
@@ -60,6 +68,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <Link
               key={item.href}
               to={item.href}
+              data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
               className={cn(
                 "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white",
                 isActive ? "bg-slate-800 text-white" : "text-slate-400",
@@ -85,23 +94,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           );
         })}
       </nav>
-
-      <div className="border-t border-slate-800 p-2">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex w-full items-center justify-center rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-        >
-          {collapsed ? (
-            <ChevronRight className="h-5 w-5" />
-          ) : (
-            <div className="flex w-full items-center">
-              <ChevronLeft className="mr-3 h-5 w-5" />
-              <span>Collapse</span>
-            </div>
-          )}
-        </button>
-      </div>
     </aside>
   );
 }

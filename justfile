@@ -80,6 +80,30 @@ dev-http:
     Set-Location '{{justfile_directory()}}'
     uv run ring-mcp-http
 
+# ── Serve ────────────────────────────────────────────────────────────────────
+
+# Run MCP server stdio
+serve:
+    Set-Location '{{justfile_directory()}}'
+    uv run python -m ring_mcp
+
+# Run webapp (Vite dev)
+serve-web:
+    Set-Location '{{justfile_directory()}}\web_sota'
+    bun run dev
+
+# Build webapp
+build-web:
+    Set-Location '{{justfile_directory()}}\web_sota'
+    bun run build
+
+# ── Test ────────────────────────────────────────────────────────────────────
+
+# Run pytest
+test:
+    Set-Location '{{justfile_directory()}}'
+    uv run pytest tests/ -q
+
 # ── Docker ────────────────────────────────────────────────────────────────────
 
 docker-up:

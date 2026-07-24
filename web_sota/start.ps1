@@ -38,7 +38,7 @@ if ($portState.Reuse) { return }
 
 # 2. Setup
 Set-Location $PSScriptRoot
-if (-not (Test-Path "node_modules")) { npm install }
+if (-not (Test-Path "node_modules")) { bun install }
 uv sync
 
 # 3. Start the Python backend (Background)

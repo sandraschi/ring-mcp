@@ -48,7 +48,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="dashboard">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">
@@ -61,12 +61,13 @@ export function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-slate-800 bg-slate-950/50">
+        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-backend">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Backend
             </CardTitle>
             <Shield
+              data-testid="backend-dot"
               className={`h-4 w-4 ${isError ? "text-red-500" : backendOk ? "text-emerald-500" : "text-slate-500"}`}
             />
           </CardHeader>
@@ -90,7 +91,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50">
+        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-ring-account">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Ring account
@@ -116,7 +117,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50">
+        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-health-round-trip">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Health round-trip
@@ -133,7 +134,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50">
+        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-server-check-time">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Server check time
