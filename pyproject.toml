@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ring-mcp"
-version = "1.0.3"
+version = "1.0.4"
 description = "Ring Security Ecosystem MCP - Universal control for Ring doorbell, burglar alarm, fire alarm, and cameras"
 authors = [
     {name = "Sandra", email = "sandraschipal@gmail.com"}
