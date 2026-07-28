@@ -1,5 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { type RingDevice, api } from "@/lib/api";
 import {
   Activity,
   CheckCircle,
@@ -11,6 +9,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api, type RingDevice } from "@/lib/api";
 
 interface ToolCard {
   name: string;

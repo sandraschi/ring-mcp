@@ -1,4 +1,3 @@
-import { cn } from "@/common/utils";
 import {
   Activity,
   Bot,
@@ -16,6 +15,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/common/utils";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -59,7 +59,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           data-testid="sidebar-toggle"
           className="flex items-center justify-center rounded-md p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
         >
-          {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          {collapsed ? (
+            <ChevronRight className="h-5 w-5" />
+          ) : (
+            <ChevronLeft className="h-5 w-5" />
+          )}
         </button>
       </div>
 

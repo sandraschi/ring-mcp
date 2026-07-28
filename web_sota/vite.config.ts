@@ -1,5 +1,5 @@
-import path from "path";
 import react from "@vitejs/plugin-react";
+import path from "path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['goliath'],
+    allowedHosts: ["goliath"],
     port: 10728,
     strictPort: true,
     host: "127.0.0.1",
@@ -20,5 +20,5 @@ export default defineConfig({
       "/openapi.json": { target: "http://127.0.0.1:10729", changeOrigin: true },
       "/redoc": { target: "http://127.0.0.1:10729", changeOrigin: true },
     },
-  }
+  },
 });

@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Box, ExternalLink, Grid, Loader2, Wifi, WifiOff } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AppEntry {
   name: string;
@@ -64,7 +64,7 @@ export function Apps() {
     scan();
     const interval = setInterval(scan, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [scan]);
 
   const onlineCount = Object.values(statuses).filter(Boolean).length;
 

@@ -1,0 +1,377 @@
+src\common\apps-catalog.ts:15:9 lint/suspicious/noExplicitAny ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Unexpected any. Specify a different type.
+  
+    13 Ôöé   label: string;
+    14 Ôöé   description: string;
+  > 15 Ôöé   icon: any;
+       Ôöé         ^^^
+    16 Ôöé   url: string; // Absolute URL for cross-app navigation
+    17 Ôöé   port: number;
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+
+src\components\layout\topbar.tsx:35:13 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    33 Ôöé         <DropdownMenu.Root>
+    34 Ôöé           <DropdownMenu.Trigger asChild>
+  > 35 Ôöé             <button className="flex items-center gap-2 rounded-md border border-slate-800 bg-slate-900/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700">
+       Ôöé             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    36 Ôöé               <LayoutGrid className="h-4 w-4" />
+    37 Ôöé               Apps
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\components\layout\topbar.tsx:69:9 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    67 Ôöé         </DropdownMenu.Root>
+    68 Ôöé 
+  > 69 Ôöé         <button className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-800 bg-slate-900/50 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+       Ôöé         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    70 Ôöé           <HelpCircle className="h-4 w-4" />
+    71 Ôöé         </button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\main.tsx:13:21 lint/style/noNonNullAssertion ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Forbidden non-null assertion.
+  
+    11 Ôöé });
+    12 Ôöé 
+  > 13 Ôöé ReactDOM.createRoot(document.getElementById("root")!).render(
+       Ôöé                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    14 Ôöé   <React.StrictMode>
+    15 Ôöé     <QueryClientProvider client={queryClient}>
+  
+
+src\pages\api-docs.tsx:50:13 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    48 Ôöé         <div className="flex items-center gap-2">
+    49 Ôöé           <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
+  > 50 Ôöé             <button
+       Ôöé             ^^^^^^^
+  > 51 Ôöé               onClick={() => setView("swagger")}
+  > 52 Ôöé               className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "swagger" ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+  > 53 Ôöé             >
+       Ôöé             ^
+    54 Ôöé               Swagger
+    55 Ôöé             </button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\pages\api-docs.tsx:56:13 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    54 Ôöé               Swagger
+    55 Ôöé             </button>
+  > 56 Ôöé             <button
+       Ôöé             ^^^^^^^
+  > 57 Ôöé               onClick={() => setView("redoc")}
+  > 58 Ôöé               className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "redoc" ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+  > 59 Ôöé             >
+       Ôöé             ^
+    60 Ôöé               ReDoc
+    61 Ôöé             </button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\pages\api-docs.tsx:63:11 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    61 Ôöé             </button>
+    62 Ôöé           </div>
+  > 63 Ôöé           <button
+       Ôöé           ^^^^^^^
+  > 64 Ôöé             onClick={() => setIframeKey((k) => k + 1)}
+  > 65 Ôöé             className="p-1.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+  > 66 Ôöé             title="Refresh"
+  > 67 Ôöé           >
+       Ôöé           ^
+    68 Ôöé             <RefreshCw className="h-4 w-4" />
+    69 Ôöé           </button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\pages\chat.tsx:205:11 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    203 Ôöé             ))}
+    204 Ôöé           </select>
+  > 205 Ôöé           <button
+        Ôöé           ^^^^^^^
+  > 206 Ôöé             data-testid="chat-export"
+         ...
+  > 210 Ôöé             title="Export"
+  > 211 Ôöé           >
+        Ôöé           ^
+    212 Ôöé             <Download className="h-4 w-4" />
+    213 Ôöé           </button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\pages\chat.tsx:214:11 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    212 Ôöé             <Download className="h-4 w-4" />
+    213 Ôöé           </button>
+  > 214 Ôöé           <button
+        Ôöé           ^^^^^^^
+  > 215 Ôöé             data-testid="chat-clear"
+         ...
+  > 219 Ôöé             title="Clear"
+  > 220 Ôöé           >
+        Ôöé           ^
+    221 Ôöé             <Eraser className="h-4 w-4" />
+    222 Ôöé           </button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\pages\chat.tsx:341:19 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    339 Ôöé                 </span>
+    340 Ôöé                 {group.prompts.map((p) => (
+  > 341 Ôöé                   <button
+        Ôöé                   ^^^^^^^
+  > 342 Ôöé                     key={p}
+  > 343 Ôöé                     onClick={() => setInput(p)}
+  > 344 Ôöé                     className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded"
+  > 345 Ôöé                   >
+        Ôöé                   ^
+    346 Ôöé                     {p}
+    347 Ôöé                   </button>
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\pages\chat.tsx:370:15 lint/a11y/useButtonType ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! Provide an explicit type prop for the button element.
+  
+    368 Ôöé                 disabled={chatMutation.isPending}
+    369 Ôöé               />
+  > 370 Ôöé               <button
+        Ôöé               ^^^^^^^
+  > 371 Ôöé                 data-testid="chat-send"
+  > 372 Ôöé                 onClick={() => send()}
+  > 373 Ôöé                 disabled={chatMutation.isPending || !input.trim()}
+  > 374 Ôöé                 className="shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-md sm:self-end"
+  > 375 Ôöé               >
+        Ôöé               ^
+    376 Ôöé                 {chatMutation.isPending ? (
+    377 Ôöé                   <Loader2 className="h-4 w-4 animate-spin" />
+  
+  i The default type of a button is submit, which causes the submission of a form when placed inside a `form` element. This is likely not the behaviour that you want inside a React application.
+  
+  i Allowed button types are: submit, button or reset
+  
+
+src\pages\doorbell.tsx:129:11 lint/correctness/noUnusedVariables ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ! This interface RingSummary is unused.
+  
+    127 Ôöé }
+    128 Ôöé 
+  > 129 Ôöé interface RingSummary {
+        Ôöé           ^^^^^^^^^^^
+    130 Ôöé   doorbells?: RingDevice[];
+    131 Ôöé   recent_events?: Array<{
+  
+  i Unused variables are often the result of typos, incomplete refactors, or other sources of bugs.
+  
+
+src\lib\useRingWebRTC.ts:33:42 lint/suspicious/useIterableCallbackReturn ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ├ù This callback passed to forEach() iterable method should not return a value.
+  
+    31 Ôöé     }
+    32 Ôöé     if (localStreamRef.current) {
+  > 33 Ôöé       localStreamRef.current.getTracks().forEach((t) => t.stop());
+       Ôöé                                          ^^^^^^^
+    34 Ôöé       localStreamRef.current = null;
+    35 Ôöé     }
+  
+  i Either remove this return or remove the returned value.
+  
+    31 Ôöé     }
+    32 Ôöé     if (localStreamRef.current) {
+  > 33 Ôöé       localStreamRef.current.getTracks().forEach((t) => t.stop());
+       Ôöé                                                         ^^^^^^^^
+    34 Ôöé       localStreamRef.current = null;
+    35 Ôöé     }
+  
+
+src\lib\useRingWebRTC.ts:146:49 lint/suspicious/useIterableCallbackReturn ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ├ù This callback passed to forEach() iterable method should not return a value.
+  
+    144 Ôöé       }
+    145 Ôöé       if (localStreamRef.current) {
+  > 146 Ôöé         localStreamRef.current.getAudioTracks().forEach((t) => t.stop());
+        Ôöé                                                 ^^^^^^^
+    147 Ôöé         localStreamRef.current = null;
+    148 Ôöé       }
+  
+  i Either remove this return or remove the returned value.
+  
+    144 Ôöé       }
+    145 Ôöé       if (localStreamRef.current) {
+  > 146 Ôöé         localStreamRef.current.getAudioTracks().forEach((t) => t.stop());
+        Ôöé                                                                ^^^^^^^^
+    147 Ôöé         localStreamRef.current = null;
+    148 Ôöé       }
+  
+
+src\pages\apps.tsx:67:7 lint/correctness/useExhaustiveDependencies ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ├ù scan changes on every re-render and should not be used as a hook dependency.
+  
+    65 Ôöé     const interval = setInterval(scan, 30000);
+    66 Ôöé     return () => clearInterval(interval);
+  > 67 Ôöé   }, [scan]);
+       Ôöé       ^^^^
+    68 Ôöé 
+    69 Ôöé   const onlineCount = Object.values(statuses).filter(Boolean).length;
+  
+  i To fix this, wrap the definition of scan in its own useCallback() hook.
+  
+
+src\pages\chat.tsx:293:25 lint/suspicious/noArrayIndexKey ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ├ù Avoid using the index of an array as key property in an element.
+  
+    291 Ôöé             ) : null}
+    292 Ôöé             {turns.map((turn, i) => (
+  > 293 Ôöé               <div key={i} className="flex gap-3">
+        Ôöé                         ^
+    294 Ôöé                 <div
+    295 Ôöé                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${turn.role === "user" ? "border-slate-700 bg-slate-800" : "border-blue-800 bg-blue-900/20"}`}
+  
+  i This is the source of the key value.
+  
+    290 Ôöé               </p>
+    291 Ôöé             ) : null}
+  > 292 Ôöé             {turns.map((turn, i) => (
+        Ôöé                               ^
+    293 Ôöé               <div key={i} className="flex gap-3">
+    294 Ôöé                 <div
+  
+  i The order of the items may change, and this also affects performances and component state.
+  
+  i Check the React documentation. 
+  
+
+src\pages\dashboard.tsx:194:37 lint/suspicious/noArrayIndexKey ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ├ù Avoid using the index of an array as key property in an element.
+  
+    192 Ôöé                 overviewLogs.map((e: LogEntry, i: number) => (
+    193 Ôöé                   <p
+  > 194 Ôöé                     key={`${e.ts}-${i}`}
+        Ôöé                                     ^
+    195 Ôöé                     className={`break-all leading-snug ${logLineTone(e.level)}`}
+    196 Ôöé                   >
+  
+  i This is the source of the key value.
+  
+    190 Ôöé                 </p>
+    191 Ôöé               ) : (
+  > 192 Ôöé                 overviewLogs.map((e: LogEntry, i: number) => (
+        Ôöé                                                ^
+    193 Ôöé                   <p
+    194 Ôöé                     key={`${e.ts}-${i}`}
+  
+  i The order of the items may change, and this also affects performances and component state.
+  
+  i Check the React documentation. 
+  
+
+src\pages\doorbell.tsx:50:13 lint/a11y/useMediaCaption ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ├ù Provide a track for captions when using audio or video elements.
+  
+    48 Ôöé         <div className="space-y-2">
+    49 Ôöé           <div className="relative overflow-hidden rounded-lg border border-slate-700 bg-black">
+  > 50 Ôöé             <video
+       Ôöé             ^^^^^^
+  > 51 Ôöé               ref={videoRef}
+  > 52 Ôöé               autoPlay
+  > 53 Ôöé               playsInline
+  > 54 Ôöé               className="aspect-video w-full object-contain"
+  > 55 Ôöé             />
+       Ôöé             ^^
+    56 Ôöé             {streamState === "connecting" && (
+    57 Ôöé               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+  
+  i Captions support users with hearing-impairments. They should be a transcription or translation of the dialogue, sound effects, musical cues, and other relevant audio information.
+  
+
+src\pages\doorbell.tsx:234:49 lint/suspicious/noArrayIndexKey ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ├ù Avoid using the index of an array as key property in an element.
+  
+    232 Ôöé                 <ul className="space-y-1 text-sm text-slate-400">
+    233 Ôöé                   {ringEvents.slice(0, 10).map((ev, i) => (
+  > 234 Ôöé                     <li key={`${ev.timestamp}-${i}`}>
+        Ôöé                                                 ^
+    235 Ôöé                       {ev.device_name ?? "Doorbell"} \u00b7{" "}
+    236 Ôöé                       {ev.event_type ?? "event"}
+  
+  i This is the source of the key value.
+  
+    231 Ôöé               <CardContent>
+    232 Ôöé                 <ul className="space-y-1 text-sm text-slate-400">
+  > 233 Ôöé                   {ringEvents.slice(0, 10).map((ev, i) => (
+        Ôöé                                                     ^
+    234 Ôöé                     <li key={`${ev.timestamp}-${i}`}>
+    235 Ôöé                       {ev.device_name ?? "Doorbell"} \u00b7{" "}
+  
+  i The order of the items may change, and this also affects performances and component state.
+  
+  i Check the React documentation. 
+  
+
+[0m[36mChecked 31 files in 121[0m[0m[2m[36mms[0m[0m[36m.[0m[0m[36m No fixes applied.[0m[0m
+[0m[0m[31mFound [0m[0m[31m7[0m[0m[31m errors.[0m[0m
+[0m[0m[33mFound [0m[0m[33m12[0m[0m[33m warnings.[0m
+ci ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü
+
+  ├ù Some errors were emitted while running checks.
+  
+

@@ -320,7 +320,7 @@ class TestRealDeviceWorkflows:
             }
 
         # Step 3: Validate inspection results
-        for device_id, result in inspection_results.items():
+        for _device_id, result in inspection_results.items():
             assert result["online"], f"Device {result['name']} should be online"
             assert result["firmware"], f"Device {result['name']} should have firmware info"
 

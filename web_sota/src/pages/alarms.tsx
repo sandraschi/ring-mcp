@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { type RingDevice, api } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw, Shield, ShieldOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api, type RingDevice } from "@/lib/api";
 
 function useDevices() {
   return useQuery({
@@ -125,9 +125,19 @@ export function Alarms() {
                 {device.name}
               </CardTitle>
               {device.online ? (
-                <span className="text-emerald-500 text-xs" data-testid="alarm-status">Online</span>
+                <span
+                  className="text-emerald-500 text-xs"
+                  data-testid="alarm-status"
+                >
+                  Online
+                </span>
               ) : (
-                <span className="text-slate-500 text-xs" data-testid="alarm-status">Offline</span>
+                <span
+                  className="text-slate-500 text-xs"
+                  data-testid="alarm-status"
+                >
+                  Offline
+                </span>
               )}
             </CardHeader>
             <CardContent className="space-y-4">

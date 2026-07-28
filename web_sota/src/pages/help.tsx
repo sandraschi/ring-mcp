@@ -1,6 +1,6 @@
+import { Book, Code, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { Book, Code, Info } from "lucide-react";
 
 const RING_MCP_VERSION = "1.0.3";
 const FASTMCP_TARGET = "3.2+";

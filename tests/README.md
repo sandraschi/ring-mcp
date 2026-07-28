@@ -132,6 +132,7 @@ events = TestDataGenerator.generate_event_list("device-123", count=10)
 ```python
 from tests.conftest import mock_ring_client
 
+
 async def test_my_function(mock_ring_client):
     devices = await mock_ring_client.get_devices()
     # Mock returns pre-configured test data
@@ -175,6 +176,7 @@ def test_with_mock_data(mock_device_data):
     """Access comprehensive mock device data"""
     assert len(mock_device_data) >= 8
 
+
 def test_with_real_devices(real_devices):
     """Access real devices (skipped in mock mode)"""
     for device in real_devices:
@@ -186,13 +188,7 @@ def test_with_real_devices(real_devices):
 @pytest.fixture
 def sample_doorbell():
     """Single doorbell device for testing"""
-    return {
-        "id": "doorbell-001",
-        "name": "Front Door",
-        "type": "doorbell",
-        "online": True,
-        "battery_life": 85
-    }
+    return {"id": "doorbell-001", "name": "Front Door", "type": "doorbell", "online": True, "battery_life": 85}
 ```
 
 ## Performance Testing
@@ -202,15 +198,10 @@ def sample_doorbell():
 from tests.test_utilities import PerformanceTester
 
 # Measure operation performance
-duration, result = await PerformanceTester.measure_operation_time(
-    mock_ring_client.get_devices
-)
+duration, result = await PerformanceTester.measure_operation_time(mock_ring_client.get_devices)
 
 # Run multiple iterations
-results = await PerformanceTester.benchmark_operation(
-    mock_ring_client.get_devices,
-    iterations=10
-)
+results = await PerformanceTester.benchmark_operation(mock_ring_client.get_devices, iterations=10)
 print(f"Average time: {results['avg_time']:.3f}s")
 ```
 
@@ -218,9 +209,7 @@ print(f"Average time: {results['avg_time']:.3f}s")
 ```python
 # Test concurrent device operations
 results = await PerformanceTester.test_concurrent_operations(
-    mock_ring_client.get_device,
-    concurrency=5,
-    device_ids=["device-1", "device-2", "device-3", "device-4", "device-5"]
+    mock_ring_client.get_device, concurrency=5, device_ids=["device-1", "device-2", "device-3", "device-4", "device-5"]
 )
 ```
 
@@ -258,9 +247,11 @@ data = TestDataManager.load_test_data("my_scenario.json")
 async def test_requires_real_devices(real_ring_client):
     """Only runs when real Ring devices are available"""
 
+
 @pytest.mark.mock_only
 def test_mock_functionality_only():
     """Only runs in mock mode"""
+
 
 @pytest.mark.integration
 async def test_full_integration():

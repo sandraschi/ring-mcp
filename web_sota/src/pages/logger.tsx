@@ -1,10 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
+import { Pause, Play, RefreshCw, ScrollText } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
-import { Pause, Play, RefreshCw, ScrollText } from "lucide-react";
-import { useState } from "react";
 
 export function Logger() {
   const [paused, setPaused] = useState(false);

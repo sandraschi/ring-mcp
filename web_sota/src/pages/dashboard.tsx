@@ -1,8 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { type HealthResponse, type LogEntry, api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, HardDrive, KeyRound, Shield, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api, type HealthResponse, type LogEntry } from "@/lib/api";
 
 function logLineTone(level: string): string {
   const u = level.toUpperCase();
@@ -61,7 +61,10 @@ export function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-backend">
+        <Card
+          className="border-slate-800 bg-slate-950/50"
+          data-testid="kpi-backend"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Backend
@@ -91,7 +94,10 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-ring-account">
+        <Card
+          className="border-slate-800 bg-slate-950/50"
+          data-testid="kpi-ring-account"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Ring account
@@ -117,7 +123,10 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-health-round-trip">
+        <Card
+          className="border-slate-800 bg-slate-950/50"
+          data-testid="kpi-health-round-trip"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Health round-trip
@@ -134,7 +143,10 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50" data-testid="kpi-server-check-time">
+        <Card
+          className="border-slate-800 bg-slate-950/50"
+          data-testid="kpi-server-check-time"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Server check time

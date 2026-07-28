@@ -1,20 +1,18 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { type RingDevice, api } from "@/lib/api";
-import { useRingWebRTC } from "@/lib/useRingWebRTC";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertCircle,
   Bell,
   Loader2,
   Mic,
   MicOff,
   PhoneOff,
   RefreshCw,
-  Shield,
   Video,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api, type RingDevice } from "@/lib/api";
+import { useRingWebRTC } from "@/lib/useRingWebRTC";
 
 function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
   const [ts, setTs] = useState(Date.now());
@@ -61,9 +59,7 @@ function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
               </div>
             )}
           </div>
-          {webrtcError && (
-            <p className="text-xs text-red-400">{webrtcError}</p>
-          )}
+          {webrtcError && <p className="text-xs text-red-400">{webrtcError}</p>}
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -111,16 +107,15 @@ function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
               size="sm"
               variant="outline"
               className="border-slate-700 text-slate-300 hover:bg-slate-800"
-              onClick={() => { setTs(Date.now()); setFailed(false); }}
+              onClick={() => {
+                setTs(Date.now());
+                setFailed(false);
+              }}
             >
               <RefreshCw className="mr-1 h-3 w-3" />
               Refresh
             </Button>
-            <Button
-              size="sm"
-              variant="default"
-              onClick={handleStartLive}
-            >
+            <Button size="sm" variant="default" onClick={handleStartLive}>
               <Video className="mr-1 h-3 w-3" />
               Live view
             </Button>
@@ -152,12 +147,20 @@ export function Doorbell() {
 
   const devices = (devicesData?.devices ?? []).filter((d) => {
     const t = (d.type ?? "").toLowerCase();
-    return t === "doorbell" || t.includes("doorbell") || t.includes("doorbot") || t.includes("stickup") || t === "camera";
+    return (
+      t === "doorbell" ||
+      t.includes("doorbell") ||
+      t.includes("doorbot") ||
+      t.includes("stickup") ||
+      t === "camera"
+    );
   });
 
   const loadEvents = useCallback(async () => {
     try {
-      const r = await fetch(`${api.getBaseUrl()}/api/v1/devices/${devices[0]?.id ?? ""}/events?limit=10`);
+      const r = await fetch(
+        `${api.getBaseUrl()}/api/v1/devices/${devices[0]?.id ?? ""}/events?limit=10`,
+      );
       if (r.ok) {
         const data = await r.json();
         setRingEvents(data.events ?? []);
@@ -174,7 +177,9 @@ export function Doorbell() {
   return (
     <div className="space-y-6" data-testid="doorbell-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Doorbell & Camera</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-white">
+          Doorbell & Camera
+        </h1>
       </div>
 
       {isLoading ? (
@@ -185,13 +190,19 @@ export function Doorbell() {
       ) : devices.length === 0 ? (
         <Card className="border-slate-800 bg-slate-950/50">
           <CardContent className="pt-6">
-            <p className="text-slate-400">No doorbells or cameras found. Configure Ring in Settings.</p>
+            <p className="text-slate-400">
+              No doorbells or cameras found. Configure Ring in Settings.
+            </p>
           </CardContent>
         </Card>
       ) : (
         <>
           {devices.map((d, i) => (
-            <Card key={d.id} className="border-slate-800 bg-slate-950/50" data-testid={`camera-${i}`}>
+            <Card
+              key={d.id}
+              className="border-slate-800 bg-slate-950/50"
+              data-testid={`camera-${i}`}
+            >
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white flex items-center gap-2">
@@ -213,14 +224,19 @@ export function Doorbell() {
           {ringEvents.length > 0 && (
             <Card className="border-slate-800 bg-slate-950/50">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base text-white">Recent events</CardTitle>
+                <CardTitle className="text-base text-white">
+                  Recent events
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-1 text-sm text-slate-400">
                   {ringEvents.slice(0, 10).map((ev, i) => (
                     <li key={`${ev.timestamp}-${i}`}>
-                      {ev.device_name ?? "Doorbell"} \u00b7 {ev.event_type ?? "event"}
-                      {ev.timestamp ? ` \u00b7 ${new Date(ev.timestamp).toLocaleTimeString()}` : ""}
+                      {ev.device_name ?? "Doorbell"} \u00b7{" "}
+                      {ev.event_type ?? "event"}
+                      {ev.timestamp
+                        ? ` \u00b7 ${new Date(ev.timestamp).toLocaleTimeString()}`
+                        : ""}
                     </li>
                   ))}
                 </ul>

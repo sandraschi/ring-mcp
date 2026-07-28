@@ -1,12 +1,15 @@
 "use client";
 
-import { APPS_CATALOG } from "@/common/apps-catalog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ExternalLink, HelpCircle, LayoutGrid } from "lucide-react";
+import { APPS_CATALOG } from "@/common/apps-catalog";
 
 export function Topbar() {
   return (
-    <header className="flex h-14 items-center justify-between border-b border-slate-800 bg-slate-950/50 px-6 backdrop-blur-xl" data-testid="topbar">
+    <header
+      className="flex h-14 items-center justify-between border-b border-slate-800 bg-slate-950/50 px-6 backdrop-blur-xl"
+      data-testid="topbar"
+    >
       <div className="flex items-center gap-4">
         <h1 className="text-sm font-medium text-slate-400">
           Navigation / <span className="text-slate-100">Control Center</span>
@@ -18,7 +21,10 @@ export function Topbar() {
         <div className="mr-4 flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-500 border border-emerald-500/20">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" data-testid="backend-dot"></span>
+            <span
+              className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"
+              data-testid="backend-dot"
+            ></span>
           </span>
           System Online
         </div>

@@ -1,3 +1,9 @@
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from "react-router-dom";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Alarms } from "@/pages/alarms";
 import { ApiDocsPage } from "@/pages/api-docs";
@@ -10,12 +16,6 @@ import { Logger } from "@/pages/logger";
 import { Settings } from "@/pages/settings";
 import { Status } from "@/pages/status";
 import { Tools } from "@/pages/tools";
-import {
-  Navigate,
-  Route,
-  BrowserRouter as Router,
-  Routes,
-} from "react-router-dom";
 
 function App() {
   return (
