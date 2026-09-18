@@ -30,18 +30,11 @@ lock:
 
 # Ruff lint (Python) + Biome CI (web_sota)
 lint:
-    Set-Location '{{justfile_directory()}}'
-    uv run ruff check .
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx @biomejs/biome ci .
+    Set-Location '{{justfile_directory()}}'; uv run ruff check .; Set-Location '{{justfile_directory()}}\web_sota'; npx @biomejs/biome ci .
 
 # Ruff fix/format + Biome write (web_sota)
 fix:
-    Set-Location '{{justfile_directory()}}'
-    uv run ruff check . --fix --unsafe-fixes
-    uv run ruff format .
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx @biomejs/biome check --write .
+    Set-Location '{{justfile_directory()}}'; uv run ruff check . --fix --unsafe-fixes; uv run ruff format .; Set-Location '{{justfile_directory()}}\web_sota'; npx @biomejs/biome check --write .
 
 # --- Test ---
 
@@ -79,8 +72,7 @@ devices-env:
 
 # Fleet UI: Vite 10728 + REST API 10729 (see web_sota\start.ps1)
 dev:
-    Set-Location '{{justfile_directory()}}\web_sota'
-    .\start.ps1
+    Set-Location '{{justfile_directory()}}\web_sota'; .\start.ps1
 
 # REST API only (fleet default port 10729 via PORT env)
 dev-http:
@@ -96,13 +88,11 @@ serve:
 
 # Run webapp (Vite dev)
 serve-web:
-    Set-Location '{{justfile_directory()}}\web_sota'
-    bun run dev
+    Set-Location '{{justfile_directory()}}\web_sota'; bun run dev
 
 # Build webapp
 build-web:
-    Set-Location '{{justfile_directory()}}\web_sota'
-    bun run build
+    Set-Location '{{justfile_directory()}}\web_sota'; bun run build
 
 
 # --- Docker ---
