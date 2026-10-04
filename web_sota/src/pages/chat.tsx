@@ -249,7 +249,7 @@ export function Chat() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Local AI chat
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-300">
             Browser \u2192 this API \u2192 Ollama{" "}
             <span className="font-mono text-slate-300">127.0.0.1:11434</span>{" "}
             <span className="font-mono text-slate-300">
@@ -259,12 +259,12 @@ export function Chat() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">
+          <span className="text-sm text-slate-300 bg-slate-800 px-2 py-1 rounded">
             skill:ring-expert
           </span>
           <select
             data-testid="personality-select"
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-slate-200"
             value={personality}
             onChange={(e) => setPersonality(e.target.value)}
           >
@@ -279,7 +279,7 @@ export function Chat() {
             data-testid="chat-export"
             onClick={exportChat}
             disabled={turns.length === 0}
-            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 disabled:opacity-30"
+            className="p-1.5 rounded hover:bg-slate-800 text-slate-300 disabled:opacity-30"
             title="Export"
           >
             <Download className="h-4 w-4" />
@@ -289,7 +289,7 @@ export function Chat() {
             data-testid="chat-clear"
             onClick={clearChat}
             disabled={turns.length === 0}
-            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 disabled:opacity-30"
+            className="p-1.5 rounded hover:bg-slate-800 text-slate-300 disabled:opacity-30"
             title="Clear"
           >
             <Eraser className="h-4 w-4" />
@@ -309,7 +309,7 @@ export function Chat() {
           <AlertCircle className="h-4 w-4 shrink-0" />
           {modelsErr}
           {base ? (
-            <span className="text-slate-400">
+            <span className="text-slate-300">
               {" "}
               (<span className="font-mono">{base}</span>)
             </span>
@@ -319,11 +319,11 @@ export function Chat() {
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500" htmlFor="llm-model">
+          <label className="text-sm text-slate-300" htmlFor="llm-model">
             Model
           </label>
           {llmStatus === "probing" ? (
-            <span className="text-sm text-slate-500">Loading models…</span>
+            <span className="text-sm text-slate-300">Loading modelsâ€¦</span>
           ) : llmModels.length > 0 ? (
             <select
               id="llm-model"
@@ -358,7 +358,7 @@ export function Chat() {
             className="flex-1 overflow-y-auto p-4 space-y-4"
           >
             {turns.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-300">
                 Ask about Ring setup, API routes, or debugging. Messages go to
                 your local LLM only (not Ring servers).
               </p>
@@ -369,7 +369,7 @@ export function Chat() {
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${turn.role === "user" ? "border-slate-700 bg-slate-800" : "border-blue-800 bg-blue-900/20"}`}
                 >
                   {turn.role === "user" ? (
-                    <User className="h-4 w-4 text-slate-400" />
+                    <User className="h-4 w-4 text-slate-300" />
                   ) : (
                     <Bot className="h-4 w-4 text-blue-400" />
                   )}
@@ -391,9 +391,9 @@ export function Chat() {
               </div>
             ))}
             {streaming ? (
-              <div className="flex items-center gap-2 pl-11 text-sm text-slate-500">
+              <div className="flex items-center gap-2 pl-11 text-sm text-slate-300">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Thinking…
+                Thinkingâ€¦
               </div>
             ) : null}
             <div ref={bottomRef} />
@@ -408,7 +408,7 @@ export function Chat() {
                 key={group.group}
                 className="flex flex-wrap items-center gap-1"
               >
-                <span className="text-xs text-slate-500 mr-1">
+                <span className="text-sm text-slate-300 mr-1">
                   {group.group}:
                 </span>
                 {group.prompts.map((p) => (
@@ -416,7 +416,7 @@ export function Chat() {
                     type="button"
                     key={p}
                     onClick={() => setInput(p)}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded"
+                    className="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded"
                   >
                     {p}
                   </button>

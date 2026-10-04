@@ -49,7 +49,7 @@ export function Alarms() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Ring Alarm
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-300">
             Base station / burglar alarm via{" "}
             <span className="text-slate-300">ring-mqtt</span> (MQTT) or legacy
             Ring API when available
@@ -86,7 +86,7 @@ export function Alarms() {
       {!error && devices.length === 0 && !isLoading && (
         <Card className="border-slate-800 bg-slate-950/50">
           <CardContent className="pt-6 space-y-3">
-            <p className="text-slate-400">
+            <p className="text-slate-300">
               To control the Ring Alarm{" "}
               <span className="text-slate-300">base station</span> here, run{" "}
               <a
@@ -126,14 +126,14 @@ export function Alarms() {
               </CardTitle>
               {device.online ? (
                 <span
-                  className="text-emerald-500 text-xs"
+                  className="text-emerald-500 text-sm"
                   data-testid="alarm-status"
                 >
                   Online
                 </span>
               ) : (
                 <span
-                  className="text-slate-500 text-xs"
+                  className="text-slate-300 text-sm"
                   data-testid="alarm-status"
                 >
                   Offline
@@ -142,10 +142,10 @@ export function Alarms() {
             </CardHeader>
             <CardContent className="space-y-4">
               {device.model && (
-                <p className="text-slate-400 text-sm">{device.model}</p>
+                <p className="text-slate-300 text-sm">{device.model}</p>
               )}
               {device.mqtt_state && (
-                <p className="text-slate-500 text-xs font-mono">
+                <p className="text-slate-300 text-xs font-mono">
                   State: {device.mqtt_state}
                 </p>
               )}

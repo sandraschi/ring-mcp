@@ -113,11 +113,11 @@ export function Apps() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             App Hub
           </h2>
-          <p className="text-slate-400" data-testid="apps-summary">
-            {scanning ? "Scanning…" : `${onlineCount}/${peers.length} online`}
+          <p className="text-slate-300" data-testid="apps-summary">
+            {scanning ? "Scanningâ€¦" : `${onlineCount}/${peers.length} online`}
           </p>
           <p
-            className="font-mono text-xs text-slate-500"
+            className="font-mono text-xs text-slate-300"
             data-testid="apps-hub-source"
           >
             source: {hubSource === "fleet" ? "fleet-hub" : "local-probe"}
@@ -147,7 +147,7 @@ export function Apps() {
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   {checking ? (
-                    <Loader2 className="h-4 w-4 text-slate-500 animate-spin" />
+                    <Loader2 className="h-4 w-4 text-slate-300 animate-spin" />
                   ) : online ? (
                     <Wifi className="h-4 w-4 text-green-500" />
                   ) : (
@@ -159,16 +159,16 @@ export function Apps() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-slate-400 mb-4">{app.description}</p>
-                <div className="flex items-center text-xs font-medium">
+                <p className="text-sm text-slate-300 mb-4">{app.description}</p>
+                <div className="flex items-center text-sm font-medium">
                   {online ? (
                     <span className="text-green-400">
                       localhost:{app.port}{" "}
                       <ExternalLink className="h-3 w-3 ml-1 inline" />
                     </span>
                   ) : (
-                    <span className="text-slate-500">
-                      localhost:{app.port} — offline
+                    <span className="text-slate-300">
+                      localhost:{app.port} â€” offline
                     </span>
                   )}
                 </div>
@@ -184,7 +184,7 @@ export function Apps() {
           <h3 className="text-sm font-medium text-slate-300">
             Auto-refresh every 30s
           </h3>
-          <p className="text-xs text-slate-500 max-w-sm">
+          <p className="text-sm text-slate-300 max-w-sm">
             Ports are probed via HTTP health checks. Green = reachable, red = no
             response.
           </p>

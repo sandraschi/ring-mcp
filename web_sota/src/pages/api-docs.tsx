@@ -41,7 +41,7 @@ export function ApiDocsPage() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             API Docs
           </h2>
-          <p className="text-zinc-400">
+          <p className="text-zinc-300">
             FastAPI Swagger UI and ReDoc documentation
           </p>
         </div>
@@ -51,7 +51,7 @@ export function ApiDocsPage() {
               type="button"
               data-testid="api-docs-swagger"
               onClick={() => setView("swagger")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "swagger" ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+              className={`px-3 py-1.5 text-sm font-medium transition-colors ${view === "swagger" ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-300 hover:text-white"}`}
             >
               Swagger
             </button>
@@ -59,7 +59,7 @@ export function ApiDocsPage() {
               type="button"
               data-testid="api-docs-redoc"
               onClick={() => setView("redoc")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "redoc" ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+              className={`px-3 py-1.5 text-sm font-medium transition-colors ${view === "redoc" ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-300 hover:text-white"}`}
             >
               ReDoc
             </button>
@@ -67,7 +67,7 @@ export function ApiDocsPage() {
           <button
             type="button"
             onClick={() => setIframeKey((k) => k + 1)}
-            className="p-1.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
             title="Refresh"
           >
             <RefreshCw className="h-4 w-4" />
@@ -76,7 +76,7 @@ export function ApiDocsPage() {
             href={iframeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-zinc-800 text-zinc-300 text-xs font-medium hover:bg-zinc-700 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 transition-colors"
             data-testid="open-in-browser"
           >
             <ExternalLink className="h-3.5 w-3.5" /> Open in browser
@@ -87,10 +87,10 @@ export function ApiDocsPage() {
         {ENDPOINTS.map((ep) => (
           <div
             key={ep.path}
-            className="flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-xs"
+            className="flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-sm"
           >
             <MethodBadge method={ep.method} />
-            <span className="text-zinc-400 font-mono text-[11px]">
+            <span className="text-zinc-300 font-mono text-[11px]">
               {ep.path}
             </span>
           </div>

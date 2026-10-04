@@ -60,7 +60,7 @@ function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
               </div>
             )}
           </div>
-          {webrtcError && <p className="text-xs text-red-400">{webrtcError}</p>}
+          {webrtcError && <p className="text-sm text-red-400">{webrtcError}</p>}
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -91,7 +91,7 @@ function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
         <>
           <div className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
             {failed ? (
-              <div className="flex aspect-video items-center justify-center text-sm text-slate-500">
+              <div className="flex aspect-video items-center justify-center text-sm text-slate-300">
                 Snapshot unavailable
               </div>
             ) : (
@@ -180,14 +180,14 @@ export function Doorbell() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 text-slate-400 py-8">
+        <div className="flex items-center gap-2 text-slate-300 py-8">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading devices...
         </div>
       ) : devices.length === 0 ? (
         <Card className="border-slate-800 bg-slate-950/50">
           <CardContent className="pt-6">
-            <p className="text-slate-400">
+            <p className="text-slate-300">
               No doorbells or cameras found. Configure Ring in Settings.
             </p>
           </CardContent>
@@ -203,10 +203,10 @@ export function Doorbell() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-slate-400" />
+                    <Bell className="h-5 w-5 text-slate-300" />
                     {d.name ?? d.id}
                   </CardTitle>
-                  <span className="text-sm text-slate-400">
+                  <span className="text-sm text-slate-300">
                     {d.online === false ? "offline" : "online"}
                     {d.battery_life != null ? ` \u00b7 ${d.battery_life}%` : ""}
                   </span>
@@ -226,7 +226,7 @@ export function Doorbell() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-1 text-sm text-slate-400">
+                <ul className="space-y-1 text-sm text-slate-300">
                   {ringEvents.slice(0, 10).map((ev) => (
                     <li
                       key={`${ev.timestamp}-${ev.device_name}-${ev.event_type}`}
