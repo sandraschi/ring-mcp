@@ -17,6 +17,42 @@ logger = logging.getLogger(__name__)
 
 _READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
+_HEALTH_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "overall_health_score": {"type": "integer"},
+        "device_count": {"type": "integer"},
+        "healthy_devices": {"type": "integer"},
+        "devices_with_issues": {"type": "integer"},
+        "offline_devices": {"type": "array"},
+        "low_battery_devices": {"type": "array"},
+        "maintenance_alerts": {"type": "array"},
+        "performance_metrics": {"type": "object"},
+        "recommendations": {"type": "array"},
+        "health_check_timestamp": {"type": "string"},
+    },
+}
+
+_ACTIVITY_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "live_activity": {"type": "array"},
+        "activity_count": {"type": "integer"},
+        "activity_summary": {"type": "object"},
+        "active_alerts": {"type": "array"},
+        "system_status": {"type": "string"},
+        "monitoring_timestamp": {"type": "string"},
+    },
+}
+
 
 def register_tools(app: FastMCP) -> None:
     """Register monitoring and health check tools with the FastMCP application.
@@ -28,6 +64,7 @@ def register_tools(app: FastMCP) -> None:
         name="monitor_system_health",
         description="Perform comprehensive health check of entire Ring security system",
         annotations=_READ_ONLY,
+        output_schema=_HEALTH_SCHEMA,
     )
     async def monitor_system_health() -> dict[str, Any]:
         """Perform comprehensive health check of entire Ring security system.
@@ -135,6 +172,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_real_time_activity",
         description="Get real-time activity feed from all Ring devices",
         annotations=_READ_ONLY,
+        output_schema=_ACTIVITY_SCHEMA,
     )
     async def get_real_time_activity() -> dict[str, Any]:
         """Get real-time activity feed from all Ring devices.

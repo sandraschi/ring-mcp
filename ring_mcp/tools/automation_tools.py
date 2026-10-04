@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal
 
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 from pydantic import Field
 
 from ..core.ring_client_modern import RingClient
@@ -18,6 +18,57 @@ logger = logging.getLogger(__name__)
 
 _MUTATING = {"readOnlyHint": False, "idempotentHint": False}
 _DESTRUCTIVE = {"readOnlyHint": False, "idempotentHint": False, "destructiveHint": True}
+
+_CREATE_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "automation_id": {"type": "string"},
+        "automation_name": {"type": "string"},
+        "rule_configuration": {"type": "object"},
+        "test_result": {"type": "object"},
+        "activation_schedule": {"type": "string"},
+        "status": {"type": "string"},
+    },
+}
+
+_EMERGENCY_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "incident_id": {"type": "string"},
+        "protocol_activated": {"type": "boolean"},
+        "activation_time": {"type": "string"},
+        "emergency_mode": {"type": "string"},
+        "activated_measures": {"type": "array"},
+        "emergency_contacts_notified": {"type": "array"},
+        "system_lockdown_status": {"type": "string"},
+        "devices_affected": {"type": "object"},
+    },
+}
+
+_SCHEDULE_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "schedule_id": {"type": "string"},
+        "timezone": {"type": "string"},
+        "schedule_active": {"type": "boolean"},
+        "schedule_summary": {"type": "object"},
+        "next_mode_change": {"type": "string"},
+        "conflict_warnings": {"type": "array"},
+        "created_at": {"type": "string"},
+    },
+}
 
 
 def register_tools(app: FastMCP) -> None:
@@ -30,6 +81,7 @@ def register_tools(app: FastMCP) -> None:
         name="create_security_automation",
         description="Create custom security automation rule with triggers and responses",
         annotations=_MUTATING,
+        output_schema=_CREATE_SCHEMA,
     )
     async def create_security_automation(
         trigger_type: Annotated[
@@ -40,6 +92,7 @@ def register_tools(app: FastMCP) -> None:
         response_actions: Annotated[list[dict[str, Any]], Field(description="Actions to execute when triggered.")],
         automation_name: Annotated[str, Field(description="Descriptive name for the automation rule.", min_length=1)],
         enabled: Annotated[bool, Field(description="Whether the automation is active.")] = True,
+        ctx: Context | None = None,
     ) -> dict[str, Any]:
         """Create custom security automation rule with triggers and responses.
 
@@ -62,6 +115,8 @@ def register_tools(app: FastMCP) -> None:
 
             # Validate automation configuration
             validation_result = await validate_automation_config(trigger_type, trigger_conditions, response_actions)
+            if ctx is not None:
+                await ctx.info(f"Automation validation: {'passed' if validation_result['valid'] else 'failed'}")
 
             if not validation_result["valid"]:
                 return {"success": False, "error": f"Invalid automation configuration: {validation_result['errors']}"}
@@ -97,8 +152,9 @@ def register_tools(app: FastMCP) -> None:
         name="trigger_emergency_protocol",
         description="Activate emergency security protocol with full system response",
         annotations=_DESTRUCTIVE,
+        output_schema=_EMERGENCY_SCHEMA,
     )
-    async def trigger_emergency_protocol() -> dict[str, Any]:
+    async def trigger_emergency_protocol(ctx: Context | None = None) -> dict[str, Any]:
         """Activate emergency security protocol with full system response.
 
         Arms online security devices and records the incident. Use only in
@@ -117,6 +173,8 @@ def register_tools(app: FastMCP) -> None:
 
                 incident_id = f"emergency_{int(datetime.now().timestamp())}"
                 activation_time = datetime.now().isoformat()
+                if ctx is not None:
+                    await ctx.warning(f"Emergency protocol {incident_id} activating")
 
                 # Categorize devices for emergency response
                 security_devices = []
@@ -136,15 +194,17 @@ def register_tools(app: FastMCP) -> None:
                 activated_measures = []
 
                 # Activate security systems
-                for device in security_devices:
+                targets = [d for d in security_devices if d.get("online", False)]
+                for n, device in enumerate(targets, start=1):
                     try:
                         # Arm all security devices if they're not already armed
-                        if device.get("online", False):
-                            await client.set_arm_status(device["id"], True)
-                            activated_measures.append(f"Armed security device: {device['name']}")
+                        await client.set_arm_status(device["id"], True)
+                        activated_measures.append(f"Armed security device: {device['name']}")
                     except Exception as e:
                         logger.error(f"Failed to arm {device['id']}: {e}")
                         activated_measures.append(f"Failed to arm {device['name']}: {e}")
+                    if ctx is not None:
+                        await ctx.report_progress(n, len(targets) + len(cameras))
 
                 # Activate cameras (in reality, this would trigger recording)
                 for camera in cameras:
@@ -188,10 +248,12 @@ def register_tools(app: FastMCP) -> None:
         name="schedule_security_modes",
         description="Configure time-based security mode scheduling for automated protection",
         annotations=_MUTATING,
+        output_schema=_SCHEDULE_SCHEMA,
     )
     async def schedule_security_modes(
         schedule_config: Annotated[dict[str, Any], Field(description="Scheduling configuration (modes + timeframes).")],
         timezone: Annotated[str, Field(description="IANA timezone for the schedule.", min_length=1)] = "Europe/Vienna",
+        ctx: Context | None = None,
     ) -> dict[str, Any]:
         """Configure time-based security mode scheduling for automated protection.
 
@@ -215,6 +277,10 @@ def register_tools(app: FastMCP) -> None:
 
             # Analyze schedule for conflicts and optimization
             schedule_summary = await analyze_schedule(schedule_config, timezone)
+            if ctx is not None:
+                await ctx.info(
+                    f"Schedule {schedule_id}: {schedule_summary.get('total_timeframes', 0)} timeframe(s) analyzed"
+                )
 
             # Calculate next mode change
             next_change = await calculate_next_mode_change(schedule_config, timezone)

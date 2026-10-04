@@ -17,6 +17,36 @@ logger = logging.getLogger(__name__)
 
 _READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
+_CAMERA_STATUS_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "cameras": {"type": "array"},
+        "total_cameras": {"type": "integer"},
+        "online_cameras": {"type": "integer"},
+        "cameras_with_issues": {"type": "integer"},
+        "last_updated": {"type": "string"},
+    },
+}
+
+_STREAMS_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "camera_streams": {"type": "array"},
+        "total_streams": {"type": "integer"},
+        "failed_cameras": {"type": "array"},
+        "total_failed": {"type": "integer"},
+        "stream_started_at": {"type": "string"},
+    },
+}
+
 
 def register_tools(app: FastMCP) -> None:
     """Register security camera management tools with the FastMCP application.
@@ -28,6 +58,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_camera_status",
         description="Get comprehensive status of all Ring security cameras",
         annotations=_READ_ONLY,
+        output_schema=_CAMERA_STATUS_SCHEMA,
     )
     async def get_camera_status() -> dict[str, Any]:
         """Get comprehensive status of all Ring security cameras.
@@ -97,6 +128,7 @@ def register_tools(app: FastMCP) -> None:
         name="stream_all_cameras",
         description="Start live streams from all available Ring cameras",
         annotations=_READ_ONLY,
+        output_schema=_STREAMS_SCHEMA,
     )
     async def stream_all_cameras() -> dict[str, Any]:
         """Report per-camera live-view readiness (WebRTC handoff).

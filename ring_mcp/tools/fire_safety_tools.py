@@ -17,6 +17,42 @@ logger = logging.getLogger(__name__)
 
 _READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
+_FIRE_STATUS_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "fire_alarms": {"type": "array"},
+        "total_alarms": {"type": "integer"},
+        "online_alarms": {"type": "integer"},
+        "system_health": {"type": "string"},
+        "battery_warnings": {"type": "array"},
+        "test_recommendations": {"type": "array"},
+        "last_updated": {"type": "string"},
+    },
+}
+
+_FIRE_TEST_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "test_results": {"type": "array"},
+        "total_devices_tested": {"type": "integer"},
+        "passed_tests": {"type": "integer"},
+        "failed_tests": {"type": "integer"},
+        "warning_tests": {"type": "integer"},
+        "overall_status": {"type": "string"},
+        "recommendations": {"type": "array"},
+        "next_test_date": {"type": "string"},
+        "test_timestamp": {"type": "string"},
+    },
+}
+
 
 def register_tools(app: FastMCP) -> None:
     """Register fire safety management tools with the FastMCP application.
@@ -28,6 +64,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_fire_alarm_status",
         description="Get comprehensive status of all Ring fire alarms and smoke detectors",
         annotations=_READ_ONLY,
+        output_schema=_FIRE_STATUS_SCHEMA,
     )
     async def get_fire_alarm_status() -> dict[str, Any]:
         """Get comprehensive status of all Ring fire alarms and smoke detectors.
@@ -132,6 +169,7 @@ def register_tools(app: FastMCP) -> None:
         name="test_fire_safety_system",
         description="Perform comprehensive test of fire safety system",
         annotations=_READ_ONLY,
+        output_schema=_FIRE_TEST_SCHEMA,
     )
     async def test_fire_safety_system() -> dict[str, Any]:
         """Perform comprehensive test of fire safety system.
