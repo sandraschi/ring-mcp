@@ -39,12 +39,50 @@ const apps: AppEntry[] = [
 export function Apps() {
   const [statuses, setStatuses] = useState<Record<string, boolean | null>>({});
   const [scanning, setScanning] = useState(true);
+  const [hubSource, setHubSource] = useState<"fleet" | "local">("local");
+  const [peers, setPeers] = useState<AppEntry[]>(apps);
 
   const scan = useCallback(async () => {
     setScanning(true);
+    let probed: AppEntry[] = apps;
+    // Fleet discovery: prefer the hub registry when it answers, else probe locally.
+    try {
+      const r = await fetch("http://127.0.0.1:10791/api/fleet/apps", {
+        signal: AbortSignal.timeout(4000),
+      });
+      if (r.ok) {
+        const body = (await r.json()) as
+          | AppEntry[]
+          | { apps?: AppEntry[] }
+          | null;
+        const list = Array.isArray(body) ? body : (body?.apps ?? []);
+        const cleaned = list
+          .filter((a) => a && typeof a.port === "number")
+          .map((a) => ({
+            name: String(a.name ?? `fleet-${a.port}`),
+            port: a.port,
+            description: String(a.description ?? "Fleet app"),
+            healthPath:
+              typeof a.healthPath === "string" && a.healthPath.startsWith("/")
+                ? a.healthPath
+                : "/api/v1/health",
+          }));
+        if (cleaned.length > 0) {
+          probed = cleaned;
+          setHubSource("fleet");
+        } else {
+          probed = apps;
+          setHubSource("local");
+        }
+      }
+    } catch {
+      probed = apps;
+      setHubSource("local");
+    }
+    setPeers(probed);
     const results: Record<string, boolean | null> = {};
     await Promise.allSettled(
-      apps.map(async (app) => {
+      probed.map(async (app) => {
         try {
           const r = await fetch(
             `http://127.0.0.1:${app.port}${app.healthPath}`,
@@ -76,7 +114,13 @@ export function Apps() {
             App Hub
           </h2>
           <p className="text-slate-400" data-testid="apps-summary">
-            {scanning ? "Scanning…" : `${onlineCount}/${apps.length} online`}
+            {scanning ? "Scanning…" : `${onlineCount}/${peers.length} online`}
+          </p>
+          <p
+            className="font-mono text-xs text-slate-500"
+            data-testid="apps-hub-source"
+          >
+            source: {hubSource === "fleet" ? "fleet-hub" : "local-probe"}
           </p>
         </div>
       </div>
@@ -85,7 +129,7 @@ export function Apps() {
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
         data-testid="apps-grid"
       >
-        {apps.map((app) => {
+        {peers.map((app) => {
           const status = statuses[app.name];
           const online = status === true;
           const checking = status === undefined || scanning;

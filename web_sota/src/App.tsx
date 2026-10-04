@@ -12,8 +12,10 @@ import { Chat } from "@/pages/chat";
 import { Dashboard } from "@/pages/dashboard";
 import { Doorbell } from "@/pages/doorbell";
 import { Help } from "@/pages/help";
+import { Inbox } from "@/pages/inbox";
 import { Logger } from "@/pages/logger";
 import { Settings } from "@/pages/settings";
+import { Skills } from "@/pages/skills";
 import { Status } from "@/pages/status";
 import { Tools } from "@/pages/tools";
 
@@ -25,7 +27,9 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/doorbell" element={<Doorbell />} />
           <Route path="/alarms" element={<Alarms />} />
+          <Route path="/inbox" element={<Inbox />} />
           <Route path="/tools" element={<Tools />} />
+          <Route path="/skills" element={<Skills />} />
           <Route path="/status" element={<Status />} />
           <Route path="/apps" element={<Apps />} />
           <Route path="/chat" element={<Chat />} />
