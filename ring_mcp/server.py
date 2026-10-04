@@ -16,6 +16,7 @@ import structlog
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.server import create_proxy
+from fastmcp.server.providers.skills import SkillsDirectoryProvider
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 from pydantic import BaseModel, Field
 
@@ -501,6 +502,17 @@ def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = Non
                 return json.dumps({"api_connected": True, "devices_accessible": len(devices)})
             except Exception as e:
                 return json.dumps({"api_connected": False, "error": str(e)})
+
+        # Domain skills as skill:// resources (ships skills/ring-mcp/SKILL.md).
+        try:
+            from pathlib import Path
+
+            skills_dir = Path(__file__).resolve().parent.parent / "skills"
+            if skills_dir.is_dir():
+                app.add_provider(SkillsDirectoryProvider(roots=[skills_dir]))
+                logger.info("Skills provider mounted: %s", skills_dir)
+        except Exception as e:
+            logger.warning("Skills provider not mounted: %s", e)
 
         logger.info("All Ring MCP tools registered successfully on app instance")
 
