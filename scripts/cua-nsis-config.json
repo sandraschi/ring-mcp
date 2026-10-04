@@ -9,6 +9,19 @@
     "feature_smoke_path": "/api/v1/system/info",
     "window_title_re": "Ring MCP",
     "nsis_glob": "native/target/release/bundle/nsis/Ring MCP_*_x64-setup.exe",
+    "nav_routes": [
+        ["Overview", "Overview"],
+        ["Doorbell & Camera", "Doorbell"],
+        ["Ring Alarm", "Alarm"],
+        ["Tools", "Tools"],
+        ["Status", "Status"],
+        ["App Hub", "App Hub"],
+        ["Local AI", "Local AI"],
+        ["Logger", "Logger"],
+        ["Help", "Help"],
+        ["API Docs", "API Docs"],
+        ["Settings", "Settings"]
+    ],
     "bridge_ok_text": "REST bridge reachable",
     "uninstall_registry_filter": "*Ring MCP*"
 }
