@@ -596,9 +596,11 @@ class WebRTCOfferRequest(BaseModel):
     sdp_offer: str
     device_id: str
 
+
 class WebRTCCandidateRequest(BaseModel):
     candidate: str
     device_id: str
+
 
 @app.post("/api/v1/webrtc/offer")
 async def create_webrtc_stream(request: WebRTCOfferRequest):
@@ -625,6 +627,7 @@ async def create_webrtc_stream(request: WebRTCOfferRequest):
         logger.exception("Failed to create WebRTC stream")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @app.post("/api/v1/webrtc/candidate")
 async def send_ice_candidate(request: WebRTCCandidateRequest):
     """Send ICE candidate to Ring for WebRTC connection."""
@@ -647,6 +650,7 @@ async def send_ice_candidate(request: WebRTCCandidateRequest):
         logger.exception("Failed to send ICE candidate")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @app.post("/api/v1/webrtc/keepalive/{device_id}")
 async def keepalive_webrtc_stream(device_id: str):
     """Keep WebRTC stream alive."""
@@ -666,6 +670,7 @@ async def keepalive_webrtc_stream(device_id: str):
     except Exception as e:
         logger.exception("Failed to send keepalive")
         raise HTTPException(status_code=500, detail=str(e)) from e
+
 
 @app.post("/api/v1/webrtc/close/{device_id}")
 async def close_webrtc_stream(device_id: str):
@@ -687,6 +692,7 @@ async def close_webrtc_stream(device_id: str):
         logger.exception("Failed to close stream")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @app.get("/api/v1/snapshot/{device_id}")
 async def get_doorbell_snapshot(device_id: str):
     """Get a still snapshot from a Ring doorbell/camera.
@@ -705,7 +711,9 @@ async def get_doorbell_snapshot(device_id: str):
         if not doorbell:
             raise HTTPException(status_code=404, detail=f"Doorbell {device_id} not found")
         import io
+
         from fastapi.responses import StreamingResponse
+
         snapshot_bytes = await doorbell.get_snapshot()
         return StreamingResponse(io.BytesIO(snapshot_bytes), media_type="image/jpeg")
     except HTTPException:
@@ -713,6 +721,7 @@ async def get_doorbell_snapshot(device_id: str):
     except Exception as e:
         logger.exception("Failed to get snapshot")
         raise HTTPException(status_code=500, detail=str(e)) from e
+
 
 @app.websocket("/api/v1/devices/{device_id}/stream/webrtc")
 async def webrtc_signaling(websocket: WebSocket, device_id: str):
@@ -740,8 +749,8 @@ async def webrtc_signaling(websocket: WebSocket, device_id: str):
                 async def on_message(payload: dict[str, Any]) -> None:
                     try:
                         await websocket.send_json(payload)
-                    except Exception:
-                        pass
+                    except Exception as send_err:
+                        logger.debug("WebRTC relay send failed (client gone?): %s", send_err)
 
                 try:
                     session_id = await client.webrtc_start(device_id, sdp, on_message)
@@ -921,6 +930,199 @@ async def get_system_status():
         raise
 
 
+# --- Fleet contract endpoints -------------------------------------------------
+# Standard shapes consumed by the webapp, the fleet launcher, and CUA smoke tests:
+# capabilities (WEBAPP_STANDARDS 1.4), diagnostics + system/info (cua smoke),
+# skills (skill-first chat), llm discover/providers/onboarding (LLM glom-on),
+# shutdown (orderly exit before process bounce).
+
+_STARTED_AT = time.time()
+
+_DIAG_TOOL_COUNT: int | None = None
+
+
+def _package_version() -> str:
+    """Installed dist version (falls back to 'unknown' on naked checkouts)."""
+    try:
+        from importlib.metadata import version
+
+        return version("ring-mcp")
+    except Exception:
+        return "unknown"
+
+
+async def _served_tool_count() -> int:
+    """Number of tools on the served MCP surface (cached; -1 when unresolvable)."""
+    global _DIAG_TOOL_COUNT
+    if _DIAG_TOOL_COUNT is None:
+        try:
+            from ring_mcp.server import create_app
+
+            _DIAG_TOOL_COUNT = len(await create_app().list_tools())
+        except Exception as e:
+            logger.warning("diagnostics: could not count MCP tools: %s", e)
+            _DIAG_TOOL_COUNT = -1
+    return _DIAG_TOOL_COUNT
+
+
+@app.get("/api/capabilities")
+async def get_capabilities():
+    """Standard fleet capability shape (WEBAPP_STANDARDS 1.4)."""
+    return {
+        "name": "ring-mcp",
+        "version": _package_version(),
+        "transports": ["stdio", "http"],
+        "features": {
+            "devices": True,
+            "webrtc_live_view": True,
+            "websocket_events": True,
+            "llm_proxy": True,
+            "mqtt_alarm_bridge": True,
+        },
+        "health_path": "/api/v1/health",
+        "docs_path": "/docs",
+    }
+
+
+@app.get("/api/v1/system/info")
+async def system_info():
+    """Lightweight system info (CUA feature-route smoke path)."""
+    return {
+        "success": True,
+        "name": "ring-mcp",
+        "version": _package_version(),
+        "uptime_seconds": int(time.time() - _STARTED_AT),
+        "transports": ["stdio", "http"],
+        "tool_count": await _served_tool_count(),
+    }
+
+
+@app.get("/api/v1/diagnostics")
+async def get_diagnostics():
+    """Full diagnostics: backend, system, tool surface (CUA-NSIS smoke)."""
+    try:
+        anchor = str(Path(__file__).resolve().anchor)
+        disk = shutil.disk_usage(anchor)
+        disk_percent = round((disk.total - disk.free) / disk.total * 100, 1) if disk.total else 0.0
+    except Exception:
+        disk_percent = 0.0
+    return {
+        "success": True,
+        "data": {
+            "backend": {"status": "ok", "version": _package_version()},
+            "system": {
+                "cpu_count": os.cpu_count(),
+                "disk_percent": disk_percent,
+                "uptime_seconds": int(time.time() - _STARTED_AT),
+            },
+            "tools": {"total": await _served_tool_count()},
+        },
+    }
+
+
+def _scan_skill_dir(base: Path) -> list[dict[str, str]]:
+    """Parse name/description frontmatter from <base>/*/SKILL.md (no yaml dep)."""
+    found: list[dict[str, str]] = []
+    if not base.is_dir():
+        return found
+    for skill_md in sorted(base.glob("*/SKILL.md")):
+        name = skill_md.parent.name
+        description = ""
+        try:
+            text = skill_md.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if text.startswith("---"):
+            end = text.find("\n---", 3)
+            head = text[3:end] if end != -1 else text[3:800]
+            for line in head.splitlines():
+                key, sep, val = line.partition(":")
+                if not sep:
+                    continue
+                if key.strip() == "name" and val.strip():
+                    name = val.strip().strip("\"'")
+                elif key.strip() == "description" and val.strip():
+                    description = val.strip().strip("\"'")
+        found.append({"name": name, "description": description, "path": skill_md.as_posix()})
+    return found
+
+
+@app.get("/api/skills")
+async def list_skills():
+    """Skill listing for skill-first chat (reads packaged SKILL.md frontmatter)."""
+    root = Path(__file__).resolve().parent.parent
+    skills = _scan_skill_dir(root / ".opencode" / "skills") + _scan_skill_dir(root / "skills")
+    return {"skills": skills}
+
+
+@app.get("/api/v1/llm/discover")
+async def llm_discover():
+    """Probe the configured local OpenAI-compatible endpoint (Ollama/LM Studio)."""
+    base = llm_base_url()
+    models, err = await list_model_ids()
+    detected = err is None
+    return {
+        "detected": detected,
+        "base_url": base,
+        "models": models,
+        "message": None if detected else err,
+    }
+
+
+@app.get("/api/v1/llm/providers")
+async def llm_providers():
+    """Provider registry: local detected flags + configured defaults (never key bytes)."""
+    base = llm_base_url()
+    models, err = await list_model_ids()
+    detected = err is None
+    return {
+        "providers": [
+            {
+                "id": "local",
+                "label": "Local LLM (Ollama / LM Studio compatible)",
+                "type": "local",
+                "detected": detected,
+                "base_url": base,
+                "default_model": default_model_env() or (models[0] if models else None),
+                "models": models,
+                "message": None if detected else err,
+            }
+        ],
+        "default_provider": "local",
+    }
+
+
+@app.get("/api/v1/llm/onboarding")
+async def llm_onboarding():
+    """Fresh-install starter facts + recommended path for the under-hero cue."""
+    base = llm_base_url()
+    _models, err = await list_model_ids()
+    llm_ready = err is None
+    return {
+        "facts": [
+            "ring-mcp controls Ring doorbells, cameras, and alarms from one dashboard.",
+            "Ring account credentials are configured in Settings (no local LLM needed for that).",
+            "Chat answers through your local LLM so device questions stay on this machine.",
+        ],
+        "recommended_path": [
+            "Open Settings and save your Ring email + password, then Test connection.",
+            "Start Ollama (default http://127.0.0.1:11434) and pull a chat model.",
+            "Ask in Chat, or arm/disarm from the Alarms page.",
+        ],
+        "llm_ready": llm_ready,
+        "llm_base_url": base,
+        "ring_credentials_set": _has_ring_credentials(),
+    }
+
+
+@app.post("/api/shutdown")
+async def shutdown_server():
+    """Orderly exit for the fleet launcher: 200 now, process exit 0.5 s later."""
+    logger.warning("HTTP shutdown requested via POST /api/shutdown")
+    asyncio.get_event_loop().call_later(0.5, lambda: os._exit(0))
+    return {"success": True, "message": "Shutting down in 0.5s"}
+
+
 def main():
     """Run the HTTP server."""
     # Configure logging
@@ -946,7 +1148,9 @@ def main():
     )
 
     # Get server configuration
-    host = os.getenv("HOST", "0.0.0.0")
+    # 0.0.0.0 is intentional: the fleet reaches backends over LAN/Tailscale and the
+    # Tauri WebView talks to 127.0.0.1; CORS still restricts origins (see CORSMiddleware above).
+    host = os.getenv("HOST", "0.0.0.0")  # noqa: S104 - LAN/Tailscale access is by design
     port = int(os.getenv("PORT", str(FLEET_RING_HTTP_API_PORT)))
 
     logger.info(f"Starting Ring MCP HTTP server on http://{host}:{port}")

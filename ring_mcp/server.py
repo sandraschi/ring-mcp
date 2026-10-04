@@ -1,8 +1,8 @@
 """
-FastMCP 3.2+ server for Ring MCP.
+FastMCP 3.4+ server for Ring MCP.
 
 This module provides a FastMCP server implementation for controlling Ring devices
-with composition and proxy capabilities. Aligned to FastMCP 3.2+ (sampling,
+with composition and proxy capabilities. Aligned to FastMCP 3.4+ (sampling,
 agentic workflows, prompts).
 """
 
@@ -28,7 +28,7 @@ def create_fastapi_app_with_docs() -> FastAPI:
     return FastAPI(
         title="Ring MCP API",
         description="Ring Security System Management API - FastAPI Documentation",
-        version="3.2.0",
+        version="1.0.4",
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
@@ -133,10 +133,10 @@ from ring_mcp.core.port_manager import get_ring_mcp_port
 
 RING_MCP_PORT = get_ring_mcp_port()
 
-# Initialize FastMCP 3.2+
+# Initialize FastMCP 3.4+
 app = FastMCP(
     name="Ring Security",
-    version="3.2.0",
+    version="1.0.4",
 )
 
 _bridge_proxies: list[str] = []
@@ -148,8 +148,8 @@ if bridge_urls:
             try:
                 app.add_provider(create_proxy(url))
                 _bridge_proxies.append(url)
-            except Exception:
-                pass
+            except Exception as bridge_err:
+                logger.warning("Skipping unreachable bridge %s: %s", url, bridge_err)
 
 # Prometheus metrics
 ring_api_calls_total = Counter("ring_api_calls_total", "Total Ring API calls", ["endpoint", "status"])
@@ -259,7 +259,7 @@ def get_ring_client() -> RingClient:
 
 
 def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
-    """Register Ring MCP tools with the FastMCP application (FastMCP 3.2+).
+    """Register Ring MCP tools with the FastMCP application (FastMCP 3.4+).
 
     Args:
         app: FastMCP application instance
@@ -267,7 +267,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
     """
     get_ring_mqtt_bridge().start()
 
-    # Request/Response models for FastMCP 3.2+
+    # Request/Response models for FastMCP 3.4+
     class DeviceID(BaseModel):
         """Device identifier model."""
 
@@ -306,18 +306,18 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
             try:
                 return await func(*args, **kwargs)
             except AuthenticationError as e:
-                raise ValueError(f"Authentication failed: {e!s}")
+                raise ValueError(f"Authentication failed: {e!s}") from e
             except DeviceNotFoundError as e:
-                raise ValueError(f"Device not found: {e!s}")
+                raise ValueError(f"Device not found: {e!s}") from e
             except RateLimitError as e:
-                raise ValueError(f"Rate limit exceeded: {e!s}")
+                raise ValueError(f"Rate limit exceeded: {e!s}") from e
             except StreamingError as e:
-                raise ValueError(f"Streaming error: {e!s}")
+                raise ValueError(f"Streaming error: {e!s}") from e
             except RingError as e:
-                raise ValueError(f"Ring API error: {e!s}")
+                raise ValueError(f"Ring API error: {e!s}") from e
             except Exception as e:
                 logger.error("Unexpected error: %s", str(e), exc_info=True)
-                raise ValueError(f"Internal server error: {e!s}")
+                raise ValueError(f"Internal server error: {e!s}") from e
 
         return wrapper
 
@@ -349,7 +349,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Used by: list operation. Default: False. Forces API call instead of using cache.
 
         Returns:
-            **FastMCP 3.2+ conversational response (sampling/agentic):**
+            **FastMCP 3.4+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -448,7 +448,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Must be a valid Ring device ID from get_devices().
 
         Returns:
-            **FastMCP 3.2+ conversational response (sampling/agentic):**
+            **FastMCP 3.4+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -545,7 +545,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Limits API calls and response size for performance.
 
         Returns:
-            **FastMCP 3.2+ conversational response (sampling/agentic):**
+            **FastMCP 3.4+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -630,7 +630,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Must be a valid Ring camera device ID from get_devices().
 
         Returns:
-            **FastMCP 3.2+ conversational response (sampling/agentic):**
+            **FastMCP 3.4+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -710,7 +710,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 False = deactivate security monitoring for authorized access
 
         Returns:
-            **FastMCP 3.2+ conversational response (sampling/agentic):**
+            **FastMCP 3.4+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -819,7 +819,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
                 Must be a valid Ring doorbell device from get_devices().
 
         Returns:
-            **FastMCP 3.2+ conversational response (sampling/agentic):**
+            **FastMCP 3.4+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -902,7 +902,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
             None required - comprehensive health check is automatic.
 
         Returns:
-            **FastMCP 3.2+ conversational response (sampling/agentic):**
+            **FastMCP 3.4+ conversational response (sampling/agentic):**
 
             ```json
             {
@@ -969,6 +969,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
         try:
             from prefab_ui import PrefabApp
             from prefab_ui.components import Div, Heading, Row
+
             devices = await ring_client.get_devices(force_refresh=False)
             with PrefabApp(title="Ring Devices") as app_card:
                 Heading(f"{len(devices)} Devices")
@@ -993,6 +994,7 @@ def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
         try:
             from prefab_ui import PrefabApp
             from prefab_ui.components import Div, Heading, Row
+
             with PrefabApp(title="Ring MCP Health") as app_card:
                 Heading("System Health")
                 Div(Row(label="API Status", value="Checking..."))
@@ -1035,6 +1037,7 @@ def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = Non
         @app.tool(
             name="ring_shutdown",
             description="Gracefully shut down the Ring MCP server",
+            annotations={"readOnlyHint": False, "idempotentHint": False, "destructiveHint": True},
         )
         async def ring_shutdown() -> dict:
             """Gracefully shut down the Ring MCP server.
@@ -1047,9 +1050,170 @@ def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = Non
             """
             import asyncio
             import os
+
             logger.warning("Ring MCP server shutdown requested via tool")
             asyncio.get_event_loop().call_later(1, os._exit, 0)
             return {"success": True, "message": "Server shutting down..."}
+
+        # Device inventory - MCP surface for what REST exposes at GET /api/v1/devices.
+        # (NOTE: register_ring_tools() below defines a get_devices variant on the
+        # legacy global app; this is the served create_app() surface.)
+        @app.tool(
+            name="list_devices",
+            description="List all Ring devices with online status and battery",
+            annotations={"readOnlyHint": True, "idempotentHint": True},
+        )
+        async def list_devices(device_type: str = "all") -> dict[str, Any]:
+            """List all Ring devices with online status and battery.
+
+            ## Return Format
+            {"success": true, "message": "Found N device(s)", "count": N, "devices": [...]}
+
+            ## Examples
+            await list_devices()
+            await list_devices(device_type="camera")
+            """
+            try:
+                async with RingClient() as client:
+                    devices = await client.get_devices()
+                if device_type != "all":
+                    needle = device_type.lower()
+                    devices = [d for d in devices if needle in str(d.get("type", "")).lower()]
+                return {
+                    "success": True,
+                    "message": f"Found {len(devices)} device(s)",
+                    "count": len(devices),
+                    "devices": devices,
+                }
+            except Exception as e:
+                logger.error("list_devices failed: %s", str(e))
+                return {"success": False, "error": str(e)}
+
+        @app.tool(
+            app=True,
+            name="show_devices_card",
+            description="Show all Ring devices as a rich card",
+            annotations={"readOnlyHint": True, "idempotentHint": True},
+        )
+        async def show_devices_card() -> dict:
+            """Show all Ring devices as a rich in-chat Prefab card.
+
+            ## Return Format
+            {"content": "...", "structured_content": {"prefab": true, "title": "...", "sections": [...]}}
+
+            ## Examples
+            await show_devices_card()
+            """
+            try:
+                from prefab_ui import PrefabApp
+                from prefab_ui.components import Badge, Div, Heading, Row, Text
+
+                async with RingClient() as client:
+                    devices = await client.get_devices()
+                with PrefabApp(title="Ring Devices") as app_card:
+                    Heading(f"{len(devices)} Devices")
+                    for d in devices:
+                        online = d.get("online", False)
+                        bat = d.get("battery_life")
+                        status = "Online" if online else "Offline"
+                        if bat is not None:
+                            status += f" | Battery: {bat}%"
+                        with Div():
+                            with Row(gap=2, align="center", justify="between"):
+                                Text(d.get("name", "?"))
+                                Badge(status, variant="success" if online else "destructive")
+                return {"content": f"Found {len(devices)} devices", "structured_content": app_card}
+            except Exception as e:
+                return {"content": f"Error: {e!s}"}
+
+        @app.tool(
+            app=True,
+            name="show_health_card",
+            description="Show Ring MCP health as a rich card",
+            annotations={"readOnlyHint": True, "idempotentHint": True},
+        )
+        async def show_health_card() -> dict:
+            """Show Ring MCP service health as a rich in-chat Prefab card.
+
+            ## Return Format
+            {"content": "...", "structured_content": {"prefab": true, "title": "...", "sections": [...]}}
+
+            ## Examples
+            await show_health_card()
+            """
+            try:
+                from prefab_ui import PrefabApp
+                from prefab_ui.components import Badge, Div, Heading, Row, Text
+
+                with PrefabApp(title="Ring MCP Health") as app_card:
+                    Heading("System Health")
+                    try:
+                        async with RingClient() as client:
+                            await client.get_devices()
+                        connected = True
+                    except Exception:
+                        connected = False
+                    with Div():
+                        with Row(gap=2, align="center", justify="between"):
+                            Text("API Connectivity")
+                            Badge(
+                                "Connected" if connected else "Disconnected",
+                                variant="success" if connected else "destructive",
+                            )
+                return {"content": "Ring MCP health check", "structured_content": app_card}
+            except Exception as e:
+                return {"content": f"Error: {e!s}"}
+
+        # Prompts: guided workflows over real tool names (served surface only).
+        @app.prompt(
+            name="ring-security-check",
+            description="Guided daily Ring security review (status, alerts, batteries).",
+        )
+        async def ring_security_check() -> str:
+            """Daily Ring security review workflow."""
+            return (
+                "Run a daily Ring security review:\n"
+                "1. Call get_security_system_status() for mode, devices, and active alerts.\n"
+                "2. If devices are offline, call check_device_connectivity() for details.\n"
+                "3. If batteries are low, note replacements from monitor_system_health().\n"
+                "4. Summarize: mode, offline devices, low batteries, recent activity."
+            )
+
+        @app.prompt(
+            name="ring-incident-triage",
+            description="Triage a Ring security event (history, devices, emergency).",
+        )
+        async def ring_incident_triage() -> str:
+            """Security incident triage workflow."""
+            return (
+                "Triage a Ring security event:\n"
+                "1. Call get_security_history(hours=6) and get_visitor_history(hours=6).\n"
+                "2. Call get_doorbell_status() and get_camera_status() for device state.\n"
+                "3. For genuine emergencies only, call trigger_emergency_protocol().\n"
+                "4. Report what happened, which devices saw it, and what was armed."
+            )
+
+        # Resources: live data snapshots by URI.
+        @app.resource("ring://devices", description="Live Ring device inventory as JSON.")
+        async def ring_devices_resource() -> str:
+            """Live Ring device inventory."""
+            import json
+
+            async with RingClient() as client:
+                devices = await client.get_devices()
+            return json.dumps(devices)
+
+        @app.resource("ring://health", description="Ring MCP service health as JSON.")
+        async def ring_health_resource() -> str:
+            """Service health snapshot (no credentials required for the shape)."""
+            import json
+
+            try:
+                async with RingClient() as client:
+                    devices = await client.get_devices()
+                return json.dumps({"api_connected": True, "devices_accessible": len(devices)})
+            except Exception as e:
+                return json.dumps({"api_connected": False, "error": str(e)})
 
         logger.info("All Ring MCP tools registered successfully on app instance")
 
@@ -1068,7 +1232,7 @@ def create_app(ring_client: RingClient | None = None) -> FastMCP:
     """Create and configure the FastMCP application with composition support.
 
     This function creates the main FastMCP application instance and registers
-    all Ring security tools (FastMCP 3.2+: sampling, agentic workflows).
+    all Ring security tools (FastMCP 3.4+: sampling, agentic workflows).
 
     Args:
         ring_client: Optional pre-initialized RingClient instance. If not provided,
@@ -1079,7 +1243,7 @@ def create_app(ring_client: RingClient | None = None) -> FastMCP:
     """
     # Create a new FastMCP app instance
     new_app = FastMCP(
-        name="Ring MCP Server", instructions="Comprehensive Ring Security System Management with FastMCP 2.12"
+        name="Ring MCP Server", instructions="Comprehensive Ring Security System Management with FastMCP 3.4"
     )
 
     # Register all tools on the new app instance
@@ -1094,7 +1258,7 @@ def create_app(ring_client: RingClient | None = None) -> FastMCP:
 
 
 if __name__ == "__main__":
-    # Configure structured logging for FastMCP 2.12
+    # Configure structured logging for FastMCP 3.4
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Configure structlog for JSON logging
@@ -1123,5 +1287,5 @@ if __name__ == "__main__":
 
     # Create and run the FastMCP server with stdio transport for Claude Desktop
     # The app is already configured with both stdio and HTTP transports
-    logger.info("Starting Ring MCP server with FastMCP 3.2+")
+    logger.info("Starting Ring MCP server with FastMCP 3.4+")
     logger.info("Server will be available via stdio for Claude Desktop and HTTP for web access")

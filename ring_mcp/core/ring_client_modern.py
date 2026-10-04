@@ -60,6 +60,20 @@ def _device_ui_category(device: RingGeneric) -> str:
 # Cache configuration
 CACHE_TTL = 300  # 5 minutes
 
+# Fire-and-forget background tasks. asyncio.create_task() results MUST be
+# referenced (RUF006) or a lone task can be GC-cancelled mid-flight with only
+# "Task was destroyed but it is pending" as evidence. Every fire-and-forget
+# spawn in this module goes through _spawn_tracked().
+_BACKGROUND_TASKS: set[asyncio.Task[Any]] = set()
+
+
+def _spawn_tracked(coro: Awaitable[Any]) -> asyncio.Task[Any]:
+    """Spawn a fire-and-forget coroutine and keep it referenced until done."""
+    task = asyncio.create_task(coro)
+    _BACKGROUND_TASKS.add(task)
+    task.add_done_callback(_BACKGROUND_TASKS.discard)
+    return task
+
 
 class RingClient:
     """Modern Ring client with async support and rate limiting."""
@@ -178,7 +192,7 @@ class RingClient:
 
         # Schedule the token save in the event loop
         if asyncio.iscoroutinefunction(self._token_manager.save_token):
-            asyncio.create_task(
+            _spawn_tracked(
                 self._token_manager.save_token(
                     username=self.username,
                     access_token=token["access_token"],
@@ -272,25 +286,25 @@ class RingClient:
                         if two_factor_callback and inspect.iscoroutinefunction(two_factor_callback):
                             otp_val = await two_factor_callback()
                             if not (otp_val and str(otp_val).strip()):
-                                raise AuthenticationError("2FA code is required but not provided")
+                                raise AuthenticationError("2FA code is required but not provided") from None
 
                             otp_clean = "".join(str(otp_val).strip().split())
                             await self._auth.async_fetch_token(self.username, self.password, otp_clean)
                             logger.info("Successfully authenticated with Ring API (with 2FA)")
                         else:
-                            raise AuthenticationError("2FA is required but no callback provided")
+                            raise AuthenticationError("2FA is required but no callback provided") from None
                     except Exception as e:
                         if "Verification Code" in str(e) or "2FA" in str(e) or "verification" in str(e).lower():
                             logger.info("2FA verification code required (message heuristic)")
                             if two_factor_callback and inspect.iscoroutinefunction(two_factor_callback):
                                 otp_val = await two_factor_callback()
                                 if not (otp_val and str(otp_val).strip()):
-                                    raise AuthenticationError("2FA code is required but not provided")
+                                    raise AuthenticationError("2FA code is required but not provided") from e
                                 otp_clean = "".join(str(otp_val).strip().split())
                                 await self._auth.async_fetch_token(self.username, self.password, otp_clean)
                                 logger.info("Successfully authenticated with Ring API (with 2FA)")
                             else:
-                                raise AuthenticationError("2FA is required but no callback provided")
+                                raise AuthenticationError("2FA is required but no callback provided") from e
                         else:
                             raise AuthenticationError(f"Authentication failed: {e}") from e
 
@@ -604,13 +618,13 @@ class RingClient:
 
         def sync_cb(msg: RingWebRtcMessage) -> None:
             if msg.error_code is not None:
-                asyncio.create_task(
+                _spawn_tracked(
                     on_message({"type": "error", "code": msg.error_code, "message": msg.error_message or ""})
                 )
             if msg.answer:
-                asyncio.create_task(on_message({"type": "answer", "sdp": msg.answer}))
+                _spawn_tracked(on_message({"type": "answer", "sdp": msg.answer}))
             if msg.candidate is not None:
-                asyncio.create_task(
+                _spawn_tracked(
                     on_message(
                         {
                             "type": "ice",
