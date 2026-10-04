@@ -64,7 +64,7 @@ export function Status() {
     (devicesQuery.data && devicesQuery.data.success === false);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="status-page">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">
@@ -77,6 +77,7 @@ export function Status() {
         <Button
           variant="outline"
           size="sm"
+          data-testid="status-refresh"
           className="border-slate-800 text-slate-300 hover:bg-slate-800"
           onClick={refetch}
           disabled={isLoading}
@@ -116,7 +117,10 @@ export function Status() {
       )}
 
       {status && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+          data-testid="status-kpis"
+        >
           <Card className="border-slate-800 bg-slate-950/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-slate-200">

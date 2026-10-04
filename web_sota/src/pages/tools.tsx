@@ -98,13 +98,13 @@ export function Tools() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="tools-page">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Tool Inventory
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-400" data-testid="tools-summary">
             {error
               ? "MCP server unreachable"
               : `${devices.length} devices · ${status?.online ?? 0} online`}
@@ -120,11 +120,18 @@ export function Tools() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div
+        className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+        data-testid="tools-grid"
+      >
         {toolDefs.map((tool) => {
           const Icon = tool.icon;
           return (
-            <Card key={tool.name} className="border-slate-800 bg-slate-950/50">
+            <Card
+              key={tool.name}
+              data-testid={`tool-card-${tool.name}`}
+              className="border-slate-800 bg-slate-950/50"
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-slate-200">
                   {tool.name}

@@ -2,8 +2,8 @@ import { Book, Code, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
 
-const RING_MCP_VERSION = "1.0.3";
-const FASTMCP_TARGET = "3.2+";
+const RING_MCP_VERSION = "1.0.4";
+const FASTMCP_TARGET = "3.4+";
 const WEB_PORT = "10728";
 const API_PORT = "10729";
 
@@ -11,7 +11,7 @@ export function Help() {
   const apiBase = api.getBaseUrl();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="help-page">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">
@@ -23,7 +23,7 @@ export function Help() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2" data-testid="help-sections">
         <Card className="border-slate-800 bg-slate-950/50">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -79,14 +79,17 @@ export function Help() {
               <code className="text-slate-200">ring-mcp-http</code> — FastAPI +
               uvicorn, fleet default port {API_PORT}.
             </p>
-            <div className="rounded border border-slate-800 bg-slate-900 p-3 font-mono text-xs text-slate-300">
+            <div
+              className="rounded border border-slate-800 bg-slate-900 p-3 font-mono text-xs text-slate-300"
+              data-testid="help-ports"
+            >
               <p>Vite dev (this UI): {WEB_PORT}</p>
               <p>REST API (backend): {API_PORT}</p>
               <p>API base (browser): {apiBase}</p>
             </div>
             <p>
               Dependency target:{" "}
-              <span className="text-slate-200">fastmcp &gt;= 3.2.0</span> (see
+              <span className="text-slate-200">fastmcp &gt;= 3.4.4</span> (see
               repo <code className="text-slate-200">pyproject.toml</code>
               ).
             </p>

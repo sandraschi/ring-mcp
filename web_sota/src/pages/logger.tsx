@@ -17,7 +17,7 @@ export function Logger() {
   const entries = logsQuery.data?.logs ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="logger-page">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">
@@ -33,6 +33,7 @@ export function Logger() {
             type="button"
             variant="outline"
             size="sm"
+            data-testid="logger-pause"
             className="border-slate-700 text-slate-200"
             onClick={() => setPaused((p) => !p)}
           >
@@ -50,6 +51,7 @@ export function Logger() {
             type="button"
             variant="outline"
             size="sm"
+            data-testid="logger-refresh"
             className="border-slate-700 text-slate-200"
             onClick={() => logsQuery.refetch()}
             disabled={logsQuery.isFetching}
