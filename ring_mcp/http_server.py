@@ -46,6 +46,7 @@ from ring_mcp.core.port_manager import FLEET_RING_HTTP_API_PORT
 from ring_mcp.core.ring_client_modern import RingClient
 from ring_mcp.local_llm import (
     chat_completion,
+    chat_completion_stream,
     default_model_env,
     list_model_ids,
     llm_base_url,
@@ -437,6 +438,29 @@ async def llm_chat(body: LlmChatRequestBody):
         return {"success": True, "reply": reply}
     except ValueError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
+
+
+@app.post("/api/v1/llm/chat/stream")
+async def llm_chat_stream(body: LlmChatRequestBody):
+    """Streaming chat completion (SSE `data:` token frames, `data: [DONE]` end)."""
+    msgs = [m.model_dump() for m in body.messages]
+    sys_default = os.getenv(
+        "RING_LLM_SYSTEM",
+        "You are a helpful assistant for the Ring MCP fleet web UI. Be concise. "
+        "Do not invent live Ring device state; suggest Status, Doorbell, or Logger when relevant.",
+    ).strip()
+    if sys_default and (not msgs or msgs[0].get("role") != "system"):
+        msgs = [{"role": "system", "content": sys_default}, *msgs]
+
+    async def gen():
+        try:
+            async for token in chat_completion_stream(msgs, model=body.model):
+                yield f"data: {json.dumps({'token': token})}\n\n"
+        except ValueError as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 
 @app.get("/api/v1/logs")

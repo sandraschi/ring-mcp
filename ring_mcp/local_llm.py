@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 import httpx
@@ -120,6 +121,55 @@ async def chat_completion(
     if not isinstance(content, str):
         raise ValueError("LLM returned no message content")
     return content
+
+
+async def chat_completion_stream(
+    messages: list[dict[str, str]],
+    model: str | None = None,
+) -> AsyncGenerator[str, None]:
+    """
+    Yield reply token chunks from POST /v1/chat/completions with stream=True
+    (OpenAI SSE: ``data: {...}`` lines, ``data: [DONE]`` terminator).
+    """
+    base = llm_base_url()
+    use_model = (model or "").strip() or default_model_env()
+    if not use_model:
+        ids, err = await list_model_ids()
+        if not ids:
+            raise ValueError(err or "No local models found; set RING_LLM_MODEL or pull a model")
+        use_model = ids[0]
+    body: dict[str, Any] = {
+        "model": use_model,
+        "messages": messages,
+        "stream": True,
+    }
+    headers = {"Content-Type": "application/json", **_auth_headers()}
+    try:
+        async with httpx.AsyncClient(timeout=_CHAT_TIMEOUT, **_LOCAL_CLIENT_KW) as client:
+            async with client.stream("POST", f"{base}/v1/chat/completions", json=body, headers=headers) as r:
+                if r.status_code >= 400:
+                    detail = await r.aread()
+                    raise ValueError(f"LLM HTTP {r.status_code}: {detail.decode(errors='replace')[:500]}")
+                async for line in r.aiter_lines():
+                    line = line.strip()
+                    if not line.startswith("data:"):
+                        continue
+                    payload = line[5:].strip()
+                    if payload == "[DONE]":
+                        return
+                    try:
+                        obj = json.loads(payload)
+                    except ValueError:
+                        continue
+                    choices = obj.get("choices") or []
+                    delta = (choices[0].get("delta") or {}) if choices else {}
+                    content = delta.get("content")
+                    if content:
+                        yield content
+    except ValueError:
+        raise
+    except Exception as e:
+        raise ValueError(f"Could not reach local LLM at {base}: {e!s}") from e
 
 
 async def probe_startup_log(append_log_fn: Callable[..., Any]) -> None:
