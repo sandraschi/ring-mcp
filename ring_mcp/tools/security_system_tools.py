@@ -22,6 +22,79 @@ logger = logging.getLogger(__name__)
 _READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 _MUTATING = {"readOnlyHint": False, "idempotentHint": False}
 
+_SYS_STATUS_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "error_type": {"type": "string"},
+        "system_status": {"type": "object"},
+        "devices": {"type": "object"},
+        "device_count": {"type": "integer"},
+        "online_devices": {"type": "integer"},
+        "active_alerts": {"type": "array"},
+        "alert_count": {"type": "integer"},
+        "last_updated": {"type": "string"},
+        "emergency_mode": {"type": "boolean"},
+    },
+}
+
+_ARM_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "error_type": {"type": "string"},
+        "system_mode": {"type": "string"},
+        "panel_id": {"type": "string"},
+        "bypass_sensors": {"type": "array"},
+        "requested_delay_minutes": {},
+        "note": {"type": "string"},
+        "warnings": {"type": "array"},
+        "arm_timestamp": {"type": "string"},
+    },
+}
+
+_DISARM_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "error_type": {"type": "string"},
+        "security_implication": {"type": "string"},
+        "current_mode": {"type": "string"},
+        "panel_id": {"type": "string"},
+        "disarm_timestamp": {"type": "string"},
+        "force_disarm_used": {"type": "boolean"},
+        "recent_activity": {"type": "array"},
+        "warnings": {"type": "array"},
+        "security_log_entry": {"type": "object"},
+    },
+}
+
+_HISTORY_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "time_range": {"type": "object"},
+        "time_range_requested": {"type": "string"},
+        "events": {"type": "array"},
+        "summary": {"type": "object"},
+        "device_activity": {"type": "object"},
+        "arm_disarm_timeline": {"type": "array"},
+        "categorized_events": {"type": "object"},
+    },
+}
+
 
 def _is_alarm_panel(device: dict[str, Any]) -> bool:
     """Panel-shaped devices: explicit alarm type/family (never guess from online state)."""
@@ -61,6 +134,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_security_system_status",
         description="Get comprehensive status of the entire Ring security system",
         annotations=_READ_ONLY,
+        output_schema=_SYS_STATUS_SCHEMA,
     )
     async def get_security_system_status() -> dict[str, Any]:
         """Get comprehensive status of the entire Ring security system.
@@ -198,6 +272,7 @@ def register_tools(app: FastMCP) -> None:
         name="arm_security_system",
         description="Arm the Ring security system with specified mode and options",
         annotations=_MUTATING,
+        output_schema=_ARM_SCHEMA,
     )
     async def arm_security_system(
         mode: Annotated[Literal["home", "away", "disarmed"], Field(description="Target panel mode.")] = "away",
@@ -272,6 +347,7 @@ def register_tools(app: FastMCP) -> None:
         name="disarm_security_system",
         description="Disarm the Ring security system safely with authentication",
         annotations=_MUTATING,
+        output_schema=_DISARM_SCHEMA,
     )
     async def disarm_security_system(
         force_disarm: Annotated[bool, Field(description="Disarm even with recent security activity.")] = False,
@@ -359,6 +435,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_security_history",
         description="Get comprehensive security system history and event timeline",
         annotations=_READ_ONLY,
+        output_schema=_HISTORY_SCHEMA,
     )
     async def get_security_history(
         hours: Annotated[int, Field(description="Hours of history to retrieve.", ge=1, le=720)] = 24,

@@ -22,6 +22,73 @@ logger = logging.getLogger(__name__)
 
 _READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
+_DOORBELL_STATUS_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "doorbells": {"type": "array"},
+        "summary": {"type": "object"},
+        "last_updated": {"type": "string"},
+    },
+}
+
+_STREAM_HANDOFF_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "doorbell_id": {"type": "string"},
+        "doorbell_name": {"type": "string"},
+        "requested_quality": {"type": "string"},
+        "webrtc": {"type": "object"},
+        "hint": {"type": "string"},
+    },
+}
+
+_CALL_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "error": {"type": "string"},
+        "unsupported": {"type": "boolean"},
+    },
+}
+
+_VISITOR_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "time_range": {"type": "object"},
+        "visitor_events": {"type": "array"},
+        "summary": {"type": "object"},
+        "frequent_visitors": {"type": "array"},
+        "hourly_activity_pattern": {"type": "array"},
+        "filters_applied": {"type": "object"},
+    },
+}
+
+_MOTION_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "error": {"type": "string"},
+        "unsupported": {"type": "boolean"},
+        "doorbell_id": {"type": "string"},
+        "doorbell_name": {"type": "string"},
+        "requested_configuration": {"type": "object"},
+    },
+}
+
 _WEBRTC_HINT = (
     "Ring video is WebRTC-only. In a browser use the Doorbell page live view, "
     "or signal manually via WS /api/v1/devices/{id}/stream/webrtc "
@@ -39,6 +106,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_doorbell_status",
         description="Get comprehensive status of all Ring doorbells in the system",
         annotations=_READ_ONLY,
+        output_schema=_DOORBELL_STATUS_SCHEMA,
     )
     async def get_doorbell_status() -> dict[str, Any]:
         """Get comprehensive status of all Ring doorbells in the system.
@@ -93,6 +161,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_doorbell_live_stream",
         description="Get live video stream from Ring doorbell (WebRTC handoff)",
         annotations=_READ_ONLY,
+        output_schema=_STREAM_HANDOFF_SCHEMA,
     )
     async def get_doorbell_live_stream(
         doorbell_id: Annotated[
@@ -153,6 +222,7 @@ def register_tools(app: FastMCP) -> None:
         name="answer_doorbell_call",
         description="Answer an active doorbell call with two-way audio communication",
         annotations={"readOnlyHint": False, "idempotentHint": False},
+        output_schema=_CALL_SCHEMA,
     )
     async def answer_doorbell_call(
         doorbell_id: Annotated[
@@ -196,6 +266,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_visitor_history",
         description="Get comprehensive visitor history with snapshots and event details",
         annotations=_READ_ONLY,
+        output_schema=_VISITOR_SCHEMA,
     )
     async def get_visitor_history(
         hours: Annotated[int, Field(description="Hours of history to retrieve.", ge=1, le=720)] = 24,
@@ -315,6 +386,7 @@ def register_tools(app: FastMCP) -> None:
         name="configure_motion_detection",
         description="Configure motion detection settings for Ring doorbell with advanced options",
         annotations={"readOnlyHint": False, "idempotentHint": True},
+        output_schema=_MOTION_SCHEMA,
     )
     async def configure_motion_detection(
         doorbell_id: Annotated[

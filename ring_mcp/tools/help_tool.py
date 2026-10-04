@@ -16,6 +16,55 @@ logger = logging.getLogger(__name__)
 
 _READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
+_LIST_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "tools": {"type": "array"},
+        "categories": {"type": "array"},
+        "total_count": {"type": "integer"},
+        "filtered_count": {"type": "integer"},
+        "timestamp": {"type": "string"},
+    },
+}
+
+_HELP_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "error": {"type": "string"},
+        "tool_name": {"type": "string"},
+        "description": {"type": "string"},
+        "category": {"type": "string"},
+        "parameters": {"type": "object"},
+        "returns": {"type": "string"},
+        "usage": {"type": "string"},
+        "examples": {"type": "object"},
+        "tips": {"type": "array"},
+        "related_tools": {"type": "array"},
+        "available_tools": {"type": "array"},
+        "suggestion": {"type": "string"},
+    },
+}
+
+_SEARCH_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "query": {"type": "string"},
+        "category_filter": {},
+        "total_matches": {"type": "integer"},
+        "results": {"type": "array"},
+        "search_tips": {"type": "array"},
+    },
+}
+
 
 def register_tools(app: FastMCP) -> None:
     """Register help system tools with the FastMCP application.
@@ -27,6 +76,7 @@ def register_tools(app: FastMCP) -> None:
         name="list_available_tools",
         description="List all available Ring MCP tools with categories and descriptions",
         annotations=_READ_ONLY,
+        output_schema=_LIST_SCHEMA,
     )
     async def list_available_tools(
         category: Annotated[
@@ -342,6 +392,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_tool_help",
         description="Get detailed help and usage information for a specific tool",
         annotations=_READ_ONLY,
+        output_schema=_HELP_SCHEMA,
     )
     async def get_tool_help(
         tool_name: Annotated[str, Field(description="Name of the tool to get help for.", min_length=1)],
@@ -402,6 +453,7 @@ def register_tools(app: FastMCP) -> None:
         name="search_tools",
         description="Search for tools by name, description, or functionality",
         annotations=_READ_ONLY,
+        output_schema=_SEARCH_SCHEMA,
     )
     async def search_tools(
         query: Annotated[str, Field(description="Search query text.", min_length=1)],

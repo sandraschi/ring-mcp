@@ -27,6 +27,75 @@ logger = logging.getLogger(__name__)
 
 _READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
+_SYSTEM_SCHEMA = {
+    "type": "object",
+    "required": ["system_status"],
+    "properties": {
+        "system_status": {"type": "string"},
+        "message": {"type": "string"},
+        "timestamp": {"type": "string"},
+        "authentication": {"type": "object"},
+        "devices": {"type": "object"},
+        "connectivity": {"type": "object"},
+        "performance": {"type": "object"},
+        "diagnostics": {"type": "object"},
+        "error": {"type": "object"},
+    },
+}
+
+_AUTH_SCHEMA = {
+    "type": "object",
+    "required": ["success"],
+    "properties": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "authenticated": {"type": "boolean"},
+        "method": {"type": "string"},
+        "token_valid": {"type": "boolean"},
+        "token_expires_in": {},
+        "permissions": {"type": "array"},
+        "rate_limit_status": {"type": "string"},
+        "last_successful_auth": {},
+        "auth_errors": {"type": "array"},
+    },
+}
+
+_CONNECTIVITY_SCHEMA = {
+    "type": "object",
+    "required": ["devices_tested"],
+    "properties": {
+        "message": {"type": "string"},
+        "test_timestamp": {"type": "string"},
+        "devices_tested": {"type": "integer"},
+        "devices_online": {"type": "integer"},
+        "devices_offline": {"type": "integer"},
+        "connectivity_score": {"type": "integer"},
+        "device_results": {"type": "array"},
+        "recommendations": {"type": "array"},
+        "note": {"type": "string"},
+        "error": {"type": "string"},
+    },
+}
+
+_SERVICE_SCHEMA = {
+    "type": "object",
+    "required": ["health_status"],
+    "properties": {
+        "message": {"type": "string"},
+        "service_name": {"type": "string"},
+        "version": {"type": "string"},
+        "uptime_seconds": {"type": "integer"},
+        "health_status": {"type": "string"},
+        "last_health_check": {"type": "string"},
+        "health_score": {"type": "integer"},
+        "components": {"type": "object"},
+        "performance": {"type": "object"},
+        "alerts": {"type": "array"},
+        "recommendations": {"type": "array"},
+        "error": {"type": "string"},
+    },
+}
+
 
 def register_tools(app: FastMCP) -> None:
     """Register status monitoring tools with the FastMCP application.
@@ -38,6 +107,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_system_status",
         description="Get comprehensive system status including authentication and device connectivity",
         annotations=_READ_ONLY,
+        output_schema=_SYSTEM_SCHEMA,
     )
     async def get_system_status(
         include_device_details: Annotated[bool, Field(description="Include per-device details.")] = True,
@@ -135,6 +205,7 @@ def register_tools(app: FastMCP) -> None:
         name="check_authentication_status",
         description="Check Ring API authentication status and token validity",
         annotations=_READ_ONLY,
+        output_schema=_AUTH_SCHEMA,
     )
     async def check_authentication_status() -> dict[str, Any]:
         """Check Ring API authentication status and token validity.
@@ -198,6 +269,7 @@ def register_tools(app: FastMCP) -> None:
         name="check_device_connectivity",
         description="Test connectivity and status of all Ring devices",
         annotations=_READ_ONLY,
+        output_schema=_CONNECTIVITY_SCHEMA,
     )
     async def check_device_connectivity(
         device_id: Annotated[str | None, Field(description="Test a single device instead of all.")] = None,
@@ -309,6 +381,7 @@ def register_tools(app: FastMCP) -> None:
         name="get_service_health",
         description="Get detailed service health and performance metrics",
         annotations=_READ_ONLY,
+        output_schema=_SERVICE_SCHEMA,
     )
     async def get_service_health(
         include_metrics: Annotated[bool, Field(description="Include resource metrics.")] = True,
