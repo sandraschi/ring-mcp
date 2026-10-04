@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml /app/
-COPY ring_mcp/ /app/ring_mcp/
 COPY src/ /app/src/
 
 RUN pip install --upgrade pip \

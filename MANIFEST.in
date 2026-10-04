@@ -4,7 +4,7 @@ include requirements.txt
 include .env.example
 
 # Include package data
-recursive-include ring_mcp *.json *.yaml *.yml
+recursive-include src/ring_mcp *.json *.yaml *.yml
 
 # Include documentation
 recursive-include docs *
