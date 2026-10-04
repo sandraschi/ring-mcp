@@ -4,7 +4,7 @@
       "matcher": "",
       "hooks": [{
         "type": "text",
-        "text": "## Session Context (Ring MCP)\n\nYou have access to Ring doorbells, security cameras, and alarm systems via MCP tools.\n\n**Before starting work:**\n1. Check device status: list_devices(device_type=\"all\")\n2. Review recent events: get_events(limit=10)\n\n**At end of work:**\n- Arm/disarm any changed devices\n- Log important events to the activity log"
+        "text": "## Session Context (Ring MCP)\n\nYou have access to Ring doorbells, security cameras, and alarm systems via MCP tools.\n\n**Before starting work:**\n1. Check system status: get_system_status()\n2. List devices: list_devices()\n\n**At end of work:**\n- Disarm any panel you armed for testing (see disarm_security_system)\n- Log important events to the activity log"
       }]
     }]
   }
