@@ -1,94 +1,107 @@
 """
-Ring Security System Management Tools - FastMCP 3.1
+Ring Security System Management Tools - FastMCP 3.4.
 
-Core security system operations for Ring burglar alarm and overall system control.
-Handles arming/disarming, status monitoring, and emergency protocols.
-Tool responses support sampling and agentic workflows (FastMCP 3.1).
+Burglar-alarm arming, status, and history against the real Ring API
+(ring_mcp.core.ring_client_modern). Arming targets alarm panels by device id
+(auto-detected when exactly one panel-shaped device is visible); without any
+visible panel the tools say so instead of pretending.
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Literal
+from datetime import UTC, datetime, timedelta
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 from ..core.exceptions import AuthenticationError, DeviceNotFoundError, RingError
-from ..core.ring_client import RingClient
+from ..core.ring_client_modern import RingClient
 
 logger = logging.getLogger(__name__)
 
+_READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
+_MUTATING = {"readOnlyHint": False, "idempotentHint": False}
+
+
+def _is_alarm_panel(device: dict[str, Any]) -> bool:
+    """Panel-shaped devices: explicit alarm type/family (never guess from online state)."""
+    return "alarm" in str(device.get("type", "")).lower() or "alarm" in str(device.get("family", "")).lower()
+
+
+async def _resolve_panel_id(client: RingClient, device_id: str | None) -> tuple[str, list[dict[str, Any]]]:
+    """Return (panel id, all devices) or raise DeviceNotFoundError with an honest message."""
+    devices = await client.get_devices()
+    if device_id:
+        match = next((d for d in devices if d.get("id") == device_id), None)
+        if match is None:
+            raise DeviceNotFoundError(f"Device {device_id} not found")
+        return device_id, devices
+    panels = [d for d in devices if _is_alarm_panel(d)]
+    if len(panels) == 1:
+        return panels[0]["id"], devices
+    if not panels:
+        raise DeviceNotFoundError(
+            "No alarm panel visible via the Ring API "
+            f"({len(devices)} device(s) seen). Pass device_id explicitly "
+            "(e.g. an MQTT-bridged panel id) or enable ring-mqtt."
+        )
+    raise DeviceNotFoundError(
+        f"{len(panels)} alarm panels visible - pass device_id explicitly: "
+        + ", ".join(f"{d.get('id')} ({d.get('name')})" for d in panels)
+    )
+
 
 def register_tools(app: FastMCP) -> None:
-    """Register security system management tools with the FastMCP application (FastMCP 3.1).
+    """Register security system management tools with the FastMCP application.
 
-    Args:
-        app: FastMCP application instance
+    Args: See Parameters block.
     """
 
     @app.tool(
-        name="get_security_system_status", description="Get comprehensive status of the entire Ring security system"
+        name="get_security_system_status",
+        description="Get comprehensive status of the entire Ring security system",
+        annotations=_READ_ONLY,
     )
     async def get_security_system_status() -> dict[str, Any]:
         """Get comprehensive status of the entire Ring security system.
 
-        Returns detailed information about all Ring security devices including:
-        - Overall system status (armed/disarmed/partial)
-        - Individual device states and battery levels
-        - Active alerts and recent events
-        - System health and connectivity status
-        - Emergency mode status
+        Armed state is reported as "unknown" unless a panel exposes it -
+        online state is NOT treated as armed (that reading would be fabricated).
 
-        This is the primary command for checking your home security status.
-        Useful for morning/evening security checks or when arriving/leaving home.
+        ## Return Format
+        {"success": true, "message": "...", "system_status": {"mode": ...},
+         "devices": {...}, "active_alerts": [...], ...}
 
-        Returns:
-            Dict containing:
-            - system_status: Overall security state
-            - devices: List of all Ring devices with status
-            - active_alerts: Current security alerts
-            - last_updated: Timestamp of status check
-            - emergency_mode: Whether emergency protocols are active
+        ## Examples
+        await get_security_system_status()
         """
         try:
             async with RingClient() as client:
-                # Get all devices
                 all_devices = await client.get_devices()
 
-                # Categorize devices by type and determine system status
                 security_devices = []
                 cameras = []
                 doorbells = []
                 sensors = []
                 other_devices = []
 
-                # Track armed status across security devices
-                armed_devices = 0
-                total_security_devices = 0
-
                 for device in all_devices:
-                    device_type = device.get("type", "").lower()
-
-                    # Enhanced device info
+                    device_type = str(device.get("type", "")).lower()
                     device_info = {
                         "device_id": device["id"],
                         "name": device["name"],
                         "type": device["type"],
-                        "model": device["model"],
-                        "online": device["online"],
+                        "model": device.get("model"),
+                        "online": device.get("online", False),
                         "battery_life": device.get("battery_life"),
                         "firmware": device.get("firmware"),
                         "address": device.get("address"),
-                        "last_update": device["last_update"],
+                        "last_update": device.get("last_update"),
+                        "alarm": device.get("alarm"),
                     }
 
-                    # Categorize device
-                    if "alarm" in device_type or "security" in device_type:
+                    if _is_alarm_panel(device) or "security" in device_type:
                         security_devices.append(device_info)
-                        total_security_devices += 1
-                        # Check if this device appears to be armed (simplified logic)
-                        # In a real implementation, you'd check the actual alarm state
-                        if device.get("online", False):  # Assume online devices might be armed
-                            armed_devices += 1
                     elif "camera" in device_type:
                         cameras.append(device_info)
                     elif "doorbell" in device_type:
@@ -98,49 +111,43 @@ def register_tools(app: FastMCP) -> None:
                     else:
                         other_devices.append(device_info)
 
-                # Determine overall system status
-                system_status = "disarmed"  # Default
-                if total_security_devices > 0:
-                    if armed_devices == total_security_devices:
-                        system_status = "armed"
-                    elif armed_devices > 0:
-                        system_status = "partial"
-                    else:
+                # Armed state: only trust an explicit panel reading, never online-ness.
+                system_status = "unknown"
+                armed_flags = [d.get("alarm") for d in security_devices if isinstance(d.get("alarm"), str)]
+                if armed_flags:
+                    lowered = [str(a).lower() for a in armed_flags]
+                    if all("disarm" in a for a in lowered):
                         system_status = "disarmed"
+                    elif any("arm" in a for a in lowered):
+                        system_status = "armed" if all("arm" in a for a in lowered) else "partial"
 
-                # Get recent events for activity analysis
-                all_events = []
+                all_events: list[dict[str, Any]] = []
                 for device in all_devices:
                     try:
                         events = await client.get_device_events(device["id"], limit=2)
                         all_events.extend(events)
                     except Exception as e:
-                        logger.debug(f"Could not get events for {device['id']}: {e}")
+                        logger.debug("Could not get events for %s: %s", device["id"], e)
 
-                # Analyze events for active alerts
                 active_alerts = []
-                recent_events = [e for e in all_events if e.get("created_at")]
+                recent_events = sorted(
+                    [e for e in all_events if e.get("created_at")],
+                    key=lambda x: x.get("created_at", ""),
+                    reverse=True,
+                )
+                recent_security_events = [
+                    e for e in recent_events[:5] if e.get("kind") in ["motion", "alarm", "doorbell"]
+                ]
+                if recent_security_events:
+                    active_alerts.append(
+                        {
+                            "type": "activity",
+                            "severity": "info",
+                            "message": f"Recent security activity: {len(recent_security_events)} events",
+                            "events": recent_security_events,
+                        }
+                    )
 
-                if recent_events:
-                    # Sort by time and get most recent
-                    recent_events.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-
-                    # Check for recent motion or alarm events
-                    recent_security_events = [
-                        e for e in recent_events[:5] if e.get("kind") in ["motion", "alarm", "doorbell"]
-                    ]
-
-                    if recent_security_events:
-                        active_alerts.append(
-                            {
-                                "type": "activity",
-                                "severity": "info",
-                                "message": f"Recent security activity: {len(recent_security_events)} events",
-                                "events": recent_security_events,
-                            }
-                        )
-
-                # Check for offline devices
                 offline_devices = [d for d in all_devices if not d.get("online", False)]
                 if offline_devices:
                     active_alerts.append(
@@ -154,10 +161,11 @@ def register_tools(app: FastMCP) -> None:
 
                 return {
                     "success": True,
+                    "message": f"{len(all_devices)} device(s), system mode: {system_status}",
                     "system_status": {
                         "mode": system_status,
                         "armed": system_status == "armed",
-                        "countdown_active": False,  # Would need specific device state checking
+                        "countdown_active": False,
                         "entry_delay": 0,
                     },
                     "devices": {
@@ -172,228 +180,163 @@ def register_tools(app: FastMCP) -> None:
                     "active_alerts": active_alerts,
                     "alert_count": len(active_alerts),
                     "last_updated": datetime.now().isoformat(),
-                    "emergency_mode": False,  # Ring doesn't have a global emergency mode
+                    "emergency_mode": False,
                 }
 
-        except AuthenticationError as e:
-            logger.error(f"Authentication failed: {e}")
+        except AuthenticationError:
+            logger.error("Authentication failed checking security status")
             return {
                 "success": False,
                 "error": "Ring authentication failed. Please check credentials.",
                 "error_type": "authentication",
             }
         except Exception as e:
-            logger.error(f"Error getting security status: {e}")
+            logger.error("Error getting security status: %s", str(e))
             return {"success": False, "error": str(e), "error_type": "system"}
 
-    @app.tool(name="arm_security_system", description="Arm the Ring security system with specified mode and options")
-    def arm_security_system(
-        mode: Literal["home", "away", "disarmed"] = "away",
-        bypass_sensors: list[str] | None = None,
-        delay_minutes: int | None = None,
+    @app.tool(
+        name="arm_security_system",
+        description="Arm the Ring security system with specified mode and options",
+        annotations=_MUTATING,
+    )
+    async def arm_security_system(
+        mode: Annotated[Literal["home", "away", "disarmed"], Field(description="Target panel mode.")] = "away",
+        bypass_sensors: Annotated[
+            list[str] | None, Field(description="Sensor IDs to bypass (panel permitting).")
+        ] = None,
+        delay_minutes: Annotated[
+            int | None, Field(description="Requested entry delay; panel defaults apply.", ge=0, le=30)
+        ] = None,
+        device_id: Annotated[str | None, Field(description="Alarm panel id (auto-detected when unambiguous).")] = None,
     ) -> dict[str, Any]:
-        """Arm the Ring security system with specified mode and options.
+        """Arm the Ring alarm panel (real set_arm_status call).
 
-        Arms your Ring security system in the specified mode. The system supports
-        different arming modes for various scenarios:
+        ## Return Format
+        {"success": true, "message": "Panel ... armed ...", "system_mode": "away", ...}
 
-        - 'home': Arms perimeter sensors but allows internal movement
-        - 'away': Arms all sensors for full protection when leaving
-        - 'disarmed': Disarms the entire system
-
-        The system includes safety features like entry/exit delays and sensor bypass
-        for maintenance or temporary issues. Always ensure all family members are
-        accounted for before arming in 'away' mode.
-
-        Args:
-            mode: Security system mode ('home', 'away', or 'disarmed')
-            bypass_sensors: Optional list of sensor IDs to bypass during arming
-            delay_minutes: Optional custom entry delay in minutes (overrides default)
-
-        Returns:
-            Dict containing:
-            - success: Whether the operation completed successfully
-            - system_mode: New system mode after arming
-            - countdown_remaining: Entry/exit delay countdown if active
-            - bypassed_sensors: List of sensors bypassed during arming
-            - estimated_arm_time: When system will be fully armed
-
-        Examples:
-            # Standard away mode when leaving house
-            arm_security_system("away")
-
-            # Home mode for nighttime protection
-            arm_security_system("home")
-
-            # Away mode bypassing faulty window sensor
-            arm_security_system("away", bypass_sensors=["sensor_12345"])
+        ## Examples
+        await arm_security_system("away")
+        await arm_security_system("home", device_id="alarm-001")
         """
         try:
-            client = RingClient()
-
-            # Validate mode
             valid_modes = ["home", "away", "disarmed"]
             if mode not in valid_modes:
                 return {"success": False, "error": f"Invalid mode '{mode}'. Must be one of: {valid_modes}"}
 
-            # Pre-arm system check
-            system_status = client.get_system_status()
-            if system_status.get("maintenance_mode"):
+            async with RingClient() as client:
+                try:
+                    panel_id, devices = await _resolve_panel_id(client, device_id)
+                except DeviceNotFoundError as e:
+                    return {"success": False, "error": str(e), "error_type": "device_not_found"}
+
+                low_battery = [
+                    {"id": d.get("id"), "name": d.get("name"), "battery_life": d.get("battery_life")}
+                    for d in devices
+                    if isinstance(d.get("battery_life"), (int, float)) and d["battery_life"] < 15
+                ]
+                warnings = []
+                if low_battery:
+                    warnings.append(
+                        {
+                            "type": "low_battery",
+                            "message": f"{len(low_battery)} devices have low battery",
+                            "devices": [d["name"] for d in low_battery],
+                        }
+                    )
+
+                armed = await client.set_arm_status(panel_id, mode != "disarmed")
+
                 return {
-                    "success": False,
-                    "error": "System is in maintenance mode. Cannot arm at this time.",
-                    "maintenance_info": system_status.get("maintenance_info"),
+                    "success": bool(armed),
+                    "message": f"Panel {panel_id} {'armed' if armed else 'NOT armed'} ({mode})",
+                    "system_mode": mode,
+                    "panel_id": panel_id,
+                    "bypass_sensors": bypass_sensors or [],
+                    "requested_delay_minutes": delay_minutes,
+                    "note": "Entry/exit delays and bypass handling follow the panel's own configuration.",
+                    "warnings": warnings,
+                    "arm_timestamp": datetime.now().isoformat(),
                 }
-
-            # Check for low battery devices that might cause issues
-            devices = client.get_all_devices()
-            low_battery_devices = [
-                d for d in devices if hasattr(d, "battery_level") and d.battery_level and d.battery_level < 15
-            ]
-
-            warnings = []
-            if low_battery_devices:
-                warnings.append(
-                    {
-                        "type": "low_battery",
-                        "message": f"{len(low_battery_devices)} devices have low battery",
-                        "devices": [d.name for d in low_battery_devices],
-                    }
-                )
-
-            # Perform the arming operation
-            arm_result = client.arm_system(
-                mode=mode, bypass_sensors=bypass_sensors or [], entry_delay_minutes=delay_minutes
-            )
-
-            # Calculate estimated full arm time
-            countdown_seconds = arm_result.get("countdown_seconds", 0)
-            estimated_arm_time = None
-            if countdown_seconds > 0:
-                estimated_arm_time = (datetime.now() + timedelta(seconds=countdown_seconds)).isoformat()
-
-            return {
-                "success": True,
-                "system_mode": mode,
-                "previous_mode": system_status.get("mode"),
-                "countdown_remaining": countdown_seconds,
-                "countdown_active": countdown_seconds > 0,
-                "bypassed_sensors": bypass_sensors or [],
-                "estimated_arm_time": estimated_arm_time,
-                "warnings": warnings,
-                "arm_timestamp": datetime.now().isoformat(),
-                "entry_delay_minutes": arm_result.get("entry_delay_minutes"),
-                "exit_delay_seconds": arm_result.get("exit_delay_seconds"),
-            }
 
         except DeviceNotFoundError as e:
-            logger.error(f"Device not found during arming: {e}")
+            logger.error("Device not found during arming: %s", str(e))
             return {"success": False, "error": f"Device not found: {e!s}", "error_type": "device_not_found"}
         except RingError as e:
-            logger.error(f"Ring API error during arming: {e}")
+            logger.error("Ring API error during arming: %s", str(e))
             return {"success": False, "error": f"Ring system error: {e!s}", "error_type": "ring_api"}
         except Exception as e:
-            logger.error(f"Unexpected error during arming: {e}")
+            logger.error("Unexpected error during arming: %s", str(e))
             return {"success": False, "error": str(e), "error_type": "unexpected"}
 
-    @app.tool(name="disarm_security_system", description="Disarm the Ring security system safely with authentication")
-    def disarm_security_system(force_disarm: bool = False, disarm_code: str | None = None) -> dict[str, Any]:
-        """Disarm the Ring security system safely with authentication.
+    @app.tool(
+        name="disarm_security_system",
+        description="Disarm the Ring security system safely with authentication",
+        annotations=_MUTATING,
+    )
+    async def disarm_security_system(
+        force_disarm: Annotated[bool, Field(description="Disarm even with recent security activity.")] = False,
+        disarm_code: Annotated[
+            str | None, Field(description="Accepted for compatibility; the Ring API call needs no code.")
+        ] = None,
+        device_id: Annotated[str | None, Field(description="Alarm panel id (auto-detected when unambiguous).")] = None,
+    ) -> dict[str, Any]:
+        """Disarm the Ring alarm panel (real set_arm_status call).
 
-        Disarms the Ring security system with proper authentication and safety checks.
-        This operation requires careful handling as it removes all security protection.
+        ## Return Format
+        {"success": true, "message": "Panel ... disarmed", "current_mode": "disarmed", ...}
 
-        The system includes safety features to prevent accidental disarming:
-        - Authentication verification
-        - Recent activity checks
-        - Force disarm option for emergencies
-
-        Always verify the disarm was successful and intentional. The system will
-        log all disarm events for security audit purposes.
-
-        Args:
-            force_disarm: Override safety checks for emergency situations
-            disarm_code: Optional disarm code for additional security
-
-        Returns:
-            Dict containing:
-            - success: Whether disarm operation completed
-            - previous_mode: System mode before disarming
-            - disarm_timestamp: When system was disarmed
-            - recent_activity: Any recent sensor activity
-            - security_log_entry: Audit log information
-
-        Examples:
-            # Standard disarm when arriving home
-            disarm_security_system()
-
-            # Emergency disarm (use with caution)
-            disarm_security_system(force_disarm=True)
-
-            # Disarm with additional security code
-            disarm_security_system(disarm_code="1234")
+        ## Examples
+        await disarm_security_system()
+        await disarm_security_system(force_disarm=True)
         """
         try:
-            client = RingClient()
+            async with RingClient() as client:
+                try:
+                    panel_id, devices = await _resolve_panel_id(client, device_id)
+                except DeviceNotFoundError as e:
+                    return {"success": False, "error": str(e), "error_type": "device_not_found"}
 
-            # Get current system status before disarming
-            current_status = client.get_system_status()
-            previous_mode = current_status.get("mode", "unknown")
+                recent_events: list[dict[str, Any]] = []
+                for device in devices:
+                    try:
+                        recent_events.extend(await client.get_device_events(device["id"], limit=5))
+                    except Exception as e:
+                        logger.debug("Could not get events for %s: %s", device["id"], e)
+                security_events = [e for e in recent_events if e.get("kind") in ["motion", "contact", "alarm"]]
 
-            # Safety check - verify system is currently armed
-            if previous_mode == "disarmed" and not force_disarm:
-                return {
-                    "success": True,
-                    "message": "System is already disarmed",
-                    "previous_mode": previous_mode,
-                    "disarm_timestamp": datetime.now().isoformat(),
-                    "no_action_required": True,
+                warnings = []
+                if security_events and not force_disarm:
+                    warnings.append(
+                        {
+                            "type": "recent_activity",
+                            "message": f"Recent security activity detected ({len(security_events)} events)",
+                            "events": security_events[:3],
+                        }
+                    )
+
+                disarmed = await client.set_arm_status(panel_id, False)
+
+                log_entry = {
+                    "action": "disarm",
+                    "timestamp": datetime.now().isoformat(),
+                    "force_disarm": force_disarm,
+                    "recent_events_count": len(security_events),
                 }
 
-            # Check for recent activity that might indicate a security event
-            recent_events = client.get_recent_events(minutes=5)
-            security_events = [
-                event for event in recent_events if event.get("event_type") in ["motion", "contact", "alarm"]
-            ]
+                return {
+                    "success": bool(disarmed),
+                    "message": f"Panel {panel_id} {'disarmed' if disarmed else 'NOT disarmed'}",
+                    "current_mode": "disarmed" if disarmed else "unknown",
+                    "panel_id": panel_id,
+                    "disarm_timestamp": datetime.now().isoformat(),
+                    "force_disarm_used": force_disarm,
+                    "recent_activity": security_events,
+                    "warnings": warnings,
+                    "security_log_entry": log_entry,
+                }
 
-            warnings = []
-            if security_events and not force_disarm:
-                warnings.append(
-                    {
-                        "type": "recent_activity",
-                        "message": f"Recent security activity detected ({len(security_events)} events)",
-                        "events": security_events[:3],  # Show first 3 events
-                    }
-                )
-
-            # Perform disarm operation
-            disarm_result = client.disarm_system(force=force_disarm, disarm_code=disarm_code)
-
-            # Create security log entry
-            log_entry = {
-                "action": "disarm",
-                "timestamp": datetime.now().isoformat(),
-                "previous_mode": previous_mode,
-                "force_disarm": force_disarm,
-                "user_authenticated": disarm_result.get("user_authenticated", False),
-                "recent_events_count": len(security_events),
-            }
-
-            return {
-                "success": True,
-                "previous_mode": previous_mode,
-                "current_mode": "disarmed",
-                "disarm_timestamp": datetime.now().isoformat(),
-                "force_disarm_used": force_disarm,
-                "authentication_verified": disarm_result.get("user_authenticated", False),
-                "recent_activity": security_events,
-                "warnings": warnings,
-                "security_log_entry": log_entry,
-                "all_sensors_disabled": True,
-            }
-
-        except AuthenticationError as e:
-            logger.error(f"Authentication failed during disarm: {e}")
+        except AuthenticationError:
+            logger.error("Authentication failed during disarm")
             return {
                 "success": False,
                 "error": "Authentication failed. Cannot disarm system.",
@@ -401,10 +344,10 @@ def register_tools(app: FastMCP) -> None:
                 "security_implication": "System remains armed for protection",
             }
         except RingError as e:
-            logger.error(f"Ring API error during disarm: {e}")
+            logger.error("Ring API error during disarm: %s", str(e))
             return {"success": False, "error": f"Ring system error: {e!s}", "error_type": "ring_api"}
         except Exception as e:
-            logger.error(f"Unexpected error during disarm: {e}")
+            logger.error("Unexpected error during disarm: %s", str(e))
             return {
                 "success": False,
                 "error": str(e),
@@ -412,127 +355,114 @@ def register_tools(app: FastMCP) -> None:
                 "security_implication": "System status unknown - manual verification recommended",
             }
 
-    @app.tool(name="get_security_history", description="Get comprehensive security system history and event timeline")
-    def get_security_history(
-        hours: int = 24, event_types: list[str] | None = None, include_video: bool = False
+    @app.tool(
+        name="get_security_history",
+        description="Get comprehensive security system history and event timeline",
+        annotations=_READ_ONLY,
+    )
+    async def get_security_history(
+        hours: Annotated[int, Field(description="Hours of history to retrieve.", ge=1, le=720)] = 24,
+        event_types: Annotated[list[str] | None, Field(description="Filter by event kind strings.")] = None,
+        include_video: Annotated[
+            bool, Field(description="Attach per-event recording status (no footage listing API exists).")
+        ] = False,
     ) -> dict[str, Any]:
-        """Get comprehensive security system history and event timeline.
+        """Get security history from real per-device events.
 
-        Retrieves detailed history of security system events, providing insights into
-        system usage patterns, security incidents, and device activity. This is
-        essential for security auditing and understanding your home's protection status.
+        ## Return Format
+        {"success": true, "message": "N event(s) ...", "events": [...], "summary": {...}, ...}
 
-        The history includes arm/disarm events, sensor triggers, device status changes,
-        and optionally video recordings. Use this for security reviews, investigating
-        incidents, or understanding system usage patterns.
-
-        Args:
-            hours: Number of hours of history to retrieve (default: 24)
-            event_types: Filter by specific event types ['arm', 'disarm', 'motion', 'contact', 'alarm']
-            include_video: Whether to include video recording links in results
-
-        Returns:
-            Dict containing:
-            - events: Chronological list of security events
-            - summary: Summary statistics for the time period
-            - device_activity: Per-device activity breakdown
-            - arm_disarm_cycles: Timeline of system mode changes
-            - video_recordings: Available video footage (if requested)
+        ## Examples
+        await get_security_history()
+        await get_security_history(hours=6, event_types=["motion"])
         """
         try:
-            client = RingClient()
+            async with RingClient() as client:
+                end_time = datetime.now(UTC)
+                start_time = end_time - timedelta(hours=hours)
+                devices = await client.get_devices()
+                name_by_id = {d.get("id"): d.get("name", "Unknown") for d in devices}
 
-            # Calculate time range
-            end_time = datetime.now()
-            start_time = end_time - timedelta(hours=hours)
+                all_events: list[dict[str, Any]] = []
+                for device in devices:
+                    try:
+                        events = await client.get_device_events(device["id"], limit=20)
+                    except Exception as e:
+                        logger.debug("Could not get events for %s: %s", device["id"], e)
+                        continue
+                    for event in events:
+                        try:
+                            created = datetime.fromisoformat(str(event.get("created_at", "")))
+                        except ValueError:
+                            continue
+                        if created < start_time:
+                            continue
+                        kind = event.get("kind", "unknown")
+                        if event_types and kind not in event_types:
+                            continue
+                        entry: dict[str, Any] = {
+                            "timestamp": event.get("created_at"),
+                            "event_type": kind,
+                            "device_id": device["id"],
+                            "device_name": name_by_id.get(device["id"], "Unknown"),
+                            "answered": event.get("answered", False),
+                        }
+                        if include_video:
+                            entry["recording_status"] = event.get("recording_status")
+                        all_events.append(entry)
 
-            # Get events from Ring API
-            all_events = client.get_events_history(start_time=start_time, end_time=end_time, event_types=event_types)
+                all_events.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
 
-            # Process and categorize events
-            arm_events = []
-            disarm_events = []
-            sensor_events = []
-            alarm_events = []
-            device_activity = {}
+                arm_events = [e for e in all_events if e["event_type"] in ["arm", "armed"]]
+                disarm_events = [e for e in all_events if e["event_type"] in ["disarm", "disarmed"]]
+                sensor_events = [e for e in all_events if e["event_type"] in ["motion", "contact", "sensor"]]
+                alarm_events = [e for e in all_events if e["event_type"] == "alarm"]
 
-            for event in all_events:
-                event_type = event.get("event_type")
-                device_name = event.get("device_name", "Unknown")
+                device_activity: dict[str, dict[str, Any]] = {}
+                for event in all_events:
+                    name = event["device_name"]
+                    slot = device_activity.setdefault(
+                        name, {"event_count": 0, "last_activity": None, "event_types": []}
+                    )
+                    slot["event_count"] += 1
+                    slot["last_activity"] = event.get("timestamp")
+                    if event["event_type"] not in slot["event_types"]:
+                        slot["event_types"].append(event["event_type"])
 
-                # Track per-device activity
-                if device_name not in device_activity:
-                    device_activity[device_name] = {"event_count": 0, "last_activity": None, "event_types": set()}
+                arm_disarm_timeline = [
+                    {"timestamp": e.get("timestamp"), "action": e.get("event_type")}
+                    for e in sorted(arm_events + disarm_events, key=lambda x: x.get("timestamp", ""))
+                ]
 
-                device_activity[device_name]["event_count"] += 1
-                device_activity[device_name]["last_activity"] = event.get("timestamp")
-                device_activity[device_name]["event_types"].add(event_type)
+                summary = {
+                    "total_events": len(all_events),
+                    "arm_events": len(arm_events),
+                    "disarm_events": len(disarm_events),
+                    "sensor_triggers": len(sensor_events),
+                    "alarm_events": len(alarm_events),
+                    "active_devices": len(device_activity),
+                    "time_period_hours": hours,
+                    "most_active_device": max(device_activity.items(), key=lambda x: x[1]["event_count"])[0]
+                    if device_activity
+                    else None,
+                }
 
-                # Categorize events
-                if event_type in ["arm", "armed"]:
-                    arm_events.append(event)
-                elif event_type in ["disarm", "disarmed"]:
-                    disarm_events.append(event)
-                elif event_type in ["motion", "contact", "sensor"]:
-                    sensor_events.append(event)
-                elif event_type == "alarm":
-                    alarm_events.append(event)
-
-            # Convert sets to lists for JSON serialization
-            for device in device_activity.values():
-                device["event_types"] = list(device["event_types"])
-
-            # Create arm/disarm timeline
-            arm_disarm_timeline = []
-            system_events = sorted(arm_events + disarm_events, key=lambda x: x.get("timestamp", ""))
-
-            for event in system_events:
-                arm_disarm_timeline.append(
-                    {
-                        "timestamp": event.get("timestamp"),
-                        "action": event.get("event_type"),
-                        "mode": event.get("mode"),
-                        "duration_minutes": event.get("duration_minutes"),
-                    }
-                )
-
-            # Summary statistics
-            summary = {
-                "total_events": len(all_events),
-                "arm_events": len(arm_events),
-                "disarm_events": len(disarm_events),
-                "sensor_triggers": len(sensor_events),
-                "alarm_events": len(alarm_events),
-                "active_devices": len(device_activity),
-                "time_period_hours": hours,
-                "most_active_device": max(device_activity.items(), key=lambda x: x[1]["event_count"])[0]
-                if device_activity
-                else None,
-            }
-
-            result = {
-                "success": True,
-                "time_range": {"start": start_time.isoformat(), "end": end_time.isoformat(), "hours": hours},
-                "events": all_events,
-                "summary": summary,
-                "device_activity": device_activity,
-                "arm_disarm_timeline": arm_disarm_timeline,
-                "categorized_events": {
-                    "arm_events": arm_events,
-                    "disarm_events": disarm_events,
-                    "sensor_events": sensor_events,
-                    "alarm_events": alarm_events,
-                },
-            }
-
-            # Add video recordings if requested
-            if include_video:
-                video_recordings = client.get_video_recordings(start_time=start_time, end_time=end_time)
-                result["video_recordings"] = video_recordings
-                result["video_count"] = len(video_recordings)
-
-            return result
+                return {
+                    "success": True,
+                    "message": f"{len(all_events)} event(s) in the last {hours}h",
+                    "time_range": {"start": start_time.isoformat(), "end": end_time.isoformat(), "hours": hours},
+                    "events": all_events,
+                    "summary": summary,
+                    "device_activity": device_activity,
+                    "arm_disarm_timeline": arm_disarm_timeline,
+                    "categorized_events": {
+                        "arm_events": arm_events,
+                        "disarm_events": disarm_events,
+                        "sensor_events": sensor_events,
+                        "alarm_events": alarm_events,
+                    },
+                }
 
         except Exception as e:
-            logger.error(f"Error retrieving security history: {e}")
+            logger.error("Error retrieving security history: %s", str(e))
             return {"success": False, "error": str(e), "time_range_requested": f"{hours} hours"}
