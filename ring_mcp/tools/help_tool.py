@@ -1,54 +1,50 @@
 """
-Ring MCP Help System Tools - FastMCP 2.12
+Ring MCP Help System Tools - FastMCP 3.4.
 
-Comprehensive help and documentation system providing multilevel assistance:
-- Tool discovery and listing
-- Detailed tool help and usage examples
-- Tool search and filtering
-- System information and capabilities
-
-This module uses FastMCP 2.12 patterns with multiline decorators and proper
-tool registration for Claude Desktop stdio communication.
+Tool discovery and listing, detailed per-tool help, and search over the
+served tool catalog (kept in sync with the registered surface).
 """
 
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
+
+_READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
 
 def register_tools(app: FastMCP) -> None:
     """Register help system tools with the FastMCP application.
 
-    Uses FastMCP 2.12 patterns with multiline decorators and proper
-    stdio communication support for Claude Desktop integration.
-
-    Args:
-        app: FastMCP application instance
+    Args: See Parameters block.
     """
 
     @app.tool(
-        name="list_available_tools", description="List all available Ring MCP tools with categories and descriptions"
+        name="list_available_tools",
+        description="List all available Ring MCP tools with categories and descriptions",
+        annotations=_READ_ONLY,
     )
-    async def list_available_tools(category: str | None = None, include_hidden: bool = False) -> dict[str, Any]:
+    async def list_available_tools(
+        category: Annotated[
+            str | None,
+            Field(
+                description="Filter by category (cameras, doorbells, security, fire, monitoring, automation, system, help)."
+            ),
+        ] = None,
+        include_hidden: Annotated[bool, Field(description="Include internal tools.")] = False,
+    ) -> dict[str, Any]:
         """List all available Ring MCP tools with categories and descriptions.
 
-        Provides a comprehensive overview of all available tools, organized by category.
-        Shows tool names, descriptions, parameters, and usage information.
+        ## Return Format
+        {"success": true, "tools": [...], "categories": [...], "total_count": N, ...}
 
-        Args:
-            category: Optional category filter (cameras, doorbells, security, fire, monitoring, automation)
-            include_hidden: Include internal/system tools (default: False)
-
-        Returns:
-            Dict containing:
-            - tools: List of available tools with metadata
-            - categories: Available tool categories
-            - total_count: Total number of tools
-            - filtered_count: Number of tools in current filter
+        ## Examples
+        await list_available_tools()
+        await list_available_tools(category="cameras")
         """
         # Tool registry - comprehensive list of all Ring MCP tools
         all_tools = {
@@ -83,35 +79,35 @@ def register_tools(app: FastMCP) -> None:
                 },
                 {
                     "name": "get_doorbell_live_stream",
-                    "description": "Get live stream URL for a specific doorbell",
+                    "description": "WebRTC live-view handoff for a doorbell (direct URLs are retired)",
                     "category": "doorbells",
-                    "parameters": {"doorbell_id": "string"},
-                    "example": "get_doorbell_live_stream(doorbell_id='1234567890')",
-                    "returns": "Live stream URL for the specified doorbell",
+                    "parameters": {"doorbell_id": "string", "quality": "low|medium|high", "duration_seconds": "int"},
+                    "example": "get_doorbell_live_stream(doorbell_id='doorbell-001')",
+                    "returns": "WebRTC signaling endpoints for the doorbell",
                 },
                 {
                     "name": "answer_doorbell_call",
-                    "description": "Answer an active doorbell call",
+                    "description": "Two-way audio status (not implemented in this backend)",
                     "category": "doorbells",
                     "parameters": {"doorbell_id": "string"},
-                    "example": "answer_doorbell_call(doorbell_id='1234567890')",
-                    "returns": "Call handling status",
+                    "example": "answer_doorbell_call(doorbell_id='doorbell-001')",
+                    "returns": "Explicit unsupported error",
                 },
                 {
                     "name": "get_visitor_history",
                     "description": "Get visitor history and activity logs",
                     "category": "doorbells",
-                    "parameters": {"hours": "int", "doorbell_id": "string"},
-                    "example": "get_visitor_history(hours=24, doorbell_id='1234567890')",
+                    "parameters": {"hours": "int", "include_snapshots": "bool", "motion_only": "bool"},
+                    "example": "get_visitor_history(hours=24, motion_only=True)",
                     "returns": "Recent visitor activity and motion events",
                 },
                 {
                     "name": "configure_motion_detection",
-                    "description": "Configure motion detection settings for doorbells",
+                    "description": "Motion configuration status (not exposed by the Ring API wrapper)",
                     "category": "doorbells",
-                    "parameters": {"doorbell_id": "string", "enabled": "bool", "sensitivity": "int"},
-                    "example": "configure_motion_detection(doorbell_id='1234567890', enabled=True, sensitivity=80)",
-                    "returns": "Motion detection configuration status",
+                    "parameters": {"doorbell_id": "string", "sensitivity": "low|medium|high"},
+                    "example": "configure_motion_detection(sensitivity='low')",
+                    "returns": "Explicit unsupported error with requested config echo",
                 },
             ],
             # Security System Tools
@@ -126,26 +122,26 @@ def register_tools(app: FastMCP) -> None:
                 },
                 {
                     "name": "arm_security_system",
-                    "description": "Arm the security system in specified mode",
+                    "description": "Arm the alarm panel in home/away mode (or disarm)",
                     "category": "security",
-                    "parameters": {"mode": "string", "devices": "list"},
-                    "example": "arm_security_system(mode='home', devices=['front_door', 'back_door'])",
-                    "returns": "Arming status and countdown information",
+                    "parameters": {"mode": "home|away|disarmed", "device_id": "string"},
+                    "example": "arm_security_system(mode='away')",
+                    "returns": "Arming status for the panel",
                 },
                 {
                     "name": "disarm_security_system",
-                    "description": "Disarm the security system",
+                    "description": "Disarm the alarm panel",
                     "category": "security",
-                    "parameters": {"code": "string"},
-                    "example": "disarm_security_system(code='1234')",
+                    "parameters": {"force_disarm": "bool", "device_id": "string"},
+                    "example": "disarm_security_system()",
                     "returns": "Disarming status and system state",
                 },
                 {
                     "name": "get_security_history",
                     "description": "Get security system history and events",
                     "category": "security",
-                    "parameters": {"hours": "int", "event_type": "string"},
-                    "example": "get_security_history(hours=24, event_type='alarm')",
+                    "parameters": {"hours": "int", "event_types": "list", "include_video": "bool"},
+                    "example": "get_security_history(hours=24)",
                     "returns": "Security events and system activity logs",
                 },
             ],
@@ -163,8 +159,8 @@ def register_tools(app: FastMCP) -> None:
                     "name": "test_fire_safety_system",
                     "description": "Test fire safety system components",
                     "category": "fire",
-                    "parameters": {"device_id": "string", "test_type": "string"},
-                    "example": "test_fire_safety_system(device_id='smoke_detector_1', test_type='battery')",
+                    "parameters": {},
+                    "example": "test_fire_safety_system()",
                     "returns": "Test results and system health report",
                 },
             ],
@@ -182,8 +178,8 @@ def register_tools(app: FastMCP) -> None:
                     "name": "get_real_time_activity",
                     "description": "Get real-time activity and alerts from all devices",
                     "category": "monitoring",
-                    "parameters": {"minutes": "int"},
-                    "example": "get_real_time_activity(minutes=30)",
+                    "parameters": {},
+                    "example": "get_real_time_activity()",
                     "returns": "Recent activity, motion events, and system alerts",
                 },
             ],
@@ -206,36 +202,111 @@ def register_tools(app: FastMCP) -> None:
                     "name": "trigger_emergency_protocol",
                     "description": "Trigger emergency response protocol",
                     "category": "automation",
-                    "parameters": {"protocol_type": "string", "severity": "string"},
-                    "example": "trigger_emergency_protocol(protocol_type='intruder', severity='high')",
+                    "parameters": {},
+                    "example": "trigger_emergency_protocol()",
                     "returns": "Emergency protocol activation status",
                 },
                 {
                     "name": "schedule_security_modes",
                     "description": "Schedule automatic security mode changes",
                     "category": "automation",
-                    "parameters": {"schedule_name": "string", "time_rules": "list", "mode_sequence": "list"},
-                    "example": "schedule_security_modes(schedule_name='Night Schedule')",
+                    "parameters": {"schedule_config": "dict", "timezone": "string"},
+                    "example": "schedule_security_modes(schedule_config={'modes': ['armed'], 'timeframes': []})",
                     "returns": "Schedule creation status and validation",
                 },
             ],
             # System Tools
             "system": [
                 {
-                    "name": "health_check",
-                    "description": "Check the health of the Ring MCP service",
-                    "category": "system",
-                    "parameters": {},
-                    "example": "health_check()",
-                    "returns": "Service health status and diagnostic information",
-                },
-                {
                     "name": "get_system_status",
                     "description": "Get detailed system status including auth and device connectivity",
                     "category": "system",
-                    "parameters": {},
+                    "parameters": {"include_device_details": "bool", "check_connectivity": "bool"},
                     "example": "get_system_status()",
                     "returns": "Authentication status, device connectivity, and system health",
+                },
+                {
+                    "name": "check_authentication_status",
+                    "description": "Check Ring API authentication status and token validity",
+                    "category": "system",
+                    "parameters": {},
+                    "example": "check_authentication_status()",
+                    "returns": "Authentication state and errors",
+                },
+                {
+                    "name": "check_device_connectivity",
+                    "description": "Test connectivity and status of all Ring devices",
+                    "category": "system",
+                    "parameters": {"device_id": "string", "test_commands": "bool"},
+                    "example": "check_device_connectivity()",
+                    "returns": "Per-device connectivity results and score",
+                },
+                {
+                    "name": "get_service_health",
+                    "description": "Get detailed service health and performance metrics",
+                    "category": "system",
+                    "parameters": {"include_metrics": "bool", "history_minutes": "int"},
+                    "example": "get_service_health()",
+                    "returns": "Component health, score, alerts, recommendations",
+                },
+                {
+                    "name": "list_devices",
+                    "description": "List all Ring devices with online status and battery",
+                    "category": "system",
+                    "parameters": {"device_type": "string"},
+                    "example": "list_devices(device_type='camera')",
+                    "returns": "Device inventory with count",
+                },
+                {
+                    "name": "show_devices_card",
+                    "description": "Show all Ring devices as a rich in-chat card",
+                    "category": "system",
+                    "parameters": {},
+                    "example": "show_devices_card()",
+                    "returns": "Prefab card payload",
+                },
+                {
+                    "name": "show_health_card",
+                    "description": "Show Ring MCP health as a rich in-chat card",
+                    "category": "system",
+                    "parameters": {},
+                    "example": "show_health_card()",
+                    "returns": "Prefab card payload",
+                },
+                {
+                    "name": "ring_shutdown",
+                    "description": "Gracefully shut down the Ring MCP server",
+                    "category": "system",
+                    "parameters": {},
+                    "example": "ring_shutdown()",
+                    "returns": "Shutdown acknowledgement",
+                },
+            ],
+            # Help Tools
+            "help": [
+                {
+                    "name": "list_available_tools",
+                    "description": "List all available Ring MCP tools with categories",
+                    "category": "help",
+                    "parameters": {"category": "string", "include_hidden": "bool"},
+                    "example": "list_available_tools(category='cameras')",
+                    "returns": "Tool catalog with count",
+                },
+                {
+                    "name": "get_tool_help",
+                    "description": "Get detailed help for a specific tool",
+                    "category": "help",
+                    "parameters": {"tool_name": "string"},
+                    "example": "get_tool_help(tool_name='list_devices')",
+                    "returns": "Tool detail with examples and related tools",
+                },
+                {
+                    "name": "search_tools",
+                    "description": "Search for tools by name, description, or functionality",
+                    "category": "help",
+                    "parameters": {"query": "string"},
+                    "example": "search_tools(query='camera')",
+                    "returns": "Ranked tool matches",
                 },
             ],
         }
@@ -258,6 +329,8 @@ def register_tools(app: FastMCP) -> None:
             tools = [t for t in tools if t["category"] != "internal"]
 
         return {
+            "success": True,
+            "message": f"{len(tools)} tool(s) listed",
             "tools": tools,
             "categories": sorted(list(categories)),
             "total_count": len(tools),
@@ -265,23 +338,22 @@ def register_tools(app: FastMCP) -> None:
             "timestamp": datetime.now().isoformat(),
         }
 
-    @app.tool(name="get_tool_help", description="Get detailed help and usage information for a specific tool")
-    async def get_tool_help(tool_name: str, include_examples: bool = True) -> dict[str, Any]:
+    @app.tool(
+        name="get_tool_help",
+        description="Get detailed help and usage information for a specific tool",
+        annotations=_READ_ONLY,
+    )
+    async def get_tool_help(
+        tool_name: Annotated[str, Field(description="Name of the tool to get help for.", min_length=1)],
+        include_examples: Annotated[bool, Field(description="Include usage examples.")] = True,
+    ) -> dict[str, Any]:
         """Get detailed help and usage information for a specific tool.
 
-        Provides comprehensive information about a specific tool including:
-        - Detailed description and purpose
-        - Parameter specifications and types
-        - Usage examples and best practices
-        - Return value descriptions
-        - Related tools and use cases
+        ## Return Format
+        {"success": true, "tool_name": "...", "description": "...", "examples": {...}, ...}
 
-        Args:
-            tool_name: Name of the tool to get help for
-            include_examples: Include usage examples (default: True)
-
-        Returns:
-            Dict containing detailed tool information and usage guidance
+        ## Examples
+        await get_tool_help(tool_name="list_devices")
         """
         # Get all tools
         all_tools_response = await list_available_tools(include_hidden=True)
@@ -296,6 +368,7 @@ def register_tools(app: FastMCP) -> None:
 
         if not tool:
             return {
+                "success": False,
                 "error": f"Tool '{tool_name}' not found",
                 "available_tools": [t["name"] for t in all_tools],
                 "suggestion": "Use 'list_available_tools()' to see all available tools",
@@ -303,6 +376,8 @@ def register_tools(app: FastMCP) -> None:
 
         # Enhanced help information
         help_info = {
+            "success": True,
+            "message": f"Help for '{tool['name']}'",
             "tool_name": tool["name"],
             "description": tool["description"],
             "category": tool["category"],
@@ -323,23 +398,23 @@ def register_tools(app: FastMCP) -> None:
 
         return help_info
 
-    @app.tool(name="search_tools", description="Search for tools by name, description, or functionality")
-    async def search_tools(query: str, category: str | None = None, limit: int = 10) -> dict[str, Any]:
+    @app.tool(
+        name="search_tools",
+        description="Search for tools by name, description, or functionality",
+        annotations=_READ_ONLY,
+    )
+    async def search_tools(
+        query: Annotated[str, Field(description="Search query text.", min_length=1)],
+        category: Annotated[str | None, Field(description="Optional category filter.")] = None,
+        limit: Annotated[int, Field(description="Maximum results.", ge=1, le=50)] = 10,
+    ) -> dict[str, Any]:
         """Search for tools by name, description, or functionality.
 
-        Intelligent search across all tools using fuzzy matching on:
-        - Tool names and descriptions
-        - Parameter names and types
-        - Use cases and functionality
-        - Categories and tags
+        ## Return Format
+        {"success": true, "query": "...", "total_matches": N, "results": [...]}
 
-        Args:
-            query: Search query string
-            category: Optional category filter
-            limit: Maximum number of results to return (default: 10)
-
-        Returns:
-            Dict containing search results with relevance scoring
+        ## Examples
+        await search_tools(query="camera")
         """
         # Get all tools
         all_tools_response = await list_available_tools(include_hidden=True)
@@ -383,6 +458,8 @@ def register_tools(app: FastMCP) -> None:
         matches = matches[:limit]
 
         return {
+            "success": True,
+            "message": f"{len(matches)} match(es) for '{query}'",
             "query": query,
             "category_filter": category,
             "total_matches": len(matches),

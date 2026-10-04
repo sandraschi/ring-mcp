@@ -1,5 +1,5 @@
 """
-Ring MCP Status and System Information Tools - FastMCP 2.12
+Ring MCP Status and System Information Tools - FastMCP 3.4.
 
 Comprehensive status monitoring tools providing:
 - Authentication status and token validity
@@ -7,56 +7,50 @@ Comprehensive status monitoring tools providing:
 - System performance metrics
 - Connection diagnostics and troubleshooting
 - Real-time system state monitoring
-
-This module uses FastMCP 2.12 patterns with multiline decorators and proper
-tool registration for Claude Desktop stdio communication.
 """
 
 import logging
+import os
 import time
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
+from pydantic import Field
 
 from ring_mcp.core.exceptions import DeviceNotFoundError
 
 from ..core.exceptions import AuthenticationError
-from ..core.ring_client import RingClient
+from ..core.ring_client_modern import RingClient
 
 logger = logging.getLogger(__name__)
+
+_READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
 
 def register_tools(app: FastMCP) -> None:
     """Register status monitoring tools with the FastMCP application.
 
-    Uses FastMCP 2.12 patterns with multiline decorators and proper
-    stdio communication support for Claude Desktop integration.
-
-    Args:
-        app: FastMCP application instance
+    Args: See Parameters block.
     """
 
     @app.tool(
         name="get_system_status",
         description="Get comprehensive system status including authentication and device connectivity",
+        annotations=_READ_ONLY,
     )
-    async def get_system_status(include_device_details: bool = True, check_connectivity: bool = True) -> dict[str, Any]:
+    async def get_system_status(
+        include_device_details: Annotated[bool, Field(description="Include per-device details.")] = True,
+        check_connectivity: Annotated[bool, Field(description="Probe Ring API reachability.")] = True,
+    ) -> dict[str, Any]:
         """Get comprehensive system status including authentication and device connectivity.
 
-        Provides a complete overview of the Ring MCP system status including:
-        - Authentication status and token validity
-        - Device connectivity and health
-        - System performance metrics
-        - Network connectivity status
-        - Service availability
+        ## Return Format
+        {"system_status": "healthy|...", "authentication": {...}, "devices": {...}, ...}
 
-        Args:
-            include_device_details: Include detailed device information (default: True)
-            check_connectivity: Perform active connectivity tests (default: True)
-
-        Returns:
-            Dict containing comprehensive system status information
+        ## Examples
+        await get_system_status()
+        await get_system_status(include_device_details=False)
         """
         start_time = time.time()
         status = {
@@ -103,6 +97,7 @@ def register_tools(app: FastMCP) -> None:
             status["system_status"] = "error"
             status["error"] = {"message": str(e), "type": type(e).__name__, "timestamp": datetime.now().isoformat()}
 
+        status["message"] = f"System status: {status['system_status']}"
         return status
 
     async def check_device_status(include_details: bool = True) -> dict[str, Any]:
@@ -129,27 +124,30 @@ def register_tools(app: FastMCP) -> None:
         """Check network connectivity to Ring API."""
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=10) as c:
                 r = await c.get("https://api.ring.com/clients_api/info")
                 return {"reachable": r.status_code == 200, "status_code": r.status_code}
         except Exception as e:
             return {"reachable": False, "error": str(e)}
 
-    @app.tool(name="check_authentication_status", description="Check Ring API authentication status and token validity")
+    @app.tool(
+        name="check_authentication_status",
+        description="Check Ring API authentication status and token validity",
+        annotations=_READ_ONLY,
+    )
     async def check_authentication_status() -> dict[str, Any]:
         """Check Ring API authentication status and token validity.
 
-        Validates the current authentication state including:
-        - Token existence and validity
-        - Token expiration status
-        - Authentication method (OAuth/password)
-        - Permission scope verification
-        - API rate limit status
+        ## Return Format
+        {"authenticated": true, "method": "username_password|oauth_token", ...}
 
-        Returns:
-            Dict containing authentication status and details
+        ## Examples
+        await check_authentication_status()
         """
         auth_status = {
+            "success": True,
+            "message": "Ring authentication valid",
             "authenticated": False,
             "method": "unknown",
             "token_valid": False,
@@ -161,61 +159,60 @@ def register_tools(app: FastMCP) -> None:
         }
 
         try:
-            # Create a test client to check auth
+            # Modern client: connect() raises AuthenticationError without creds (never prompts).
             test_client = RingClient()
             await test_client.connect()
 
-            # Check if we have valid credentials
-            if test_client.auth and test_client.auth.token:
-                auth_status["authenticated"] = True
-                auth_status["token_valid"] = True
-                auth_status["method"] = "oauth_token"
+            # A successful device read proves the session works.
+            try:
+                await test_client.get_devices(force_refresh=False)
+            except AuthenticationError as e:
+                auth_status["success"] = False
+                auth_status["message"] = f"Authentication failed: {e!s}"
+                auth_status["auth_errors"].append(f"Authentication failed: {e!s}")
+                return auth_status
+            except Exception as e:
+                auth_status["success"] = False
+                auth_status["message"] = f"Connection failed: {e!s}"
+                auth_status["auth_errors"].append(f"Connection failed: {e!s}")
+                return auth_status
 
-                # Get token info if available
-                if hasattr(test_client.auth, "token_expires_in"):
-                    auth_status["token_expires_in"] = test_client.auth.token_expires_in
+            auth_status["authenticated"] = True
+            auth_status["token_valid"] = True
+            auth_status["method"] = "oauth_token" if os.getenv("RING_TOKEN") else "username_password"
+            auth_status["last_successful_auth"] = datetime.now().isoformat()
 
-                auth_status["last_successful_auth"] = datetime.now().isoformat()
-
-            elif test_client.username and test_client.password:
-                auth_status["method"] = "username_password"
-                # Test actual authentication
-                try:
-                    await test_client.get_devices(force_refresh=False)
-                    auth_status["authenticated"] = True
-                    auth_status["last_successful_auth"] = datetime.now().isoformat()
-                except AuthenticationError as e:
-                    auth_status["auth_errors"].append(f"Authentication failed: {e!s}")
-                except Exception as e:
-                    auth_status["auth_errors"].append(f"Connection failed: {e!s}")
-
-            else:
-                auth_status["method"] = "none"
-                auth_status["auth_errors"].append("No authentication credentials configured")
-
+        except AuthenticationError as e:
+            auth_status["success"] = False
+            auth_status["message"] = f"Authentication failed: {e!s}"
+            auth_status["auth_errors"].append(f"Authentication failed: {e!s}")
         except Exception as e:
             logger.error("Authentication check failed: %s", str(e))
+            auth_status["success"] = False
+            auth_status["message"] = f"Check failed: {e!s}"
             auth_status["auth_errors"].append(f"Check failed: {e!s}")
 
         return auth_status
 
-    @app.tool(name="check_device_connectivity", description="Test connectivity and status of all Ring devices")
-    async def check_device_connectivity(device_id: str | None = None, test_commands: bool = False) -> dict[str, Any]:
+    @app.tool(
+        name="check_device_connectivity",
+        description="Test connectivity and status of all Ring devices",
+        annotations=_READ_ONLY,
+    )
+    async def check_device_connectivity(
+        device_id: Annotated[str | None, Field(description="Test a single device instead of all.")] = None,
+        test_commands: Annotated[
+            bool, Field(description="Reserved for active command tests (currently no-op).")
+        ] = False,
+    ) -> dict[str, Any]:
         """Test connectivity and status of all Ring devices.
 
-        Performs connectivity tests on Ring devices including:
-        - Network connectivity verification
-        - Device responsiveness testing
-        - Status command execution
-        - Signal strength checking
-        - Battery level monitoring
+        ## Return Format
+        {"devices_tested": N, "devices_online": N, "connectivity_score": 0-100, "device_results": [...]}
 
-        Args:
-            device_id: Optional specific device ID to test
-            test_commands: Execute test commands on devices (default: False)
-
-        Returns:
-            Dict containing device connectivity test results
+        ## Examples
+        await check_device_connectivity()
+        await check_device_connectivity(device_id="camera-001")
         """
         connectivity_results = {
             "test_timestamp": datetime.now().isoformat(),
@@ -225,14 +222,19 @@ def register_tools(app: FastMCP) -> None:
             "connectivity_score": 0,
             "device_results": [],
             "recommendations": [],
+            "note": "Signal strength is not exposed by the Ring API wrapper; online/offline and battery are reported.",
         }
 
         try:
-            # Get all devices
+            # Get all devices (or a single one when requested)
             client = RingClient()
             await client.connect()
 
             devices = await client.get_devices(force_refresh=True)
+            if device_id:
+                devices = [d for d in devices if d.get("id") == device_id]
+                if not devices:
+                    raise DeviceNotFoundError(device_id)
             connectivity_results["devices_tested"] = len(devices)
 
             for device in devices:
@@ -242,33 +244,30 @@ def register_tools(app: FastMCP) -> None:
                     "device_name": device.get("name", "Unnamed"),
                     "connectivity_status": "unknown",
                     "response_time_ms": None,
-                    "last_seen": device.get("last_seen"),
-                    "battery_level": device.get("battery_level"),
+                    "last_seen": device.get("last_update"),
+                    "battery_level": device.get("battery_life"),
                     "signal_strength": device.get("signal_strength"),
                     "errors": [],
                 }
 
                 try:
-                    # Test basic connectivity
+                    # Test basic connectivity (modern client returns full device dicts)
                     start_time = time.time()
-                    device_details = await client.get_device_details(device["id"])
+                    device_details = await client.get_device(device["id"])
+                    if device_details is None:
+                        raise DeviceNotFoundError(device["id"])
                     response_time = (time.time() - start_time) * 1000
 
                     device_result["connectivity_status"] = "online"
                     device_result["response_time_ms"] = round(response_time, 2)
                     connectivity_results["devices_online"] += 1
 
-                    # Check device health
-                    if device_details.get("battery_level", 0) < 20:
+                    # Check device health (modern dicts carry battery_life; no signal metric)
+                    battery = device_details.get("battery_life")
+                    if battery is not None and battery < 20:
                         device_result["errors"].append("Low battery")
                         connectivity_results["recommendations"].append(
                             f"Replace battery in {device.get('name', 'device')}"
-                        )
-
-                    if device_details.get("signal_strength", 0) < 50:
-                        device_result["errors"].append("Weak signal")
-                        connectivity_results["recommendations"].append(
-                            f"Check signal strength for {device.get('name', 'device')}"
                         )
 
                 except DeviceNotFoundError:
@@ -294,6 +293,10 @@ def register_tools(app: FastMCP) -> None:
                 connectivity_results["connectivity_score"] = int(
                     (connectivity_results["devices_online"] / connectivity_results["devices_tested"]) * 100
                 )
+            connectivity_results["message"] = (
+                f"{connectivity_results['devices_online']}/{connectivity_results['devices_tested']} online "
+                f"(score {connectivity_results['connectivity_score']})"
+            )
 
         except Exception as e:
             logger.error("Device connectivity check failed: %s", str(e))
@@ -302,27 +305,26 @@ def register_tools(app: FastMCP) -> None:
 
         return connectivity_results
 
-    @app.tool(name="get_service_health", description="Get detailed service health and performance metrics")
-    async def get_service_health(include_metrics: bool = True, history_minutes: int = 5) -> dict[str, Any]:
+    @app.tool(
+        name="get_service_health",
+        description="Get detailed service health and performance metrics",
+        annotations=_READ_ONLY,
+    )
+    async def get_service_health(
+        include_metrics: Annotated[bool, Field(description="Include resource metrics.")] = True,
+        history_minutes: Annotated[int, Field(description="History window (reserved).", ge=1, le=1440)] = 5,
+    ) -> dict[str, Any]:
         """Get detailed service health and performance metrics.
 
-        Provides comprehensive service health information including:
-        - Service availability and uptime
-        - Performance metrics and response times
-        - Error rates and failure patterns
-        - Resource utilization (memory, CPU)
-        - Health check history
+        ## Return Format
+        {"health_status": "healthy|degraded|error", "health_score": 0-100, "components": {...}, ...}
 
-        Args:
-            include_metrics: Include performance metrics (default: True)
-            history_minutes: Minutes of history to include (default: 5)
-
-        Returns:
-            Dict containing service health and performance information
+        ## Examples
+        await get_service_health()
         """
         health_info = {
             "service_name": "Ring MCP Server",
-            "version": "2.12.0",
+            "version": _service_version(),
             "uptime_seconds": get_uptime(),
             "health_status": "healthy",
             "last_health_check": datetime.now().isoformat(),
@@ -375,6 +377,7 @@ def register_tools(app: FastMCP) -> None:
             # Generate alerts and recommendations
             health_info["alerts"] = generate_health_alerts(components)
             health_info["recommendations"] = generate_health_recommendations(components)
+            health_info["message"] = f"Service {health_info['health_status']} (score {health_info['health_score']})"
 
         except Exception as e:
             logger.error("Service health check failed: %s", str(e))
@@ -385,7 +388,7 @@ def register_tools(app: FastMCP) -> None:
         return health_info
 
 
-async def check_auth_component(ring_client) -> dict[str, Any]:
+async def check_auth_component() -> dict[str, Any]:
     """Check authentication component health."""
     try:
         return {"status": "healthy", "details": "Authentication working"}
@@ -425,8 +428,9 @@ def determine_overall_status(auth_status: dict, device_status: dict, connectivit
     if not auth_status.get("authenticated", False):
         return "authentication_failed"
 
-    online_devices = device_status.get("online_devices", 0)
-    total_devices = device_status.get("total_devices", 0)
+    # check_device_status() reports devices_online / devices_tested.
+    online_devices = device_status.get("online_devices", device_status.get("devices_online", 0))
+    total_devices = device_status.get("total_devices", device_status.get("devices_tested", 0))
 
     if total_devices == 0:
         return "no_devices"
@@ -456,12 +460,24 @@ def generate_diagnostics(status: dict[str, Any]) -> dict[str, Any]:
 
 
 # Placeholder functions for system metrics
-def get_uptime() -> int:
-    """Get system uptime in seconds."""
+def _service_version() -> str:
+    """Installed dist version (falls back to 'unknown' on naked checkouts)."""
     try:
+        from importlib.metadata import version
+
+        return version("ring-mcp")
+    except Exception:
+        return "unknown"
+
+
+def get_uptime() -> int:
+    """Process uptime in seconds (0 when psutil is unavailable)."""
+    try:
+        import time as _time
+
         import psutil
 
-        return int(psutil.boot_time())
+        return int(_time.time() - psutil.boot_time())
     except ImportError:
         return 0
 
