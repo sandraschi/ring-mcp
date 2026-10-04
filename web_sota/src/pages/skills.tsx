@@ -19,14 +19,14 @@ export function Skills() {
     <div className="space-y-6" data-testid="skills-page">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-white">Skills</h2>
-        <p className="text-slate-400" data-testid="skills-summary">
+        <p className="text-slate-300" data-testid="skills-summary">
           {skills.length} skill(s) served as{" "}
           <span className="font-mono">skill://</span> resources
         </p>
       </div>
 
       {skillsQuery.isLoading ? (
-        <p className="text-slate-500">Loading skills…</p>
+        <p className="text-slate-300">Loading skills…</p>
       ) : skillsQuery.isError ? (
         <p className="text-red-400">
           Could not load skills. Is the API running at {api.getBaseUrl()}?
@@ -34,7 +34,7 @@ export function Skills() {
       ) : skills.length === 0 ? (
         <Card className="border-slate-800 bg-slate-950/50">
           <CardContent className="pt-6">
-            <p className="text-slate-400">
+            <p className="text-slate-300">
               No skills found. Add <span className="font-mono">SKILL.md</span>{" "}
               files under <span className="font-mono">skills/</span>.
             </p>
@@ -57,7 +57,7 @@ export function Skills() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-xs text-slate-400">{s.description}</p>
+                  <p className="text-sm text-slate-300">{s.description}</p>
                 </CardContent>
               </Card>
             ))}
