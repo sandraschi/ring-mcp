@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { API_URL_STORAGE_KEY, api } from "@/lib/api";
+import { useLlmStore } from "@/store/llm";
 
 function getStoredApiUrl(): string {
   try {
@@ -26,81 +27,102 @@ function getStoredApiUrl(): string {
 const RING_ACCOUNT_FORM_STORAGE_KEY = "ring_mcp_ring_account_form_v1";
 
 function LLMSettings() {
-  const [providers, setProviders] = useState<
-    Record<string, { name: string }[]>
-  >({});
-  const [selectedProvider, setSelectedProvider] = useState("ollama");
-  const [selectedModel, setSelectedModel] = useState("");
-  const [_status, setStatus] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
+  const {
+    providers,
+    providerId,
+    model,
+    baseUrl,
+    status,
+    message,
+    gpuHint,
+    refresh,
+    select,
+  } = useLlmStore();
   useEffect(() => {
-    // NOTE: backend serves GET /api/v1/llm/providers (versioned, {providers: [...]});
-    // this legacy unversioned path 404s and the catch below keeps the local fallback.
-    // Full shape adaptation is follow-up work (see assess report 2026-10-04).
-    fetch(`${getStoredApiUrl()}/api/llm/providers`)
-      .then((r) => r.json())
-      .then((d) => {
-        setProviders(d);
-        const savedP = localStorage.getItem("llm_provider") || "ollama";
-        const savedM = localStorage.getItem("llm_model") || "";
-        setSelectedProvider(savedP);
-        const models = d[savedP === "ollama" ? "ollama" : "lm_studio"] || [];
-        setSelectedModel(
-          savedM && models.some((m: { name: string }) => m.name === savedM)
-            ? savedM
-            : models[0]?.name || "",
-        );
-        setStatus(models.length > 0 ? "ready" : "error");
-      })
-      .catch(() => {
-        setProviders({ ollama: [{ name: "llama3.2:3b" }] });
-        setSelectedModel(localStorage.getItem("llm_model") || "llama3.2:3b");
-        setStatus("ready");
-      });
-  }, []);
-  const save = (p: string, m: string) => {
-    localStorage.setItem("llm_provider", p);
-    localStorage.setItem("llm_model", m);
-  };
-  const models =
-    providers[selectedProvider === "ollama" ? "ollama" : "lm_studio"] || [];
+    refresh();
+  }, [refresh]);
+  const active = providers.find((p) => p.id === providerId) ?? providers[0];
+  const models = active?.models ?? [];
   return (
     <Card className="border-slate-800 bg-slate-950/50">
       <CardHeader>
         <CardTitle className="text-white">Local LLM</CardTitle>
-        <CardDescription className="text-slate-400">
+        <CardDescription
+          className="text-slate-400"
+          data-testid="llm-provider-card-local"
+        >
           Provider and model selection
+          {baseUrl ? ` · ${baseUrl}` : ""}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div
+          className="flex items-center gap-2 text-sm"
+          data-testid="llm-status"
+        >
+          <span
+            className={`inline-block h-2 w-2 rounded-full ${status === "ready" ? "bg-emerald-500" : status === "probing" ? "bg-amber-400 animate-pulse" : "bg-red-500"}`}
+          />
+          <span className="text-slate-300">
+            {status === "ready"
+              ? `Ready${model ? ` · ${model}` : ""}`
+              : status === "probing"
+                ? "Probing local providers…"
+                : (message ?? "No local LLM detected")}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-testid="llm-refresh"
+            className="ml-auto border-slate-700 text-slate-200"
+            onClick={() => refresh()}
+          >
+            Refresh
+          </Button>
+        </div>
+        {gpuHint ? <p className="text-sm text-amber-300">{gpuHint}</p> : null}
         <div className="grid gap-2">
-          <Label className="text-slate-300">Provider</Label>
+          <Label className="text-slate-300" htmlFor="llm-provider">
+            Provider
+          </Label>
           <select
+            id="llm-provider"
+            data-testid="llm-provider-select"
             className="h-9 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-200"
-            value={selectedProvider}
+            value={providerId}
             onChange={(e) => {
-              setSelectedProvider(e.target.value);
-              save(e.target.value, "");
+              const next = providers.find((p) => p.id === e.target.value);
+              select(
+                e.target.value,
+                next?.default_model || next?.models?.[0] || "",
+              );
             }}
           >
-            <option value="ollama">Ollama</option>
-            <option value="lm_studio">LM Studio</option>
+            {providers.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+                {p.detected ? "" : " (not detected)"}
+              </option>
+            ))}
           </select>
         </div>
         <div className="grid gap-2">
-          <Label className="text-slate-300">Model</Label>
+          <Label className="text-slate-300" htmlFor="llm-model">
+            Model
+          </Label>
           <select
+            id="llm-model"
+            data-testid="llm-model-select"
             className="h-9 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-200"
-            value={selectedModel}
+            value={model}
             onChange={(e) => {
-              setSelectedModel(e.target.value);
-              save(selectedProvider, e.target.value);
+              select(providerId, e.target.value);
             }}
           >
             {models.map((m) => (
-              <option key={m.name} value={m.name}>
-                {m.name}
+              <option key={m} value={m}>
+                {m}
               </option>
             ))}
           </select>

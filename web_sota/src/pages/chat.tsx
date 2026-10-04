@@ -1,4 +1,3 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
   Bot,
@@ -6,12 +5,13 @@ import {
   Eraser,
   Loader2,
   Send,
+  Square,
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useLlmStore } from "@/store/llm";
 
-const CHAT_MODEL_STORAGE_KEY = "ring_mcp_chat_model_v1";
 const HISTORY_KEY = "ring-chat-history";
 const PERSONALITY_KEY = "ring-chat-personality";
 const MAX_HISTORY = 100;
@@ -82,39 +82,52 @@ export function Chat() {
     }
   });
   const [input, setInput] = useState("");
-  const [model, setModel] = useState("");
+  const [streaming, setStreaming] = useState(false);
+  const [skillPreprompt, setSkillPreprompt] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const modelsQuery = useQuery({
-    queryKey: ["ring-llm-models"],
-    queryFn: () => api.llmModels(),
-    staleTime: 60_000,
-  });
-
-  useEffect(() => {
-    const d = modelsQuery.data;
-    if (!d) return;
-    try {
-      const saved = localStorage.getItem(CHAT_MODEL_STORAGE_KEY);
-      if (saved) {
-        setModel((prev) => prev || saved);
-        return;
-      }
-    } catch {
-      /* ignore */
-    }
-    if (d.default_model) setModel((prev) => prev || d.default_model || "");
-    else if (d.models?.[0]) setModel((prev) => prev || d.models?.[0] || "");
-  }, [modelsQuery.data]);
+  const providerId = useLlmStore((s) => s.providerId);
+  const model = useLlmStore((s) => s.model);
+  const llmStatus = useLlmStore((s) => s.status);
+  const llmMessage = useLlmStore((s) => s.message);
+  const llmBaseUrl = useLlmStore((s) => s.baseUrl);
+  const refreshLlm = useLlmStore((s) => s.refresh);
+  const selectLlm = useLlmStore((s) => s.select);
+  const llmModels = useLlmStore(
+    (s) => s.providers.find((p) => p.id === s.providerId)?.models ?? [],
+  );
 
   useEffect(() => {
-    if (!model) return;
-    try {
-      localStorage.setItem(CHAT_MODEL_STORAGE_KEY, model);
-    } catch {
-      /* ignore */
-    }
-  }, [model]);
+    refreshLlm();
+  }, [refreshLlm]);
+
+  // Skill-first: load skill catalog once, compose it into the system preprompt.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getSkills()
+      .then((res) => {
+        if (cancelled) return;
+        const lines = (res.skills ?? [])
+          .map((s) => `- ${s.name}: ${s.description}`.slice(0, 200))
+          .slice(0, 12);
+        if (lines.length > 0) {
+          setSkillPreprompt(
+            `Available Ring skills (prefer these tools):\n${lines.join("\n")}`.slice(
+              0,
+              1500,
+            ),
+          );
+        }
+      })
+      .catch(() => {
+        /* chat works without skills */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(turns));
@@ -126,15 +139,9 @@ export function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  const chatMutation = useMutation({
-    mutationFn: async (messages: { role: string; content: string }[]) => {
-      return api.llmChat({ messages, model: model || undefined });
-    },
-  });
-
   const send = useCallback(async () => {
     const text = input.trim();
-    if (!text || chatMutation.isPending) return;
+    if (!text || streaming) return;
     setInput("");
     const userTurn: ChatTurn = {
       id: crypto.randomUUID(),
@@ -143,41 +150,74 @@ export function Chat() {
     };
     const updatedTurns = [...turns, userTurn].slice(-MAX_HISTORY);
     setTurns(updatedTurns);
-    const history = updatedTurns.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const system = `${PERSONALITIES[personality] ?? PERSONALITIES["Security Expert"]}${skillPreprompt ? `\n\n${skillPreprompt}` : ""}`;
+    const history = [
+      { role: "system", content: system },
+      ...updatedTurns.map((m) => ({ role: m.role, content: m.content })),
+    ];
+    const assistantId = crypto.randomUUID();
+    setTurns((t) =>
+      [
+        ...t,
+        { id: assistantId, role: "assistant" as const, content: "" },
+      ].slice(-MAX_HISTORY),
+    );
+    setStreaming(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      const res = await chatMutation.mutateAsync(history);
-      const reply = res.reply?.trim() || "(empty reply)";
-      setTurns((t) =>
-        [
-          ...t,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant" as const,
-            content: reply,
-          },
-        ].slice(-MAX_HISTORY),
+      await api.llmChatStream(
+        { messages: history, model: model || undefined },
+        (token) => {
+          setTurns((t) =>
+            t.map((m) =>
+              m.id === assistantId ? { ...m, content: m.content + token } : m,
+            ),
+          );
+        },
+        ctrl.signal,
       );
-    } catch {
       setTurns((t) =>
-        [
-          ...t,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant" as const,
-            content:
-              "Request failed. Is Ollama running on 127.0.0.1:11434? Check Ring HTTP API logs.",
-          },
-        ].slice(-MAX_HISTORY),
+        t.map((m) =>
+          m.id === assistantId && !m.content.trim()
+            ? { ...m, content: "(empty reply)" }
+            : m,
+        ),
       );
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") {
+        setTurns((t) =>
+          t.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: `${m.content}\n[stopped]` }
+              : m,
+          ),
+        );
+      } else {
+        setTurns((t) =>
+          [
+            ...t.filter((m) => m.id !== assistantId),
+            {
+              id: crypto.randomUUID(),
+              role: "assistant" as const,
+              content:
+                "Request failed. Is Ollama running on 127.0.0.1:11434? Check Ring HTTP API logs.",
+            },
+          ].slice(-MAX_HISTORY),
+        );
+      }
+    } finally {
+      setStreaming(false);
+      abortRef.current = null;
     }
-  }, [input, turns, chatMutation]);
+  }, [input, turns, streaming, model, personality, skillPreprompt]);
 
-  const base = modelsQuery.data?.base_url ?? "";
-  const modelsErr =
-    modelsQuery.data?.success === false ? modelsQuery.data?.message : null;
+  const stopStream = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
+  const base = llmBaseUrl;
+  const modelsErr = llmStatus === "error" ? llmMessage : null;
 
   const exportChat = () => {
     const text = turns
@@ -257,7 +297,7 @@ export function Chat() {
         </div>
       </div>
 
-      {modelsQuery.isError ? (
+      {llmStatus === "error" && !modelsErr ? (
         <div className="flex items-center gap-2 rounded-md border border-red-900/50 bg-red-950/20 px-3 py-2 text-sm text-red-300">
           <AlertCircle className="h-4 w-4 shrink-0" />
           Could not load models. Is the Ring API running at {api.getBaseUrl()}?
@@ -282,16 +322,16 @@ export function Chat() {
           <label className="text-xs text-slate-500" htmlFor="llm-model">
             Model
           </label>
-          {modelsQuery.isLoading ? (
-            <span className="text-sm text-slate-500">Loading models\u2026</span>
-          ) : (modelsQuery.data?.models?.length ?? 0) > 0 ? (
+          {llmStatus === "probing" ? (
+            <span className="text-sm text-slate-500">Loading models…</span>
+          ) : llmModels.length > 0 ? (
             <select
               id="llm-model"
               className="rounded-md border border-slate-800 bg-slate-950 px-2 py-1.5 text-sm text-slate-200"
               value={model}
-              onChange={(e) => setModel(e.target.value)}
+              onChange={(e) => selectLlm(providerId, e.target.value)}
             >
-              {(modelsQuery.data?.models ?? []).map((m) => (
+              {llmModels.map((m) => (
                 <option key={m} value={m}>
                   {m}
                 </option>
@@ -304,7 +344,7 @@ export function Chat() {
               className="min-w-[12rem] rounded-md border border-slate-800 bg-slate-950 px-2 py-1.5 text-sm text-slate-200"
               placeholder="Model id (e.g. llama3.2)"
               value={model}
-              onChange={(e) => setModel(e.target.value)}
+              onChange={(e) => selectLlm(providerId, e.target.value)}
               aria-label="Model id"
             />
           )}
@@ -350,10 +390,10 @@ export function Chat() {
                 </div>
               </div>
             ))}
-            {chatMutation.isPending ? (
+            {streaming ? (
               <div className="flex items-center gap-2 pl-11 text-sm text-slate-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Thinking\u2026
+                Thinking…
               </div>
             ) : null}
             <div ref={bottomRef} />
@@ -400,21 +440,28 @@ export function Chat() {
                     send();
                   }
                 }}
-                disabled={chatMutation.isPending}
+                disabled={streaming}
               />
-              <button
-                type="button"
-                data-testid="chat-send"
-                onClick={() => send()}
-                disabled={chatMutation.isPending || !input.trim()}
-                className="shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-md sm:self-end"
-              >
-                {chatMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
+              {streaming ? (
+                <button
+                  type="button"
+                  data-testid="chat-stop"
+                  onClick={() => stopStream()}
+                  className="shrink-0 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-md sm:self-end"
+                >
+                  <Square className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="chat-send"
+                  onClick={() => send()}
+                  disabled={!input.trim()}
+                  className="shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-md sm:self-end"
+                >
                   <Send className="h-4 w-4" />
-                )}
-              </button>
+                </button>
+              )}
             </div>
           </div>
         </div>

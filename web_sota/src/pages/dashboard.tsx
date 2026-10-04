@@ -3,6 +3,7 @@ import { Activity, HardDrive, KeyRound, Shield, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api, type HealthResponse, type LogEntry } from "@/lib/api";
+import { isOnboarded, MOCK_DEVICES, MOCK_KPIS } from "@/lib/mockOnboarding";
 
 function logLineTone(level: string): string {
   const u = level.toUpperCase();
@@ -40,6 +41,8 @@ export function Dashboard() {
   const deviceCount = hs?.devices_accessible ?? 0;
   const ringSignedIn = hs?.authentication_valid === true;
   const overviewLogs = (logsQuery.data?.logs ?? []).slice(-20);
+  const onboarded =
+    !isLoading && !isError && isOnboarded(hs?.authentication_valid);
 
   const healthMessage = (h: HealthResponse | undefined) => {
     const m = h?.message?.trim();
@@ -59,6 +62,78 @@ export function Dashboard() {
           </p>
         </div>
       </div>
+
+      {!onboarded && !isLoading ? (
+        <div className="space-y-4">
+          <Link
+            to="/settings"
+            data-testid="onboarding-cue"
+            className="block w-full rounded-lg bg-red-600 px-4 py-3 text-center text-base font-semibold text-white hover:bg-red-500"
+          >
+            Complete onboarding — connect Ring
+          </Link>
+          <div
+            data-testid="mock-data-banner"
+            className="rounded-lg border border-dashed border-rose-700 bg-rose-950/20 px-4 py-2 text-sm text-rose-200"
+          >
+            Sample data below is mocked (connect Ring in Settings to clear it).
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {MOCK_KPIS.map((kpi) => (
+              <Card
+                key={kpi.testid}
+                data-testid={kpi.testid}
+                className="border-dashed border-rose-700 bg-slate-950/50"
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-200">
+                    {kpi.label}
+                  </CardTitle>
+                  <span
+                    data-testid="mock-badge"
+                    className="rounded bg-rose-900 px-1.5 py-0.5 text-xs font-bold text-rose-100"
+                  >
+                    MOCK
+                  </span>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-white">
+                    {kpi.value}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {MOCK_DEVICES.map((d) => (
+              <Card
+                key={d.id}
+                data-testid={`mock-device-${d.id}`}
+                className="border-dashed border-rose-700 bg-slate-950/50"
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-200">
+                    {d.name}
+                  </CardTitle>
+                  <span
+                    data-testid="mock-badge"
+                    className="rounded bg-rose-900 px-1.5 py-0.5 text-xs font-bold text-rose-100"
+                  >
+                    MOCK
+                  </span>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-slate-300">
+                    {d.type} · {d.online ? "Online" : "Offline"}
+                    {d.battery !== null ? ` · ${d.battery}%` : ""}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{d.note}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card
