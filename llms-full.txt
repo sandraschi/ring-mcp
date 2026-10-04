@@ -88,7 +88,7 @@ doorbells, cameras, alarms. Transports: stdio (Claude Desktop), HTTP REST
 ## Architecture
 
 ```
-ring_mcp/
+src/ring_mcp/
   __init__.py         — stdio entry (serves create_app() surface)
   __main__.py         — python -m ring_mcp (create_app, stdio)
   run_server.py       — dual transport (MCP_PORT -> HTTP, else stdio)

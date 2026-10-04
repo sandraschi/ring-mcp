@@ -25,6 +25,7 @@
 
 ##  Documentation
 
+- **[Onboarding](docs/ONBOARDING.md)** - First-timer setup: Ring account, costs, pitfalls, sanity check
 - **[ Complete Setup Guide](docs/RING_MCP_SETUP_GUIDE.md)** - Device onboarding, API keys, 2FA, discovery & iOS app integration
 - **[ API Reference](docs/RING_MCP_API_REFERENCE.md)** - Complete API documentation
 - **[ Quick Reference](docs/RING_MCP_QUICK_REFERENCE.md)** - Tool summaries and examples
@@ -407,12 +408,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ##  Development
 
-Built with **FastMCP 3.2+**: sampling, agentic workflows, and MCP prompts/skills per [gofastmcp.com](https://gofastmcp.com/). Tool responses are conversational and support agentic use.
+Built with **FastMCP 3.4+**: tool annotations, output schemas, prompts, skills, and Prefab cards per [gofastmcp.com](https://gofastmcp.com/). Tool responses are conversational and support agentic use.
 
 ### Project Structure
 ```
 ring-mcp/
- ring_mcp/
+ src/ring_mcp/
     __init__.py          # FastMCP stdio server
     core/                # Ring API client & exceptions
     tools/               # Modular tool categories

@@ -23,7 +23,8 @@ just cua-webapp-test / just cua-nsis-test   # browser / installer smoke walks
 
 ## Layout
 
-Top-level package `ring_mcp/` (NOT src-layout — see MCPB note). `ring_mcp/server.py`
+Top-level package `src/ring_mcp/` (src-layout; `[tool.hatch.build]` targets the wheel
+at `src/ring_mcp`). `ring_mcp/server.py` (import path; on disk `src/ring_mcp/server.py`)
 is the FastMCP factory (`create_app()` registers 29 tools + 2 prompts + 3 resources
 + Prefab cards + SkillsDirectoryProvider). `http_server.py` is the FastAPI REST app.
 `tools/*_tools.py` hold domain tools against `core/ring_client_modern.py` (the ONLY
