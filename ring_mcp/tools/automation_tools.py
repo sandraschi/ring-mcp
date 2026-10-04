@@ -1,68 +1,58 @@
 """
-Ring Security Automation and Response Tools - FastMCP 2.12
+Ring Security Automation and Response Tools - FastMCP 3.4.
 
 Automated security responses, custom rules, emergency protocols, and intelligent
 automation for Ring security ecosystem. Enables proactive security management.
-
-This module uses FastMCP 2.12 patterns with multiline decorators and proper
-tool registration for Claude Desktop stdio communication.
 """
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 
-from ..core.ring_client import RingClient
+from ..core.ring_client_modern import RingClient
 
 logger = logging.getLogger(__name__)
+
+_MUTATING = {"readOnlyHint": False, "idempotentHint": False}
+_DESTRUCTIVE = {"readOnlyHint": False, "idempotentHint": False, "destructiveHint": True}
 
 
 def register_tools(app: FastMCP) -> None:
     """Register security automation and response tools with the FastMCP application.
 
-    Uses FastMCP 2.12 patterns with multiline decorators and proper
-    stdio communication support for Claude Desktop integration.
-
-    Args:
-        app: FastMCP application instance
+    Args: See Parameters block.
     """
 
     @app.tool(
         name="create_security_automation",
         description="Create custom security automation rule with triggers and responses",
+        annotations=_MUTATING,
     )
     async def create_security_automation(
-        trigger_type: Literal["motion", "doorbell", "schedule", "alarm"],
-        trigger_conditions: dict[str, Any],
-        response_actions: list[dict[str, Any]],
-        automation_name: str,
-        enabled: bool = True,
+        trigger_type: Annotated[
+            Literal["motion", "doorbell", "schedule", "alarm"],
+            Field(description="Event type that activates the automation."),
+        ],
+        trigger_conditions: Annotated[dict[str, Any], Field(description="Specific conditions for trigger activation.")],
+        response_actions: Annotated[list[dict[str, Any]], Field(description="Actions to execute when triggered.")],
+        automation_name: Annotated[str, Field(description="Descriptive name for the automation rule.", min_length=1)],
+        enabled: Annotated[bool, Field(description="Whether the automation is active.")] = True,
     ) -> dict[str, Any]:
         """Create custom security automation rule with triggers and responses.
 
-        Establishes intelligent automation rules that respond to security events
-        with appropriate actions. Enables proactive security management and
-        reduces response time to security incidents.
+        ## Return Format
+        {"success": true, "message": "Automation '<name>' created", "automation_id": "...", ...}
 
-        Automation rules can trigger on motion detection, doorbell activity,
-        scheduled times, or alarm events. Response actions can include lighting
-        control, notifications, recording, or system mode changes.
-
-        Args:
-            trigger_type: Event type that activates automation
-            trigger_conditions: Specific conditions for trigger activation
-            response_actions: Actions to execute when triggered
-            automation_name: Descriptive name for the automation rule
-            enabled: Whether automation is active
-
-        Returns:
-            Dict containing:
-            - automation_id: Unique identifier for created rule
-            - rule_configuration: Complete automation configuration
-            - test_result: Result of automation rule validation
-            - activation_schedule: When automation will be active
+        ## Examples
+        await create_security_automation(
+            trigger_type="motion",
+            trigger_conditions={"device_id": "camera-001"},
+            response_actions=[{"action": "notify"}],
+            automation_name="Night watch",
+        )
         """
         try:
             # Note: Ring doesn't have a native automation API, so this is a conceptual implementation
@@ -90,6 +80,7 @@ def register_tools(app: FastMCP) -> None:
 
             return {
                 "success": True,
+                "message": f"Automation '{automation_name}' created",
                 "automation_id": automation_id,
                 "automation_name": automation_name,
                 "rule_configuration": automation_rule,
@@ -103,28 +94,21 @@ def register_tools(app: FastMCP) -> None:
             return {"success": False, "error": str(e)}
 
     @app.tool(
-        name="trigger_emergency_protocol", description="Activate emergency security protocol with full system response"
+        name="trigger_emergency_protocol",
+        description="Activate emergency security protocol with full system response",
+        annotations=_DESTRUCTIVE,
     )
     async def trigger_emergency_protocol() -> dict[str, Any]:
         """Activate emergency security protocol with full system response.
 
-        Immediately activates comprehensive emergency response including:
-        - Full security system activation
-        - All cameras start recording
-        - Emergency contacts notification
-        - Maximum alert sensitivity
-        - Documentation of emergency event
+        Arms online security devices and records the incident. Use only in
+        genuine emergencies - this overrides normal security settings.
 
-        Use only in genuine emergency situations. This protocol overrides
-        all normal security settings and activates maximum protection mode.
+        ## Return Format
+        {"success": true, "message": "Emergency protocol active (<incident>)", ...}
 
-        Returns:
-            Dict containing:
-            - protocol_activation_time: When emergency mode was activated
-            - activated_measures: List of emergency measures implemented
-            - emergency_contacts_notified: Who was automatically contacted
-            - system_lockdown_status: Security system lockdown state
-            - incident_id: Unique identifier for emergency incident
+        ## Examples
+        await trigger_emergency_protocol()
         """
         try:
             async with RingClient() as client:
@@ -181,6 +165,7 @@ def register_tools(app: FastMCP) -> None:
 
                 return {
                     "success": True,
+                    "message": f"Emergency protocol active ({incident_id})",
                     "incident_id": incident_id,
                     "protocol_activated": True,
                     "activation_time": activation_time,
@@ -202,30 +187,19 @@ def register_tools(app: FastMCP) -> None:
     @app.tool(
         name="schedule_security_modes",
         description="Configure time-based security mode scheduling for automated protection",
+        annotations=_MUTATING,
     )
     async def schedule_security_modes(
-        schedule_config: dict[str, Any], timezone: str = "Europe/Vienna"
+        schedule_config: Annotated[dict[str, Any], Field(description="Scheduling configuration (modes + timeframes).")],
+        timezone: Annotated[str, Field(description="IANA timezone for the schedule.", min_length=1)] = "Europe/Vienna",
     ) -> dict[str, Any]:
         """Configure time-based security mode scheduling for automated protection.
 
-        Sets up intelligent scheduling that automatically adjusts security modes
-        based on daily routines, work schedules, and lifestyle patterns.
-        Reduces manual security management while maintaining optimal protection.
+        ## Return Format
+        {"success": true, "message": "Schedule <id> active", "schedule_id": "...", ...}
 
-        Supports different schedules for weekdays/weekends, vacation modes,
-        and special event scheduling. Integrates with Austrian time zones
-        and considers local sunset/sunrise times for optimal automation.
-
-        Args:
-            schedule_config: Complete scheduling configuration
-            timezone: Timezone for schedule (default: Europe/Vienna)
-
-        Returns:
-            Dict containing:
-            - schedule_id: Unique identifier for schedule
-            - schedule_summary: Overview of automated mode changes
-            - next_mode_change: When next automatic change will occur
-            - conflict_warnings: Any scheduling conflicts detected
+        ## Examples
+        await schedule_security_modes(schedule_config={"modes": ["armed"], "timeframes": []})
         """
         try:
             # Note: Ring doesn't have native scheduling API, so this is a conceptual implementation
@@ -247,6 +221,7 @@ def register_tools(app: FastMCP) -> None:
 
             return {
                 "success": True,
+                "message": f"Schedule {schedule_id} active",
                 "schedule_id": schedule_id,
                 "timezone": timezone,
                 "schedule_active": True,

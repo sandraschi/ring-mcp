@@ -1,11 +1,8 @@
 """
-Ring Security Camera Management Tools - FastMCP 2.12
+Ring Security Camera Management Tools - FastMCP 3.4.
 
-Security camera operations including video streaming, recording management,
-motion detection, and multi-camera monitoring for Ring security cameras.
-
-This module uses FastMCP 2.12 patterns with multiline decorators and proper
-tool registration for Claude Desktop stdio communication.
+Security camera operations including status, recording state, motion activity,
+and multi-camera monitoring for Ring security cameras.
 """
 
 import logging
@@ -14,35 +11,32 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from ..core.ring_client import RingClient
+from ..core.ring_client_modern import RingClient
 
 logger = logging.getLogger(__name__)
+
+_READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
 
 def register_tools(app: FastMCP) -> None:
     """Register security camera management tools with the FastMCP application.
 
-    Uses FastMCP 2.12 patterns with multiline decorators and proper
-    stdio communication support for Claude Desktop integration.
-
-    Args:
-        app: FastMCP application instance
+    Args: See Parameters block.
     """
 
-    @app.tool(name="get_camera_status", description="Get comprehensive status of all Ring security cameras")
+    @app.tool(
+        name="get_camera_status",
+        description="Get comprehensive status of all Ring security cameras",
+        annotations=_READ_ONLY,
+    )
     async def get_camera_status() -> dict[str, Any]:
         """Get comprehensive status of all Ring security cameras.
 
-        Provides detailed information about camera health, connectivity, recording
-        status, and motion detection settings. Essential for monitoring security
-        coverage and ensuring all cameras are operational.
+        ## Return Format
+        {"success": true, "message": "N camera(s), M online", "cameras": [...], ...}
 
-        Returns:
-            Dict containing:
-            - cameras: List of all cameras with detailed status
-            - recording_status: Current recording state for each camera
-            - motion_activity: Recent motion detection summary
-            - storage_usage: Cloud storage utilization
+        ## Examples
+        await get_camera_status()
         """
         try:
             async with RingClient() as client:
@@ -87,6 +81,7 @@ def register_tools(app: FastMCP) -> None:
 
                 return {
                     "success": True,
+                    "message": f"{len(camera_details)} camera(s), {sum(1 for c in camera_details if c.get('online', False))} online",
                     "cameras": camera_details,
                     "total_cameras": len(camera_details),
                     "online_cameras": sum(1 for c in camera_details if c.get("online", False)),
@@ -98,20 +93,23 @@ def register_tools(app: FastMCP) -> None:
             logger.error(f"Error getting camera status: {e}")
             return {"success": False, "error": str(e)}
 
-    @app.tool(name="stream_all_cameras", description="Start live streams from all available Ring cameras")
+    @app.tool(
+        name="stream_all_cameras",
+        description="Start live streams from all available Ring cameras",
+        annotations=_READ_ONLY,
+    )
     async def stream_all_cameras() -> dict[str, Any]:
-        """Start live streams from all available Ring cameras.
+        """Report per-camera live-view readiness (WebRTC handoff).
 
-        Initiates simultaneous live video streams from all operational Ring cameras
-        for comprehensive security monitoring. Provides unified dashboard view
-        of all camera feeds with individual stream controls.
+        Ring retired direct stream URLs - each camera resolves to either a
+        stream entry or an honest per-camera failure pointing at WebRTC.
 
-        Returns:
-            Dict containing:
-            - camera_streams: List of active streams with URLs
-            - total_streams: Number of successfully started streams
-            - failed_cameras: Cameras that failed to start streaming
-            - dashboard_url: Unified viewing interface
+        ## Return Format
+        {"success": true, "message": "N stream(s) started, M failed",
+         "camera_streams": [...], "failed_cameras": [...]}
+
+        ## Examples
+        await stream_all_cameras()
         """
         try:
             async with RingClient() as client:
@@ -142,6 +140,7 @@ def register_tools(app: FastMCP) -> None:
 
                 return {
                     "success": True,
+                    "message": f"{len(camera_streams)} stream(s) started, {len(failed_cameras)} failed (WebRTC-only API)",
                     "camera_streams": camera_streams,
                     "total_streams": len(camera_streams),
                     "failed_cameras": failed_cameras,

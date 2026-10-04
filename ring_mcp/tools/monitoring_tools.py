@@ -1,11 +1,8 @@
 """
-Ring Monitoring and Health Check Tools - FastMCP 2.12
+Ring Monitoring and Health Check Tools - FastMCP 3.4.
 
 Real-time monitoring, health checks, and performance analysis for Ring security ecosystem.
 Provides comprehensive system oversight and proactive maintenance alerts.
-
-This module uses FastMCP 2.12 patterns with multiline decorators and proper
-tool registration for Claude Desktop stdio communication.
 """
 
 import logging
@@ -14,38 +11,32 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from ..core.ring_client import RingClient
+from ..core.ring_client_modern import RingClient
 
 logger = logging.getLogger(__name__)
+
+_READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
 
 def register_tools(app: FastMCP) -> None:
     """Register monitoring and health check tools with the FastMCP application.
 
-    Uses FastMCP 2.12 patterns with multiline decorators and proper
-    stdio communication support for Claude Desktop integration.
-
-    Args:
-        app: FastMCP application instance
+    Args: See Parameters block.
     """
 
     @app.tool(
-        name="monitor_system_health", description="Perform comprehensive health check of entire Ring security system"
+        name="monitor_system_health",
+        description="Perform comprehensive health check of entire Ring security system",
+        annotations=_READ_ONLY,
     )
     async def monitor_system_health() -> dict[str, Any]:
         """Perform comprehensive health check of entire Ring security system.
 
-        Analyzes all Ring devices, connectivity, battery levels, signal strength,
-        and system performance. Provides proactive maintenance recommendations
-        and identifies potential issues before they affect security coverage.
+        ## Return Format
+        {"success": true, "message": "System health: N/100 (...)", "overall_health_score": 0-100, ...}
 
-        Returns:
-            Dict containing:
-            - overall_health_score: System health rating (0-100)
-            - device_health: Individual device health assessments
-            - maintenance_alerts: Required maintenance actions
-            - performance_metrics: System performance indicators
-            - recommendations: Proactive improvement suggestions
+        ## Examples
+        await monitor_system_health()
         """
         try:
             async with RingClient() as client:
@@ -120,6 +111,7 @@ def register_tools(app: FastMCP) -> None:
 
                 return {
                     "success": True,
+                    "message": f"System health: {health_score}/100 ({online_devices}/{total_devices} online)",
                     "overall_health_score": health_score,
                     "device_count": total_devices,
                     "healthy_devices": online_devices,
@@ -139,20 +131,19 @@ def register_tools(app: FastMCP) -> None:
             logger.error(f"Error monitoring system health: {e}")
             return {"success": False, "error": str(e)}
 
-    @app.tool(name="get_real_time_activity", description="Get real-time activity feed from all Ring devices")
+    @app.tool(
+        name="get_real_time_activity",
+        description="Get real-time activity feed from all Ring devices",
+        annotations=_READ_ONLY,
+    )
     async def get_real_time_activity() -> dict[str, Any]:
         """Get real-time activity feed from all Ring devices.
 
-        Provides live activity monitoring across all Ring devices including
-        motion events, doorbell presses, security alerts, and system changes.
-        Essential for active security monitoring and incident response.
+        ## Return Format
+        {"success": true, "message": "N recent event(s)", "live_activity": [...], ...}
 
-        Returns:
-            Dict containing:
-            - live_activity: Real-time events from all devices
-            - activity_summary: Current activity levels by device type
-            - active_alerts: Any current security or system alerts
-            - system_status: Overall system operational status
+        ## Examples
+        await get_real_time_activity()
         """
         try:
             async with RingClient() as client:
@@ -224,6 +215,7 @@ def register_tools(app: FastMCP) -> None:
 
                 return {
                     "success": True,
+                    "message": f"{len(live_activity)} recent event(s), system {system_status}",
                     "live_activity": live_activity,
                     "activity_count": len(live_activity),
                     "activity_summary": activity_by_type,

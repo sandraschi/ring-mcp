@@ -1,11 +1,8 @@
 """
-Ring Fire Safety Management Tools - FastMCP 2.12
+Ring Fire Safety Management Tools - FastMCP 3.4.
 
 Fire alarm monitoring, testing, and emergency protocols for Ring fire safety devices.
 Handles smoke detection, safety alerts, and emergency response automation.
-
-This module uses FastMCP 2.12 patterns with multiline decorators and proper
-tool registration for Claude Desktop stdio communication.
 """
 
 import logging
@@ -14,37 +11,32 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from ..core.ring_client import RingClient
+from ..core.ring_client_modern import RingClient
 
 logger = logging.getLogger(__name__)
+
+_READ_ONLY = {"readOnlyHint": True, "idempotentHint": True}
 
 
 def register_tools(app: FastMCP) -> None:
     """Register fire safety management tools with the FastMCP application.
 
-    Uses FastMCP 2.12 patterns with multiline decorators and proper
-    stdio communication support for Claude Desktop integration.
-
-    Args:
-        app: FastMCP application instance
+    Args: See Parameters block.
     """
 
     @app.tool(
-        name="get_fire_alarm_status", description="Get comprehensive status of all Ring fire alarms and smoke detectors"
+        name="get_fire_alarm_status",
+        description="Get comprehensive status of all Ring fire alarms and smoke detectors",
+        annotations=_READ_ONLY,
     )
     async def get_fire_alarm_status() -> dict[str, Any]:
         """Get comprehensive status of all Ring fire alarms and smoke detectors.
 
-        Provides detailed information about fire safety device health, battery levels,
-        sensor functionality, and recent alert history. Critical for maintaining
-        home fire safety and ensuring emergency detection systems are operational.
+        ## Return Format
+        {"success": true, "message": "...", "fire_alarms": [...], "system_health": "operational|..."}
 
-        Returns:
-            Dict containing:
-            - fire_alarms: List of all fire safety devices with status
-            - system_health: Overall fire safety system assessment
-            - battery_warnings: Devices with low battery requiring attention
-            - test_recommendations: Suggested testing schedule
+        ## Examples
+        await get_fire_alarm_status()
         """
         try:
             async with RingClient() as client:
@@ -117,6 +109,7 @@ def register_tools(app: FastMCP) -> None:
 
                 return {
                     "success": True,
+                    "message": f"Fire safety: {system_health} ({len(fire_alarms)} device(s))",
                     "fire_alarms": fire_alarms,
                     "total_alarms": len(fire_alarms),
                     "online_alarms": len([d for d in fire_alarms if d.get("online", False)]),
@@ -135,20 +128,19 @@ def register_tools(app: FastMCP) -> None:
             logger.error(f"Error getting fire alarm status: {e}")
             return {"success": False, "error": str(e)}
 
-    @app.tool(name="test_fire_safety_system", description="Perform comprehensive test of fire safety system")
+    @app.tool(
+        name="test_fire_safety_system",
+        description="Perform comprehensive test of fire safety system",
+        annotations=_READ_ONLY,
+    )
     async def test_fire_safety_system() -> dict[str, Any]:
         """Perform comprehensive test of fire safety system.
 
-        Executes safety test protocols for all fire alarms and smoke detectors.
-        Essential for regular safety maintenance and ensuring proper emergency
-        detection functionality. Follows Austrian fire safety standards.
+        ## Return Format
+        {"success": true, "message": "Safety test: <pass|warning|fail>", "overall_status": "...", ...}
 
-        Returns:
-            Dict containing:
-            - test_results: Results for each device tested
-            - overall_status: Pass/fail status of safety system
-            - recommendations: Actions needed for failed tests
-            - next_test_date: Recommended date for next safety test
+        ## Examples
+        await test_fire_safety_system()
         """
         try:
             async with RingClient() as client:
@@ -234,6 +226,7 @@ def register_tools(app: FastMCP) -> None:
 
                 return {
                     "success": True,
+                    "message": f"Safety test: {overall_status} ({len(test_results)} device(s) checked)",
                     "test_results": test_results,
                     "total_devices_tested": len(test_results),
                     "passed_tests": len([r for r in test_results if r["test_status"] == "pass"]),
