@@ -13,7 +13,7 @@ from .exceptions import (
     RingError,
     StreamingError,
 )
-from .ring_client import RingClient
+from .ring_client_modern import RingClient
 
 __all__ = [
     "ApiRateLimitError",

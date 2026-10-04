@@ -1,10 +1,10 @@
 """
-Server Composition and Proxy for Ring MCP - FastMCP 2.12
+Server Composition and Proxy for Ring MCP - FastMCP 3.4
 
 This module provides functionality to compose multiple MCP servers together
 and proxy requests between them, enabling a unified API for multiple services.
 
-This module uses FastMCP 2.12 patterns with multiline decorators and proper
+This module uses FastMCP 3.4 patterns with multiline decorators and proper
 tool registration for Claude Desktop stdio communication.
 """
 
@@ -35,7 +35,7 @@ class MCPServerComposition:
     def _register_tools(self, app: FastMCP) -> None:
         """Register composition and proxy tools with the base server.
 
-        Uses FastMCP 2.12 patterns with multiline decorators and proper
+        Uses FastMCP 3.4 patterns with multiline decorators and proper
         stdio communication support for Claude Desktop integration.
 
         Args:
@@ -90,7 +90,7 @@ class MCPServerComposition:
 
             except Exception as e:
                 logger.error("Failed to connect to server %s: %s", server_url, str(e))
-                raise RuntimeError(f"Failed to connect to server: {e!s}")
+                raise RuntimeError(f"Failed to connect to server: {e!s}") from e
 
         @self.base_server.tool()
         async def disconnect_server(namespace: str) -> dict[str, Any]:
@@ -123,7 +123,7 @@ class MCPServerComposition:
 
             except Exception as e:
                 logger.error("Failed to disconnect server %s: %s", namespace, str(e))
-                raise RuntimeError(f"Failed to disconnect server: {e!s}")
+                raise RuntimeError(f"Failed to disconnect server: {e!s}") from e
 
         @app.tool(
             name="call_namespaced_tool",
@@ -159,7 +159,7 @@ class MCPServerComposition:
                 return await client.call(actual_tool_name, **kwargs)
             except Exception as e:
                 logger.error("Error calling tool %s on server %s: %s", actual_tool_name, namespace, str(e))
-                raise RuntimeError(f"Failed to call tool {tool_name}: {e!s}")
+                raise RuntimeError(f"Failed to call tool {tool_name}: {e!s}") from e
 
     async def close(self) -> None:
         """Close all connections to remote servers."""
@@ -177,7 +177,7 @@ class MCPServerComposition:
 def create_composed_app(ring_client=None) -> FastMCP:
     """Create a composed FastMCP application with Ring MCP and composition support.
 
-    Uses FastMCP 2.12 patterns with multiline decorators and proper
+    Uses FastMCP 3.4 patterns with multiline decorators and proper
     stdio communication support for Claude Desktop integration.
 
     Args:
@@ -186,10 +186,10 @@ def create_composed_app(ring_client=None) -> FastMCP:
     Returns:
         Configured FastMCP application with composition support
     """
-    # Create the base FastMCP application with FastMCP 2.12 patterns
+    # Create the base FastMCP application with FastMCP 3.4 patterns
     app = FastMCP(
         name="Ring MCP with Composition",
-        version="2.12.0",
+        version="1.0.4",
     )
 
     # Add the Ring MCP tools

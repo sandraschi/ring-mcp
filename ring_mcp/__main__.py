@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 # Import the server after setting up logging
-from ring_mcp.server import create_app  # noqa: E402
+from ring_mcp.server import create_app
 
 
 def prompt_for_2fa_code() -> str:
@@ -70,7 +70,8 @@ def main():
     from ring_mcp.core.port_manager import get_ring_mcp_port, print_port_info
 
     # Get host and port from environment variables
-    host = os.getenv("HOST", "0.0.0.0")
+    # 0.0.0.0 is intentional (LAN/Tailscale reachability); API auth is still required per call.
+    host = os.getenv("HOST", "0.0.0.0")  # noqa: S104 - LAN/Tailscale access is by design
     port = get_ring_mcp_port()
 
     logging.info(f"\nStarting Ring MCP server on http://{host}:{port}")
@@ -79,7 +80,6 @@ def main():
 
     try:
         # Run the server with stdio transport for Claude Desktop
-        # FastMCP 2.12 stdio mode - no parameters needed
         app.run()
     except KeyboardInterrupt:
         logging.info("\nShutting down Ring MCP server...")
