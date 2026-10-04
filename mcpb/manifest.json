@@ -1,6 +1,6 @@
 {
   "name": "ring-mcp",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "description": "Universal Ring Security Ecosystem Control - Comprehensive MCP server for Ring doorbells, security cameras, and alarm systems with Austrian precision",
   "author": "Sandra",
   "license": "MIT",
@@ -9,7 +9,21 @@
     "type": "git",
     "url": "https://github.com/sandraschi/ring-mcp"
   },
-  "main": "server/server.py",
+  "server": {
+    "type": "python",
+    "entry_point": "src/ring_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "ring_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1",
+        "RING_USERNAME": "${RING_USERNAME}",
+        "RING_PASSWORD": "${RING_PASSWORD}",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  },
   "mcp": {
     "version": "1.0",
     "capabilities": ["tools"],
@@ -26,7 +40,7 @@
     "python": ">=3.10"
   },
   "dependencies": {
-    "fastmcp": ">=3.2.0",
+    "fastmcp": ">=3.4.4",
     "ring-doorbell": ">=0.8.0",
     "pydantic": ">=2.0.0",
     "httpx": ">=0.27.0"
@@ -80,4 +94,3 @@
     "austria"
   ]
 }
-

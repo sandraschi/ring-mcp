@@ -1,6 +1,6 @@
 {
   "name": "ring-mcp",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Ring device management via MCP",
   "hooks": "../hooks/hooks.json"
 }

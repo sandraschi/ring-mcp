@@ -1,16 +1,16 @@
 {
     "name": "ring-mcp",
-    "version": "1.0.0",
+    "version": "1.0.4",
     "type": "server",
     "runtime": "python",
-    "entry_point": "src/ring_mcp/server.py",
+    "entry_point": "ring_mcp/__main__.py",
     "dependencies": [
-        "fastmcp>=3.2.0",
+        "fastmcp>=3.4.4,<4",
         "ring-doorbell>=0.8.0"
     ],
     "build": {
         "include": [
-            "src/**/*",
+            "ring_mcp/**/*",
             "README.md",
             "LICENSE"
         ],

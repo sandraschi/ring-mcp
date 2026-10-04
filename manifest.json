@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "ring-mcp",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "🔥 Ring Security Ecosystem MCP - Universal control for Ring doorbell, burglar alarm, fire alarm, and cameras with Austrian precision",
   "author": "Sandra Schiessl",
   "homepage": "https://github.com/sandraschi/ring-mcp",
@@ -71,63 +71,119 @@
   "tools": [
     {
       "name": "list_devices",
-      "description": "List all Ring devices in your account with current status"
+      "description": "List all Ring devices with online status and battery"
     },
     {
-      "name": "get_device_info",
-      "description": "Get detailed information about a specific Ring device"
+      "name": "get_security_system_status",
+      "description": "Get comprehensive status of the entire Ring security system"
     },
     {
-      "name": "get_device_health",
-      "description": "Check battery level and connectivity status of Ring devices"
+      "name": "arm_security_system",
+      "description": "Arm the Ring alarm panel in home/away mode (or disarm)"
     },
     {
-      "name": "start_live_view",
-      "description": "Start live video streaming from Ring cameras"
+      "name": "disarm_security_system",
+      "description": "Disarm the Ring alarm panel"
     },
     {
-      "name": "capture_snapshot",
-      "description": "Capture a still image from Ring camera"
+      "name": "get_security_history",
+      "description": "Get security system history and events"
     },
     {
-      "name": "get_recent_events",
-      "description": "Retrieve recent motion, doorbell, and alarm events"
+      "name": "get_doorbell_status",
+      "description": "Get comprehensive status of all Ring doorbells"
     },
     {
-      "name": "control_device",
-      "description": "Control Ring device lights, sirens, and other features"
+      "name": "get_doorbell_live_stream",
+      "description": "WebRTC live-view handoff for a doorbell (direct URLs are retired)"
     },
     {
-      "name": "set_device_settings",
-      "description": "Configure device settings like motion sensitivity and notifications"
+      "name": "answer_doorbell_call",
+      "description": "Two-way audio status (not implemented in this backend)"
     },
     {
-      "name": "monitor_events",
-      "description": "Subscribe to real-time device events via WebSocket"
+      "name": "get_visitor_history",
+      "description": "Get visitor history and activity logs"
+    },
+    {
+      "name": "configure_motion_detection",
+      "description": "Motion configuration status (not exposed by the Ring API wrapper)"
+    },
+    {
+      "name": "get_camera_status",
+      "description": "Get comprehensive status of all Ring security cameras"
+    },
+    {
+      "name": "stream_all_cameras",
+      "description": "Per-camera live-view readiness (WebRTC handoff)"
+    },
+    {
+      "name": "get_fire_alarm_status",
+      "description": "Get comprehensive status of all Ring fire alarms and smoke detectors"
+    },
+    {
+      "name": "test_fire_safety_system",
+      "description": "Perform comprehensive test of fire safety system"
+    },
+    {
+      "name": "monitor_system_health",
+      "description": "Perform comprehensive health check of entire Ring security system"
+    },
+    {
+      "name": "get_real_time_activity",
+      "description": "Get real-time activity feed from all Ring devices"
+    },
+    {
+      "name": "create_security_automation",
+      "description": "Create custom security automation rule with triggers and responses"
+    },
+    {
+      "name": "trigger_emergency_protocol",
+      "description": "Activate emergency security protocol with full system response"
+    },
+    {
+      "name": "schedule_security_modes",
+      "description": "Configure time-based security mode scheduling"
     },
     {
       "name": "get_system_status",
-      "description": "Get overall Ring system status and diagnostics"
+      "description": "Get comprehensive system status including auth and device connectivity"
     },
     {
-      "name": "test_connectivity",
-      "description": "Test connectivity to Ring API and devices"
+      "name": "check_authentication_status",
+      "description": "Check Ring API authentication status and token validity"
     },
     {
-      "name": "manage_locations",
-      "description": "Manage Ring locations and device groupings"
+      "name": "check_device_connectivity",
+      "description": "Test connectivity and status of all Ring devices"
     },
     {
-      "name": "get_shared_users",
-      "description": "List users who have access to your Ring devices"
+      "name": "get_service_health",
+      "description": "Get detailed service health and performance metrics"
     },
     {
-      "name": "update_firmware",
-      "description": "Check and update device firmware"
+      "name": "list_available_tools",
+      "description": "List all available Ring MCP tools with categories"
     },
     {
-      "name": "export_device_data",
-      "description": "Export device history and event data"
+      "name": "get_tool_help",
+      "description": "Get detailed help for a specific tool"
+    },
+    {
+      "name": "search_tools",
+      "description": "Search for tools by name, description, or functionality"
+    },
+    {
+      "name": "show_devices_card",
+      "description": "Show all Ring devices as a rich in-chat card"
+    },
+    {
+      "name": "show_health_card",
+      "description": "Show Ring MCP health as a rich in-chat card"
+    },
+    {
+      "name": "ring_shutdown",
+      "description": "Gracefully shut down the Ring MCP server"
     }
   ],
   "compatibility": {
@@ -162,4 +218,3 @@
     "Ring Smart Lighting (Pathlight, Steplight)"
   ]
 }
-

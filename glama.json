@@ -2,6 +2,7 @@
   "$schema": "https://glama.ai/mcp/schemas/server.json",
   "maintainers": ["sandraschi"],
   "name": "ring-mcp",
+  "version": "1.0.4",
   "description": "FastMCP 3.4+ server for Ring device management including doorbells, security cameras, and alarm systems.",
   "type": "mcp_server",
   "status": "active",
@@ -10,6 +11,17 @@
   "keywords": [
     "ring", "security", "cameras", "doorbells", "alarm",
     "home-security", "mcp-server", "fastmcp", "iot"
+  ],
+  "tools": [
+    "answer_doorbell_call", "arm_security_system", "check_authentication_status",
+    "check_device_connectivity", "configure_motion_detection", "create_security_automation",
+    "disarm_security_system", "get_camera_status", "get_doorbell_live_stream",
+    "get_doorbell_status", "get_fire_alarm_status", "get_real_time_activity",
+    "get_security_history", "get_security_system_status", "get_service_health",
+    "get_system_status", "get_tool_help", "get_visitor_history", "list_available_tools",
+    "list_devices", "monitor_system_health", "ring_shutdown", "schedule_security_modes",
+    "search_tools", "show_devices_card", "show_health_card", "stream_all_cameras",
+    "test_fire_safety_system", "trigger_emergency_protocol"
   ],
   "features": {
     "device_management": {
