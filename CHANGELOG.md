@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **MCP tools now use the real Ring API client**: all 7 tool modules migrated from the legacy
+  hardcoded-mock `ring_client` to `ring_client_modern` (async, lazy auth). Includes honest-unsupported
+  returns where the wrapper exposes no primitive (direct stream URLs, two-way audio, motion config),
+  WebRTC handoff payloads, and a fabricated `armed`-from-online heuristic replaced with `unknown`
+  unless a panel reports state. New `tests/test_tool_wiring.py` (13 tests) invokes all 28 safe tools
+  through a FastMCP client against modern-spec mocks (`ring_shutdown` excluded: calls `os._exit`).
+- **Prefab cards serve again**: `show_devices_card`/`show_health_card` moved onto the served
+  `create_app()` surface and rewritten for prefab-ui 0.14 (`with`-block composition); added served
+  `list_devices`. All stdio entries (`python -m ring_mcp`, `ring-mcp` script) now serve the same
+  29 tools + 2 prompts + 2 resources via `create_app()`.
+- **Contract endpoints** (all live-probed 200): `GET /api/capabilities`, `GET /api/v1/system/info`,
+  `GET /api/v1/diagnostics`, `GET /api/skills`, `GET /api/v1/llm/discover|providers|onboarding`,
+  `POST /api/shutdown` (200 then orderly exit, verified). `GET /api/v1/status` correctly 401s
+  without credentials.
+- **Webapp build green**: 4 tsc errors fixed (ImportMeta cast, unused const/interface, setModel null
+  narrowing); removed dead wrong-port `API_BASE` export - `settings.tsx` providers fetch and
+  `useRingWebRTC` signaling now use `api.getBaseUrl()` (correct :10729 in every mode); chat history
+  capped at 100 turns (was declared but unenforced); stable React keys; `type="button"` everywhere;
+  18 biome findings fixed (`biome:ci` exit 0); Tailwind CSS gate 28 kB.
+- **Tauri CSP**: `connect-src`/`img-src` now allow `:10729` (backend was blocked in the desktop app).
+- **Lint gates**: `ruff check .` clean (B904 `from` chaining, tracked-task helper for RUF006, S110/S112
+  un-ignored with 3 real fixes, T20 print ban + per-file-ignores, S104/S113 annotated); CUA smoke
+  script S110/S310 fixed (log-and-continue, localhost-only noqas).
+- **Launcher/contract**: justfile recipes joined to single-line (`Set-Location` is per-line-lost);
+  added `fmt` alias, `mcpb-pack`, `cua-webapp-test`, `cua-nsis-test`; `bootstrap` uses bun;
+  `fleet-start.config.ps1` HealthPath `/api/v1/health` + relative WebRoot; `nav_routes` added to
+  `cua-nsis-config.json`; `ring-mcp-start.bat` launcher + manifest regen (mcp-central-docs side).
+- **Metadata drift**: versions aligned to 1.0.4 (manifest, mcpb, glama + real 29-tool list, plugin);
+  `llms-full.txt` regenerated from the served surface; help catalog synced (removed unserved
+  `health_check`, fixed stale params); session-injection prompts cite real tool names;
+  `.bak` dross removed (tracked + untracked), `.gitignore` covers `*.bak.*`/`*.bak-*`;
+  `renovate.json` added; coverage gate `--cov-fail-under=30` (measured 32%).
+- **Status tool correctness**: `determine_overall_status` read nonexistent keys (always `no_devices`);
+  `check_auth_component` took an arg it was never given; `get_uptime` returned boot time;
+  `check_device_connectivity` honors `device_id`; battery/signal keys match the modern shape.
+- **Rebuilt dev env**: `.venv` was missing `pyvenv.cfg` (every interpreter inside failed at startup);
+  recreated via `uv sync --extra dev`.
+
+### Deferred (follow-up program)
+- `skillbuild ring-mcp` (runt 543 B domain skill), onboarding system (docs + hero CTA +
+  mock-until-onboarded), canonical `docs/` four, MCPB 3-4-100 prompts + icon + src-layout
+  migration (blocks `just mcpb-pack`), chat streaming + skill-first, Zustand LLM store, Apps Hub
+  fleet discovery, Tauri `backend-status` listen + `useZoom`, P4 font/contrast sweep, e2e specs,
+  `output_schema` per-tool audit, agentic `ctx:Context`, `skills/` provider dir, `.agents/skills`.
+  Settings LLM providers block still targets the legacy unversioned path (noted in code).
+
 ### Added
 - API Docs page: Swagger/ReDoc toggle, quick-ref endpoints, iframe embed
 - `.claude-plugin/plugin.json` + `hooks/hooks.json`: session context injection
@@ -159,4 +206,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Removed** for now removed features
 - **Fixed** for any bug fixes
 - **Security** in case of vulnerabilities
-
