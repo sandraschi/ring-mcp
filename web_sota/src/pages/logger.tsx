@@ -23,7 +23,7 @@ export function Logger() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Server log
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-300">
             Recent HTTP and Ring MCP lines from the API process (in-memory
             buffer, max ~500 lines).
           </p>
@@ -70,7 +70,7 @@ export function Logger() {
             <ScrollText className="h-5 w-5 text-amber-500" />
             <CardTitle className="text-white">Live tail</CardTitle>
           </div>
-          <span className="text-xs text-slate-500">{entries.length} lines</span>
+          <span className="text-sm text-slate-300">{entries.length} lines</span>
         </CardHeader>
         <CardContent>
           {logsQuery.isError ? (
@@ -82,7 +82,7 @@ export function Logger() {
               <pre className="font-mono text-xs leading-relaxed text-slate-300 whitespace-pre-wrap break-all">
                 {entries.length === 0
                   ? logsQuery.isLoading
-                    ? "Loading…"
+                    ? "Loadingâ€¦"
                     : "No log lines yet. Use the app or Settings to generate traffic."
                   : entries
                       .map((e) => `${e.ts} [${e.level}] ${e.message}`)

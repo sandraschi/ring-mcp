@@ -90,8 +90,8 @@ export function Tools() {
         <h2 className="text-2xl font-bold tracking-tight text-white">
           Tool Inventory
         </h2>
-        <div className="flex items-center gap-2 text-slate-400">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading Ring MCP data…
+        <div className="flex items-center gap-2 text-slate-300">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading Ring MCP dataâ€¦
         </div>
       </div>
     );
@@ -104,10 +104,10 @@ export function Tools() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Tool Inventory
           </h2>
-          <p className="text-slate-400" data-testid="tools-summary">
+          <p className="text-slate-300" data-testid="tools-summary">
             {error
               ? "MCP server unreachable"
-              : `${devices.length} devices · ${status?.online ?? 0} online`}
+              : `${devices.length} devices Â· ${status?.online ?? 0} online`}
           </p>
         </div>
       </div>
@@ -139,8 +139,8 @@ export function Tools() {
                 <Icon className={`h-4 w-4 ${tool.iconColor}`} />
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-slate-400">{tool.description}</p>
-                <div className="mt-2 flex items-center gap-1 text-xs">
+                <p className="text-sm text-slate-300">{tool.description}</p>
+                <div className="mt-2 flex items-center gap-1 text-sm">
                   {health ? (
                     <>
                       <CheckCircle className="h-3 w-3 text-green-500" />{" "}
@@ -163,7 +163,7 @@ export function Tools() {
         <Card className="border-slate-800 bg-slate-950/50">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-slate-400" />
+              <Wrench className="h-4 w-4 text-slate-300" />
               Registered tools ({devices.length})
             </CardTitle>
           </CardHeader>
@@ -181,16 +181,16 @@ export function Tools() {
                     <span className="text-sm font-medium text-slate-200">
                       {d.name}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-sm text-slate-300">
                       {d.type}
                       {d.family ? ` (${d.family})` : ""}
                     </span>
                   </div>
                   <span
-                    className={`text-xs font-mono ${d.online ? "text-green-400" : "text-slate-500"}`}
+                    className={`text-xs font-mono ${d.online ? "text-green-400" : "text-slate-300"}`}
                   >
                     {d.online ? "online" : "offline"}
-                    {d.battery_life != null ? ` · ${d.battery_life}%` : ""}
+                    {d.battery_life != null ? ` Â· ${d.battery_life}%` : ""}
                   </span>
                 </div>
               ))}
@@ -206,7 +206,7 @@ export function Tools() {
             <h3 className="text-lg font-medium text-slate-300">
               API connected, no devices
             </h3>
-            <p className="text-sm text-slate-500 max-w-sm">
+            <p className="text-sm text-slate-300 max-w-sm">
               Ring devices will appear here once discovered by the backend.
             </p>
           </CardContent>

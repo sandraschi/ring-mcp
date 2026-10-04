@@ -17,7 +17,7 @@ export function Help() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Help & documentation
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-300">
             Fleet layout, ports, and how this UI talks to Ring
           </p>
         </div>
@@ -31,7 +31,7 @@ export function Help() {
               <CardTitle className="text-white">Getting started</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-slate-400">
+          <CardContent className="space-y-4 text-sm text-slate-300">
             <p>
               This UI is the <span className="text-slate-200">Ring MCP</span>{" "}
               fleet console. It calls the REST API (same machine) to list
@@ -72,12 +72,12 @@ export function Help() {
               <CardTitle className="text-white">Developer notes</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-slate-400">
+          <CardContent className="space-y-4 text-sm text-slate-300">
             <p>
               MCP stdio server: <code className="text-slate-200">ring-mcp</code>{" "}
               (Claude Desktop). HTTP API for this UI:{" "}
-              <code className="text-slate-200">ring-mcp-http</code> — FastAPI +
-              uvicorn, fleet default port {API_PORT}.
+              <code className="text-slate-200">ring-mcp-http</code> â€” FastAPI
+              + uvicorn, fleet default port {API_PORT}.
             </p>
             <div
               className="rounded border border-slate-800 bg-slate-900 p-3 font-mono text-xs text-slate-300"
@@ -105,7 +105,7 @@ export function Help() {
           </div>
         </CardHeader>
         <CardContent>
-          <table className="w-full text-left text-sm text-slate-400">
+          <table className="w-full text-left text-sm text-slate-300">
             <tbody className="divide-y divide-slate-800">
               <tr>
                 <td className="py-2 font-medium text-slate-300">

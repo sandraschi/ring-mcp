@@ -10,7 +10,7 @@ function logLineTone(level: string): string {
   if (u === "ERROR" || u === "CRITICAL") return "text-red-400";
   if (u === "WARNING" || u === "WARN") return "text-amber-400";
   if (u === "INFO") return "text-slate-300";
-  return "text-slate-500";
+  return "text-slate-300";
 }
 
 export function Dashboard() {
@@ -47,7 +47,7 @@ export function Dashboard() {
   const healthMessage = (h: HealthResponse | undefined) => {
     const m = h?.message?.trim();
     if (!m) return "No message from /api/v1/health.";
-    return m.length > 160 ? `${m.slice(0, 157)}…` : m;
+    return m.length > 160 ? `${m.slice(0, 157)}â€¦` : m;
   };
 
   return (
@@ -57,7 +57,7 @@ export function Dashboard() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Ring MCP Dashboard
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-300">
             System overview (data from this HTTP API only)
           </p>
         </div>
@@ -70,7 +70,7 @@ export function Dashboard() {
             data-testid="onboarding-cue"
             className="block w-full rounded-lg bg-red-600 px-4 py-3 text-center text-base font-semibold text-white hover:bg-red-500"
           >
-            Complete onboarding — connect Ring
+            Complete onboarding â€” connect Ring
           </Link>
           <div
             data-testid="mock-data-banner"
@@ -91,7 +91,7 @@ export function Dashboard() {
                   </CardTitle>
                   <span
                     data-testid="mock-badge"
-                    className="rounded bg-rose-900 px-1.5 py-0.5 text-xs font-bold text-rose-100"
+                    className="rounded bg-rose-900 px-1.5 py-0.5 text-sm font-bold text-rose-100"
                   >
                     MOCK
                   </span>
@@ -117,17 +117,17 @@ export function Dashboard() {
                   </CardTitle>
                   <span
                     data-testid="mock-badge"
-                    className="rounded bg-rose-900 px-1.5 py-0.5 text-xs font-bold text-rose-100"
+                    className="rounded bg-rose-900 px-1.5 py-0.5 text-sm font-bold text-rose-100"
                   >
                     MOCK
                   </span>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-slate-300">
-                    {d.type} · {d.online ? "Online" : "Offline"}
-                    {d.battery !== null ? ` · ${d.battery}%` : ""}
+                    {d.type} Â· {d.online ? "Online" : "Offline"}
+                    {d.battery !== null ? ` Â· ${d.battery}%` : ""}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">{d.note}</p>
+                  <p className="mt-1 text-sm text-slate-300">{d.note}</p>
                 </CardContent>
               </Card>
             ))}
@@ -146,20 +146,20 @@ export function Dashboard() {
             </CardTitle>
             <Shield
               data-testid="backend-dot"
-              className={`h-4 w-4 ${isError ? "text-red-500" : backendOk ? "text-emerald-500" : "text-slate-500"}`}
+              className={`h-4 w-4 ${isError ? "text-red-500" : backendOk ? "text-emerald-500" : "text-slate-300"}`}
             />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">
               {isLoading
-                ? "…"
+                ? "â€¦"
                 : isError
                   ? "Unreachable"
                   : backendOk
                     ? "Up"
                     : "Degraded"}
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm text-slate-300">
               {isError
                 ? `Could not reach ${api.getBaseUrl()}`
                 : backendOk
@@ -178,20 +178,20 @@ export function Dashboard() {
               Ring account
             </CardTitle>
             <KeyRound
-              className={`h-4 w-4 ${ringSignedIn ? "text-emerald-500" : "text-slate-500"}`}
+              className={`h-4 w-4 ${ringSignedIn ? "text-emerald-500" : "text-slate-300"}`}
             />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">
               {isLoading
-                ? "…"
+                ? "â€¦"
                 : isError
-                  ? "—"
+                  ? "â€”"
                   : ringSignedIn
                     ? "Signed in"
                     : "Not signed in"}
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm text-slate-300">
               From <span className="font-mono">authentication_valid</span> on
               last health check
             </p>
@@ -210,10 +210,10 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">
-              {isLoading ? "…" : isError ? "—" : `${healthMs ?? "—"} ms`}
+              {isLoading ? "â€¦" : isError ? "â€”" : `${healthMs ?? "â€”"} ms`}
             </div>
-            <p className="text-xs text-slate-400">
-              Browser → GET /api/v1/health (not Ring cloud latency)
+            <p className="text-sm text-slate-300">
+              Browser â†’ GET /api/v1/health (not Ring cloud latency)
             </p>
           </CardContent>
         </Card>
@@ -230,9 +230,9 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold text-white font-mono leading-tight">
-              {isLoading ? "…" : isError ? "—" : (hs?.last_check ?? "—")}
+              {isLoading ? "â€¦" : isError ? "â€”" : (hs?.last_check ?? "â€”")}
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm text-slate-300">
               <span className="font-mono">last_check</span> from health JSON
             </p>
           </CardContent>
@@ -245,7 +245,7 @@ export function Dashboard() {
             <CardTitle className="text-white">Recent Logs</CardTitle>
             <Link
               to="/logger"
-              className="text-xs font-medium text-sky-400 hover:text-sky-300"
+              className="text-sm font-medium text-sky-400 hover:text-sky-300"
             >
               Open Logger
             </Link>
@@ -257,9 +257,9 @@ export function Dashboard() {
                   Could not load logs. Check API at {api.getBaseUrl()}.
                 </p>
               ) : logsQuery.isLoading ? (
-                <p className="text-slate-500">Loading…</p>
+                <p className="text-slate-300">Loadingâ€¦</p>
               ) : overviewLogs.length === 0 ? (
-                <p className="text-slate-500">
+                <p className="text-slate-300">
                   No log lines yet. Traffic from this API appears here (same
                   buffer as Logger).
                 </p>
@@ -283,23 +283,23 @@ export function Dashboard() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-start">
-                <HardDrive className="h-4 w-4 text-slate-400 mr-2 mt-0.5 shrink-0" />
+                <HardDrive className="h-4 w-4 text-slate-300 mr-2 mt-0.5 shrink-0" />
                 <div className="ml-2 space-y-1 min-w-0">
                   <p className="text-sm font-medium leading-none text-white">
                     API message
                   </p>
-                  <p className="text-xs text-slate-400 break-words">
-                    {isLoading ? "Loading…" : healthMessage(health)}
+                  <p className="text-sm text-slate-300 break-words">
+                    {isLoading ? "Loadingâ€¦" : healthMessage(health)}
                   </p>
                 </div>
               </div>
               <div className="flex items-start">
-                <Activity className="h-4 w-4 text-slate-400 mr-2 mt-0.5 shrink-0" />
+                <Activity className="h-4 w-4 text-slate-300 mr-2 mt-0.5 shrink-0" />
                 <div className="ml-2 space-y-1 min-w-0">
                   <p className="text-sm font-medium leading-none text-white">
                     stdio MCP
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-sm text-slate-300">
                     This page only talks to the HTTP API. A separate stdio MCP
                     process may still be running; it is not probed from the
                     browser.

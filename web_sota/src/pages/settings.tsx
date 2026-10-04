@@ -48,11 +48,11 @@ function LLMSettings() {
       <CardHeader>
         <CardTitle className="text-white">Local LLM</CardTitle>
         <CardDescription
-          className="text-slate-400"
+          className="text-slate-300"
           data-testid="llm-provider-card-local"
         >
           Provider and model selection
-          {baseUrl ? ` · ${baseUrl}` : ""}
+          {baseUrl ? ` Â· ${baseUrl}` : ""}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -65,9 +65,9 @@ function LLMSettings() {
           />
           <span className="text-slate-300">
             {status === "ready"
-              ? `Ready${model ? ` · ${model}` : ""}`
+              ? `Ready${model ? ` Â· ${model}` : ""}`
               : status === "probing"
-                ? "Probing local providers…"
+                ? "Probing local providersâ€¦"
                 : (message ?? "No local LLM detected")}
           </span>
           <Button
@@ -313,14 +313,14 @@ export function Settings() {
         <h2 className="text-2xl font-bold tracking-tight text-white">
           Configuration
         </h2>
-        <p className="text-slate-400">Ring credentials and API connection</p>
+        <p className="text-slate-300">Ring credentials and API connection</p>
       </div>
 
       <div className="grid gap-6">
         <Card className="border-slate-800 bg-slate-950/50">
           <CardHeader>
             <CardTitle className="text-white">Ring Account</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-slate-300">
               Email and password for your Ring account. Used to list and control
               devices.
             </CardDescription>
@@ -342,7 +342,7 @@ export function Settings() {
                 <Input
                   type={showPassword ? "text" : "password"}
                   className="bg-slate-900 border-slate-800 pr-10 text-slate-100 placeholder:text-slate-400"
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
@@ -350,7 +350,7 @@ export function Settings() {
                 <button
                   type="button"
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-300 hover:text-slate-200"
                   onClick={() => setShowPassword((v) => !v)}
                 >
                   {showPassword ? (
@@ -383,7 +383,7 @@ export function Settings() {
                   }
                 }}
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-300">
                 If Ring asks for verification, paste the code here and click
                 Save again (same email and password).
               </p>
@@ -395,7 +395,7 @@ export function Settings() {
                 onClick={configureAuth}
                 disabled={authLoading}
               >
-                {authLoading ? "Saving…" : "Save Ring credentials"}
+                {authLoading ? "Savingâ€¦" : "Save Ring credentials"}
               </Button>
               {authMessage && (
                 <span
@@ -417,7 +417,7 @@ export function Settings() {
         <Card className="border-slate-800 bg-slate-950/50">
           <CardHeader>
             <CardTitle className="text-white">API Bridge</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-slate-300">
               Backend URL (default: http://127.0.0.1:10729). Run
               web_sota\\start.ps1 to start backend.
             </CardDescription>
@@ -448,7 +448,7 @@ export function Settings() {
                 onClick={testConnection}
                 disabled={testLoading}
               >
-                {testLoading ? "Testing…" : "Test connection"}
+                {testLoading ? "Testingâ€¦" : "Test connection"}
               </Button>
               {testMessage && (
                 <span
