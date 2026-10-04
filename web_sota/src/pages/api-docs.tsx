@@ -48,12 +48,16 @@ export function ApiDocsPage() {
         <div className="flex items-center gap-2">
           <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
             <button
+              type="button"
+              data-testid="api-docs-swagger"
               onClick={() => setView("swagger")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "swagger" ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
             >
               Swagger
             </button>
             <button
+              type="button"
+              data-testid="api-docs-redoc"
               onClick={() => setView("redoc")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "redoc" ? "bg-emerald-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
             >
@@ -61,6 +65,7 @@ export function ApiDocsPage() {
             </button>
           </div>
           <button
+            type="button"
             onClick={() => setIframeKey((k) => k + 1)}
             className="p-1.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
             title="Refresh"

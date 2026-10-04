@@ -189,9 +189,9 @@ export function Dashboard() {
                   buffer as Logger).
                 </p>
               ) : (
-                overviewLogs.map((e: LogEntry, i: number) => (
+                overviewLogs.map((e: LogEntry) => (
                   <p
-                    key={`${e.ts}-${i}`}
+                    key={`${e.ts}-${e.level}-${e.message}`}
                     className={`break-all leading-snug ${logLineTone(e.level)}`}
                   >
                     {e.ts} [{e.level}] {e.message}

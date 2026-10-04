@@ -1,5 +1,5 @@
 import { Box, ExternalLink, Grid, Loader2, Wifi, WifiOff } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AppEntry {
@@ -40,7 +40,7 @@ export function Apps() {
   const [statuses, setStatuses] = useState<Record<string, boolean | null>>({});
   const [scanning, setScanning] = useState(true);
 
-  const scan = async () => {
+  const scan = useCallback(async () => {
     setScanning(true);
     const results: Record<string, boolean | null> = {};
     await Promise.allSettled(
@@ -58,7 +58,7 @@ export function Apps() {
     );
     setStatuses(results);
     setScanning(false);
-  };
+  }, []);
 
   useEffect(() => {
     scan();
@@ -69,19 +69,22 @@ export function Apps() {
   const onlineCount = Object.values(statuses).filter(Boolean).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="apps-page">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">
             App Hub
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-400" data-testid="apps-summary">
             {scanning ? "Scanning…" : `${onlineCount}/${apps.length} online`}
           </p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div
+        className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+        data-testid="apps-grid"
+      >
         {apps.map((app) => {
           const status = statuses[app.name];
           const online = status === true;
