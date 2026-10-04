@@ -11,7 +11,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { api, type RingDevice } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useRingWebRTC } from "@/lib/useRingWebRTC";
 
 function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
@@ -47,6 +47,7 @@ function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
       {showLive ? (
         <div className="space-y-2">
           <div className="relative overflow-hidden rounded-lg border border-slate-700 bg-black">
+            {/* biome-ignore lint/a11y/useMediaCaption: live WebRTC stream has no caption track to attach */}
             <video
               ref={videoRef}
               autoPlay
@@ -106,6 +107,7 @@ function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
             <Button
               size="sm"
               variant="outline"
+              data-testid="doorbell-refresh"
               className="border-slate-700 text-slate-300 hover:bg-slate-800"
               onClick={() => {
                 setTs(Date.now());
@@ -115,7 +117,12 @@ function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
               <RefreshCw className="mr-1 h-3 w-3" />
               Refresh
             </Button>
-            <Button size="sm" variant="default" onClick={handleStartLive}>
+            <Button
+              size="sm"
+              variant="default"
+              data-testid="doorbell-liveview"
+              onClick={handleStartLive}
+            >
               <Video className="mr-1 h-3 w-3" />
               Live view
             </Button>
@@ -124,16 +131,6 @@ function DoorbellSnapshot({ deviceId }: { deviceId: string }) {
       )}
     </div>
   );
-}
-
-interface RingSummary {
-  doorbells?: RingDevice[];
-  recent_events?: Array<{
-    device_name?: string;
-    event_type?: string;
-    timestamp?: string;
-  }>;
-  alarm_mode?: string;
 }
 
 export function Doorbell() {
@@ -230,8 +227,10 @@ export function Doorbell() {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-1 text-sm text-slate-400">
-                  {ringEvents.slice(0, 10).map((ev, i) => (
-                    <li key={`${ev.timestamp}-${i}`}>
+                  {ringEvents.slice(0, 10).map((ev) => (
+                    <li
+                      key={`${ev.timestamp}-${ev.device_name}-${ev.event_type}`}
+                    >
                       {ev.device_name ?? "Doorbell"} \u00b7{" "}
                       {ev.event_type ?? "event"}
                       {ev.timestamp

@@ -14,7 +14,7 @@ import { api } from "@/lib/api";
 const CHAT_MODEL_STORAGE_KEY = "ring_mcp_chat_model_v1";
 const HISTORY_KEY = "ring-chat-history";
 const PERSONALITY_KEY = "ring-chat-personality";
-const _MAX_HISTORY = 100;
+const MAX_HISTORY = 100;
 
 const PERSONALITIES: Record<string, string> = {
   "Security Expert":
@@ -52,7 +52,21 @@ const EXAMPLE_PROMPTS = [
   },
 ];
 
-type ChatTurn = { role: "user" | "assistant"; content: string };
+type ChatTurn = { id: string; role: "user" | "assistant"; content: string };
+
+function normalizeTurns(raw: unknown): ChatTurn[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (t): t is { role?: unknown; content?: unknown; id?: unknown } =>
+        typeof t === "object" && t !== null,
+    )
+    .map((t) => ({
+      id: typeof t.id === "string" ? t.id : crypto.randomUUID(),
+      role: t.role === "assistant" ? ("assistant" as const) : ("user" as const),
+      content: typeof t.content === "string" ? t.content : "",
+    }));
+}
 
 export function Chat() {
   const [personality, setPersonality] = useState(
@@ -60,7 +74,9 @@ export function Chat() {
   );
   const [turns, setTurns] = useState<ChatTurn[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      return normalizeTurns(
+        JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"),
+      );
     } catch {
       return [];
     }
@@ -87,8 +103,8 @@ export function Chat() {
     } catch {
       /* ignore */
     }
-    if (d.default_model) setModel((prev) => prev || d.default_model);
-    else if (d.models?.[0]) setModel((prev) => prev || d.models[0]);
+    if (d.default_model) setModel((prev) => prev || d.default_model || "");
+    else if (d.models?.[0]) setModel((prev) => prev || d.models?.[0] || "");
   }, [modelsQuery.data]);
 
   useEffect(() => {
@@ -120,8 +136,12 @@ export function Chat() {
     const text = input.trim();
     if (!text || chatMutation.isPending) return;
     setInput("");
-    const userTurn: ChatTurn = { role: "user", content: text };
-    const updatedTurns = [...turns, userTurn];
+    const userTurn: ChatTurn = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: text,
+    };
+    const updatedTurns = [...turns, userTurn].slice(-MAX_HISTORY);
     setTurns(updatedTurns);
     const history = updatedTurns.map((m) => ({
       role: m.role,
@@ -130,16 +150,28 @@ export function Chat() {
     try {
       const res = await chatMutation.mutateAsync(history);
       const reply = res.reply?.trim() || "(empty reply)";
-      setTurns((t) => [...t, { role: "assistant", content: reply }]);
+      setTurns((t) =>
+        [
+          ...t,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant" as const,
+            content: reply,
+          },
+        ].slice(-MAX_HISTORY),
+      );
     } catch {
-      setTurns((t) => [
-        ...t,
-        {
-          role: "assistant",
-          content:
-            "Request failed. Is Ollama running on 127.0.0.1:11434? Check Ring HTTP API logs.",
-        },
-      ]);
+      setTurns((t) =>
+        [
+          ...t,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant" as const,
+            content:
+              "Request failed. Is Ollama running on 127.0.0.1:11434? Check Ring HTTP API logs.",
+          },
+        ].slice(-MAX_HISTORY),
+      );
     }
   }, [input, turns, chatMutation]);
 
@@ -203,6 +235,7 @@ export function Chat() {
             ))}
           </select>
           <button
+            type="button"
             data-testid="chat-export"
             onClick={exportChat}
             disabled={turns.length === 0}
@@ -212,6 +245,7 @@ export function Chat() {
             <Download className="h-4 w-4" />
           </button>
           <button
+            type="button"
             data-testid="chat-clear"
             onClick={clearChat}
             disabled={turns.length === 0}
@@ -289,8 +323,8 @@ export function Chat() {
                 your local LLM only (not Ring servers).
               </p>
             ) : null}
-            {turns.map((turn, i) => (
-              <div key={i} className="flex gap-3">
+            {turns.map((turn) => (
+              <div key={turn.id} className="flex gap-3">
                 <div
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${turn.role === "user" ? "border-slate-700 bg-slate-800" : "border-blue-800 bg-blue-900/20"}`}
                 >
@@ -339,6 +373,7 @@ export function Chat() {
                 </span>
                 {group.prompts.map((p) => (
                   <button
+                    type="button"
                     key={p}
                     onClick={() => setInput(p)}
                     className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded"
@@ -368,6 +403,7 @@ export function Chat() {
                 disabled={chatMutation.isPending}
               />
               <button
+                type="button"
                 data-testid="chat-send"
                 onClick={() => send()}
                 disabled={chatMutation.isPending || !input.trim()}

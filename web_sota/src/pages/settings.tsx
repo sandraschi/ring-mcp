@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { API_BASE, API_URL_STORAGE_KEY, api } from "@/lib/api";
+import { API_URL_STORAGE_KEY, api } from "@/lib/api";
 
 function getStoredApiUrl(): string {
   try {
@@ -35,7 +35,10 @@ function LLMSettings() {
     "loading",
   );
   useEffect(() => {
-    fetch(`${API_BASE}/api/llm/providers`)
+    // NOTE: backend serves GET /api/v1/llm/providers (versioned, {providers: [...]});
+    // this legacy unversioned path 404s and the catch below keeps the local fallback.
+    // Full shape adaptation is follow-up work (see assess report 2026-10-04).
+    fetch(`${getStoredApiUrl()}/api/llm/providers`)
       .then((r) => r.json())
       .then((d) => {
         setProviders(d);
@@ -410,6 +413,7 @@ export function Settings() {
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
+                data-testid="settings-save-url"
                 className="border-slate-800 text-slate-300 hover:bg-slate-800"
                 onClick={saveApiUrl}
               >
@@ -417,6 +421,7 @@ export function Settings() {
               </Button>
               <Button
                 variant="outline"
+                data-testid="settings-test-connection"
                 className="border-slate-800 text-slate-300 hover:bg-slate-800"
                 onClick={testConnection}
                 disabled={testLoading}
