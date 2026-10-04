@@ -10,7 +10,7 @@
     ],
     "build": {
         "include": [
-            "ring_mcp/**/*",
+            "src/ring_mcp/**/*",
             "README.md",
             "LICENSE"
         ],

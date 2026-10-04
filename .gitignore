@@ -32,6 +32,8 @@ MANIFEST
 # PyInstaller
 *.manifest
 *.spec
+# Tauri backend spec is source (native build needs it from a fresh clone)
+!ring-mcp-backend.spec
 
 # Installer logs
 pip-log.txt
