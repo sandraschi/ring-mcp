@@ -1,0 +1,756 @@
+[
+  {
+    "name": "status-morning-check",
+    "description": "Morning security overview",
+    "prompt": "Give me the morning security rundown.",
+    "tool": "get_security_system_status",
+    "arguments": {}
+  },
+  {
+    "name": "status-evening-check",
+    "description": "Evening status before bed",
+    "prompt": "Is everything secure for the night?",
+    "tool": "get_security_system_status",
+    "arguments": {}
+  },
+  {
+    "name": "status-after-arm",
+    "description": "Verify state after arming",
+    "prompt": "Confirm the system is armed.",
+    "tool": "get_security_system_status",
+    "arguments": {}
+  },
+  {
+    "name": "arm-away-leaving",
+    "description": "Arm away when leaving home",
+    "prompt": "Arm the system away, we are leaving.",
+    "tool": "arm_security_system",
+    "arguments": {"mode": "away"}
+  },
+  {
+    "name": "arm-home-night",
+    "description": "Arm home perimeter at night",
+    "prompt": "Arm home for the night.",
+    "tool": "arm_security_system",
+    "arguments": {"mode": "home"}
+  },
+  {
+    "name": "arm-panel-explicit",
+    "description": "Arm a specific panel by id",
+    "prompt": "Arm panel alarm-001 away.",
+    "tool": "arm_security_system",
+    "arguments": {"mode": "away", "device_id": "alarm-001"}
+  },
+  {
+    "name": "arm-home-bypass",
+    "description": "Arm home bypassing a faulty sensor",
+    "prompt": "Arm home but bypass the kitchen sensor.",
+    "tool": "arm_security_system",
+    "arguments": {"mode": "home", "bypass_sensors": ["sensor-7"]}
+  },
+  {
+    "name": "arm-invalid-mode",
+    "description": "Invalid mode is rejected with guidance",
+    "prompt": "Arm vacation mode.",
+    "tool": "arm_security_system",
+    "arguments": {"mode": "vacation"}
+  },
+  {
+    "name": "disarm-arriving",
+    "description": "Standard disarm when arriving home",
+    "prompt": "Disarm the system, I am home.",
+    "tool": "disarm_security_system",
+    "arguments": {}
+  },
+  {
+    "name": "disarm-force",
+    "description": "Emergency disarm overriding safety checks",
+    "prompt": "Force disarm now, it is an emergency.",
+    "tool": "disarm_security_system",
+    "arguments": {"force_disarm": true}
+  },
+  {
+    "name": "disarm-with-code",
+    "description": "Disarm passing a code for compatibility",
+    "prompt": "Disarm with code 1234.",
+    "tool": "disarm_security_system",
+    "arguments": {"disarm_code": "1234"}
+  },
+  {
+    "name": "disarm-panel-explicit",
+    "description": "Disarm a specific panel by id",
+    "prompt": "Disarm panel alarm-001.",
+    "tool": "disarm_security_system",
+    "arguments": {"device_id": "alarm-001"}
+  },
+  {
+    "name": "history-daily",
+    "description": "Last 24h security history",
+    "prompt": "What happened in the last day?",
+    "tool": "get_security_history",
+    "arguments": {"hours": 24}
+  },
+  {
+    "name": "history-motion-window",
+    "description": "Motion events in a short window",
+    "prompt": "Any motion in the last 6 hours?",
+    "tool": "get_security_history",
+    "arguments": {"hours": 6, "event_types": ["motion"]}
+  },
+  {
+    "name": "history-with-video",
+    "description": "History with recording status attached",
+    "prompt": "Show weekend events with recording status.",
+    "tool": "get_security_history",
+    "arguments": {"hours": 48, "include_video": true}
+  },
+  {
+    "name": "history-alarm-only",
+    "description": "Alarm-kind events only",
+    "prompt": "Any alarm events this week?",
+    "tool": "get_security_history",
+    "arguments": {"hours": 168, "event_types": ["alarm"]}
+  },
+  {
+    "name": "doorbell-status-all",
+    "description": "All doorbells with online and battery",
+    "prompt": "How are my doorbells doing?",
+    "tool": "get_doorbell_status",
+    "arguments": {}
+  },
+  {
+    "name": "doorbell-status-pre-winter",
+    "description": "Battery check before cold weather",
+    "prompt": "Check doorbell batteries before winter.",
+    "tool": "get_doorbell_status",
+    "arguments": {}
+  },
+  {
+    "name": "doorbell-status-offline-hunt",
+    "description": "Find offline doorbells",
+    "prompt": "Which doorbells are offline?",
+    "tool": "get_doorbell_status",
+    "arguments": {}
+  },
+  {
+    "name": "livestream-default",
+    "description": "WebRTC handoff for the first doorbell",
+    "prompt": "Show me the front door live.",
+    "tool": "get_doorbell_live_stream",
+    "arguments": {}
+  },
+  {
+    "name": "livestream-by-id",
+    "description": "WebRTC handoff for a specific doorbell",
+    "prompt": "Live view of doorbell-001 in high quality.",
+    "tool": "get_doorbell_live_stream",
+    "arguments": {"doorbell_id": "doorbell-001", "quality": "high", "duration_seconds": 60}
+  },
+  {
+    "name": "livestream-low-bandwidth",
+    "description": "Low quality handoff on slow links",
+    "prompt": "Low-bandwidth live view please.",
+    "tool": "get_doorbell_live_stream",
+    "arguments": {"quality": "low"}
+  },
+  {
+    "name": "livestream-unknown-id",
+    "description": "Unknown doorbell id errors honestly",
+    "prompt": "Live view of doorbell-999.",
+    "tool": "get_doorbell_live_stream",
+    "arguments": {"doorbell_id": "doorbell-999"}
+  },
+  {
+    "name": "answer-call-default",
+    "description": "Two-way audio is unsupported, says so",
+    "prompt": "Answer the doorbell.",
+    "tool": "answer_doorbell_call",
+    "arguments": {}
+  },
+  {
+    "name": "answer-call-by-id",
+    "description": "Answer path with explicit doorbell",
+    "prompt": "Answer doorbell-001.",
+    "tool": "answer_doorbell_call",
+    "arguments": {"doorbell_id": "doorbell-001"}
+  },
+  {
+    "name": "answer-call-no-talk",
+    "description": "Answer without two-way audio or recording",
+    "prompt": "Answer without audio or recording.",
+    "tool": "answer_doorbell_call",
+    "arguments": {"enable_two_way_audio": false, "auto_record": false}
+  },
+  {
+    "name": "visitors-today",
+    "description": "24h visitor history with snapshots",
+    "prompt": "Who came by today?",
+    "tool": "get_visitor_history",
+    "arguments": {"hours": 24}
+  },
+  {
+    "name": "visitors-motion-morning",
+    "description": "Morning motion-only review",
+    "prompt": "Any motion this morning?",
+    "tool": "get_visitor_history",
+    "arguments": {"hours": 6, "motion_only": true}
+  },
+  {
+    "name": "visitors-no-snapshots",
+    "description": "History without snapshot hints",
+    "prompt": "Visitor events, skip snapshots.",
+    "tool": "get_visitor_history",
+    "arguments": {"hours": 12, "include_snapshots": false}
+  },
+  {
+    "name": "visitors-weekend",
+    "description": "48h weekend review",
+    "prompt": "Who visited this weekend?",
+    "tool": "get_visitor_history",
+    "arguments": {"hours": 48}
+  },
+  {
+    "name": "motion-lower-sensitivity",
+    "description": "Motion config request echoes honestly",
+    "prompt": "Lower motion sensitivity.",
+    "tool": "configure_motion_detection",
+    "arguments": {"sensitivity": "low"}
+  },
+  {
+    "name": "motion-zones-echo",
+    "description": "Zone request validated then echoed",
+    "prompt": "Set a walkway zone.",
+    "tool": "configure_motion_detection",
+    "arguments": {
+      "doorbell_id": "doorbell-001",
+      "sensitivity": "medium",
+      "motion_zones": [{"name": "Walkway", "coordinates": [[0, 0], [1, 0], [1, 1], [0, 1]]}],
+      "smart_alerts": true,
+      "schedule_enabled": false
+    }
+  },
+  {
+    "name": "motion-bad-zone",
+    "description": "Malformed zone is rejected",
+    "prompt": "Add a zone without coordinates.",
+    "tool": "configure_motion_detection",
+    "arguments": {"motion_zones": [{"name": "Broken"}]}
+  },
+  {
+    "name": "motion-smart-off",
+    "description": "Disable smart alerts request",
+    "prompt": "Turn off smart alerts.",
+    "tool": "configure_motion_detection",
+    "arguments": {"smart_alerts": false}
+  },
+  {
+    "name": "cameras-status",
+    "description": "All cameras with recent events",
+    "prompt": "Are my cameras okay?",
+    "tool": "get_camera_status",
+    "arguments": {}
+  },
+  {
+    "name": "cameras-battery-watch",
+    "description": "Battery-focused camera review",
+    "prompt": "Camera batteries?",
+    "tool": "get_camera_status",
+    "arguments": {}
+  },
+  {
+    "name": "cameras-offline-hunt",
+    "description": "Find offline cameras",
+    "prompt": "Any cameras offline?",
+    "tool": "get_camera_status",
+    "arguments": {}
+  },
+  {
+    "name": "streams-dashboard",
+    "description": "Per-camera live readiness",
+    "prompt": "Start all camera streams.",
+    "tool": "stream_all_cameras",
+    "arguments": {}
+  },
+  {
+    "name": "streams-evening",
+    "description": "Evening stream check",
+    "prompt": "Show all live feeds.",
+    "tool": "stream_all_cameras",
+    "arguments": {}
+  },
+  {
+    "name": "streams-single-camera-home",
+    "description": "Readiness in a single-camera home",
+    "prompt": "Is my camera streamable?",
+    "tool": "stream_all_cameras",
+    "arguments": {}
+  },
+  {
+    "name": "fire-status",
+    "description": "Smoke and fire device health",
+    "prompt": "Are the smoke detectors okay?",
+    "tool": "get_fire_alarm_status",
+    "arguments": {}
+  },
+  {
+    "name": "fire-battery-watch",
+    "description": "Battery warnings before winter",
+    "prompt": "Fire alarm batteries?",
+    "tool": "get_fire_alarm_status",
+    "arguments": {}
+  },
+  {
+    "name": "fire-no-devices",
+    "description": "Home without fire devices",
+    "prompt": "Do I have any fire alarms?",
+    "tool": "get_fire_alarm_status",
+    "arguments": {}
+  },
+  {
+    "name": "fire-monthly-test",
+    "description": "Monthly safety test",
+    "prompt": "Run the monthly fire test.",
+    "tool": "test_fire_safety_system",
+    "arguments": {}
+  },
+  {
+    "name": "fire-test-after-battery-swap",
+    "description": "Verify after maintenance",
+    "prompt": "Test fire system after the battery swap.",
+    "tool": "test_fire_safety_system",
+    "arguments": {}
+  },
+  {
+    "name": "fire-test-new-tenant",
+    "description": "Safety proof for a new household member",
+    "prompt": "Prove the fire system works.",
+    "tool": "test_fire_safety_system",
+    "arguments": {}
+  },
+  {
+    "name": "health-score",
+    "description": "0-100 health with recommendations",
+    "prompt": "How healthy is my system?",
+    "tool": "monitor_system_health",
+    "arguments": {}
+  },
+  {
+    "name": "health-pre-trip",
+    "description": "Health check before travel",
+    "prompt": "System check before vacation.",
+    "tool": "monitor_system_health",
+    "arguments": {}
+  },
+  {
+    "name": "health-after-outage",
+    "description": "Health check after a network outage",
+    "prompt": "Everything back after the outage?",
+    "tool": "monitor_system_health",
+    "arguments": {}
+  },
+  {
+    "name": "activity-now",
+    "description": "Live cross-device activity",
+    "prompt": "Anything happening right now?",
+    "tool": "get_real_time_activity",
+    "arguments": {}
+  },
+  {
+    "name": "activity-night",
+    "description": "Overnight activity review",
+    "prompt": "Activity overnight?",
+    "tool": "get_real_time_activity",
+    "arguments": {}
+  },
+  {
+    "name": "activity-quiet-verify",
+    "description": "Confirm a quiet house",
+    "prompt": "Confirm the house is quiet.",
+    "tool": "get_real_time_activity",
+    "arguments": {}
+  },
+  {
+    "name": "automation-night-watch",
+    "description": "Motion-triggered night notification",
+    "prompt": "Notify me for backyard motion at night.",
+    "tool": "create_security_automation",
+    "arguments": {
+      "trigger_type": "motion",
+      "trigger_conditions": {"device_id": "camera-001", "after": "22:00"},
+      "response_actions": [{"action": "notify"}],
+      "automation_name": "Night watch"
+    }
+  },
+  {
+    "name": "automation-doorbell-daytime",
+    "description": "Daytime doorbell rule",
+    "prompt": "Log doorbell presses during work hours.",
+    "tool": "create_security_automation",
+    "arguments": {
+      "trigger_type": "doorbell",
+      "trigger_conditions": {"device_id": "doorbell-001"},
+      "response_actions": [{"action": "log"}],
+      "automation_name": "Daytime doorbell log",
+      "enabled": true
+    }
+  },
+  {
+    "name": "automation-schedule-trigger",
+    "description": "Schedule-triggered lighting rule",
+    "prompt": "Turn on porch light on schedule.",
+    "tool": "create_security_automation",
+    "arguments": {
+      "trigger_type": "schedule",
+      "trigger_conditions": {"at": "19:00"},
+      "response_actions": [{"action": "light_on", "device": "porch"}],
+      "automation_name": "Porch light"
+    }
+  },
+  {
+    "name": "automation-invalid-empty",
+    "description": "Empty conditions are rejected",
+    "prompt": "Make an automation with no conditions.",
+    "tool": "create_security_automation",
+    "arguments": {
+      "trigger_type": "motion",
+      "trigger_conditions": {},
+      "response_actions": [{"action": "notify"}],
+      "automation_name": "Broken rule"
+    }
+  },
+  {
+    "name": "automation-dangerous-schedule-disarm",
+    "description": "Schedule-triggered disarm is rejected",
+    "prompt": "Disarm every morning on schedule.",
+    "tool": "create_security_automation",
+    "arguments": {
+      "trigger_type": "schedule",
+      "trigger_conditions": {"at": "08:00"},
+      "response_actions": [{"action": "disarm_system"}],
+      "automation_name": "Morning disarm"
+    }
+  },
+  {
+    "name": "automation-disabled-draft",
+    "description": "Draft a disabled rule",
+    "prompt": "Draft a disabled alarm rule.",
+    "tool": "create_security_automation",
+    "arguments": {
+      "trigger_type": "alarm",
+      "trigger_conditions": {"device_id": "alarm-001"},
+      "response_actions": [{"action": "notify"}],
+      "automation_name": "Alarm draft",
+      "enabled": false
+    }
+  },
+  {
+    "name": "emergency-confirmed",
+    "description": "Confirmed emergency activation",
+    "prompt": "Emergency, arm everything now. Confirmed.",
+    "tool": "trigger_emergency_protocol",
+    "arguments": {}
+  },
+  {
+    "name": "emergency-breakin",
+    "description": "Break-in emergency",
+    "prompt": "Someone is breaking in, emergency protocol.",
+    "tool": "trigger_emergency_protocol",
+    "arguments": {}
+  },
+  {
+    "name": "schedule-workweek",
+    "description": "Workweek away schedule",
+    "prompt": "Arm away on workdays 8 to 18.",
+    "tool": "schedule_security_modes",
+    "arguments": {
+      "schedule_config": {
+        "modes": ["armed", "disarmed"],
+        "timeframes": [{"days": ["mon", "tue", "wed", "thu", "fri"], "start": "08:00", "end": "18:00"}]
+      },
+      "timezone": "Europe/Vienna"
+    }
+  },
+  {
+    "name": "schedule-minimal",
+    "description": "Minimal valid schedule",
+    "prompt": "Basic armed schedule.",
+    "tool": "schedule_security_modes",
+    "arguments": {
+      "schedule_config": {"modes": ["armed"], "timeframes": []}
+    }
+  },
+  {
+    "name": "schedule-invalid-missing",
+    "description": "Missing fields are rejected",
+    "prompt": "Schedule with no modes.",
+    "tool": "schedule_security_modes",
+    "arguments": {"schedule_config": {"timeframes": []}}
+  },
+  {
+    "name": "schedule-overlap-warning",
+    "description": "Overlapping timeframes warn",
+    "prompt": "Two overlapping evening windows.",
+    "tool": "schedule_security_modes",
+    "arguments": {
+      "schedule_config": {
+        "modes": ["armed", "armed"],
+        "timeframes": [
+          {"start": "18:00", "end": "22:00"},
+          {"start": "20:00", "end": "23:00"}
+        ]
+      }
+    }
+  },
+  {
+    "name": "system-full",
+    "description": "Full system status with details",
+    "prompt": "Full system status please.",
+    "tool": "get_system_status",
+    "arguments": {"include_device_details": true, "check_connectivity": true}
+  },
+  {
+    "name": "system-quick",
+    "description": "Fast status without details",
+    "prompt": "Quick status, skip details.",
+    "tool": "get_system_status",
+    "arguments": {"include_device_details": false, "check_connectivity": false}
+  },
+  {
+    "name": "system-no-probe",
+    "description": "Skip the connectivity probe",
+    "prompt": "Status without probing.",
+    "tool": "get_system_status",
+    "arguments": {"check_connectivity": false}
+  },
+  {
+    "name": "system-auth-focus",
+    "description": "Credentials verification",
+    "prompt": "Are my credentials valid?",
+    "tool": "check_authentication_status",
+    "arguments": {}
+  },
+  {
+    "name": "system-auth-after-relogin",
+    "description": "Verify after re-login",
+    "prompt": "I re-entered my password, check now.",
+    "tool": "check_authentication_status",
+    "arguments": {}
+  },
+  {
+    "name": "conn-all",
+    "description": "Connectivity sweep of all devices",
+    "prompt": "Test all device connections.",
+    "tool": "check_device_connectivity",
+    "arguments": {}
+  },
+  {
+    "name": "conn-single",
+    "description": "Single device connectivity",
+    "prompt": "Is camera-001 reachable?",
+    "tool": "check_device_connectivity",
+    "arguments": {"device_id": "camera-001"}
+  },
+  {
+    "name": "conn-unknown-id",
+    "description": "Unknown device id errors",
+    "prompt": "Test device nope-1.",
+    "tool": "check_device_connectivity",
+    "arguments": {"device_id": "nope-1"}
+  },
+  {
+    "name": "conn-with-commands",
+    "description": "Connectivity with command tests flag",
+    "prompt": "Deep connectivity test.",
+    "tool": "check_device_connectivity",
+    "arguments": {"test_commands": true}
+  },
+  {
+    "name": "service-health-full",
+    "description": "Service health with metrics",
+    "prompt": "Service health with metrics.",
+    "tool": "get_service_health",
+    "arguments": {"include_metrics": true, "history_minutes": 5}
+  },
+  {
+    "name": "service-health-lean",
+    "description": "Health without metrics",
+    "prompt": "Quick service health.",
+    "tool": "get_service_health",
+    "arguments": {"include_metrics": false}
+  },
+  {
+    "name": "service-health-hour",
+    "description": "Hour-long health window",
+    "prompt": "Service health for the last hour.",
+    "tool": "get_service_health",
+    "arguments": {"history_minutes": 60}
+  },
+  {
+    "name": "devices-all",
+    "description": "Full device inventory",
+    "prompt": "List my Ring devices.",
+    "tool": "list_devices",
+    "arguments": {}
+  },
+  {
+    "name": "devices-cameras",
+    "description": "Camera inventory only",
+    "prompt": "List my cameras.",
+    "tool": "list_devices",
+    "arguments": {"device_type": "camera"}
+  },
+  {
+    "name": "devices-doorbells",
+    "description": "Doorbell inventory only",
+    "prompt": "List my doorbells.",
+    "tool": "list_devices",
+    "arguments": {"device_type": "doorbell"}
+  },
+  {
+    "name": "devices-alarms",
+    "description": "Alarm inventory only",
+    "prompt": "List my alarm devices.",
+    "tool": "list_devices",
+    "arguments": {"device_type": "alarm"}
+  },
+  {
+    "name": "devices-unknown-filter",
+    "description": "Filter with no matches",
+    "prompt": "List my intercoms.",
+    "tool": "list_devices",
+    "arguments": {"device_type": "intercom-xl"}
+  },
+  {
+    "name": "card-devices",
+    "description": "Rich device card",
+    "prompt": "Show my devices as a card.",
+    "tool": "show_devices_card",
+    "arguments": {}
+  },
+  {
+    "name": "card-devices-evening",
+    "description": "Evening device card",
+    "prompt": "Device card please.",
+    "tool": "show_devices_card",
+    "arguments": {}
+  },
+  {
+    "name": "card-health",
+    "description": "Rich health card",
+    "prompt": "Show health as a card.",
+    "tool": "show_health_card",
+    "arguments": {}
+  },
+  {
+    "name": "card-health-morning",
+    "description": "Morning health card",
+    "prompt": "Health card for the morning check.",
+    "tool": "show_health_card",
+    "arguments": {}
+  },
+  {
+    "name": "shutdown-maintenance",
+    "description": "Graceful shutdown for maintenance",
+    "prompt": "Shut down the server for maintenance.",
+    "tool": "ring_shutdown",
+    "arguments": {}
+  },
+  {
+    "name": "help-all",
+    "description": "Full tool catalog",
+    "prompt": "What can you do?",
+    "tool": "list_available_tools",
+    "arguments": {}
+  },
+  {
+    "name": "help-cameras",
+    "description": "Camera tools only",
+    "prompt": "What camera tools exist?",
+    "tool": "list_available_tools",
+    "arguments": {"category": "cameras"}
+  },
+  {
+    "name": "help-system",
+    "description": "System tools only",
+    "prompt": "What system tools exist?",
+    "tool": "list_available_tools",
+    "arguments": {"category": "system"}
+  },
+  {
+    "name": "help-hidden",
+    "description": "Catalog including hidden tools",
+    "prompt": "List everything including hidden tools.",
+    "tool": "list_available_tools",
+    "arguments": {"include_hidden": true}
+  },
+  {
+    "name": "help-list-devices",
+    "description": "Detail for list_devices",
+    "prompt": "How do I list devices?",
+    "tool": "get_tool_help",
+    "arguments": {"tool_name": "list_devices"}
+  },
+  {
+    "name": "help-arm",
+    "description": "Detail for arm_security_system",
+    "prompt": "How do I arm the system?",
+    "tool": "get_tool_help",
+    "arguments": {"tool_name": "arm_security_system"}
+  },
+  {
+    "name": "help-unknown-tool",
+    "description": "Unknown tool name suggests catalog",
+    "prompt": "Help for frobnicate.",
+    "tool": "get_tool_help",
+    "arguments": {"tool_name": "frobnicate"}
+  },
+  {
+    "name": "help-no-examples",
+    "description": "Compact help without examples",
+    "prompt": "Brief help for monitor_system_health.",
+    "tool": "get_tool_help",
+    "arguments": {"tool_name": "monitor_system_health", "include_examples": false}
+  },
+  {
+    "name": "search-camera",
+    "description": "Find camera tools",
+    "prompt": "Find camera-related tools.",
+    "tool": "search_tools",
+    "arguments": {"query": "camera"}
+  },
+  {
+    "name": "search-alarm",
+    "description": "Find alarm tools",
+    "prompt": "Find alarm tools.",
+    "tool": "search_tools",
+    "arguments": {"query": "alarm"}
+  },
+  {
+    "name": "search-motion-limited",
+    "description": "Motion search, top 3",
+    "prompt": "Top 3 motion tools.",
+    "tool": "search_tools",
+    "arguments": {"query": "motion", "limit": 3}
+  },
+  {
+    "name": "search-no-match",
+    "description": "Query with no matches",
+    "prompt": "Find submarine tools.",
+    "tool": "search_tools",
+    "arguments": {"query": "submarine"}
+  },
+  {
+    "name": "search-security-category",
+    "description": "Category-scoped search",
+    "prompt": "Security tools about arming.",
+    "tool": "search_tools",
+    "arguments": {"query": "arm", "category": "security"}
+  },
+  {
+    "name": "conn-explicit-passive",
+    "description": "Connectivity without command tests",
+    "prompt": "Passive connectivity check.",
+    "tool": "check_device_connectivity",
+    "arguments": {"test_commands": false}
+  }
+]
