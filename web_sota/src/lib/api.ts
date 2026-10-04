@@ -123,6 +123,60 @@ export interface LlmChatResponse {
   reply?: string;
 }
 
+export interface RingEvent {
+  id?: string;
+  device_id?: string;
+  device_name?: string;
+  kind?: string;
+  created_at?: string;
+  answered?: boolean;
+  recording_status?: string;
+}
+
+export interface EventsRecentResponse {
+  success: boolean;
+  events: RingEvent[];
+  count: number;
+}
+
+export interface SkillInfo {
+  name: string;
+  description: string;
+  path: string;
+  content?: string;
+}
+
+export interface LlmProviderInfo {
+  id: string;
+  label: string;
+  type: string;
+  detected: boolean;
+  base_url: string;
+  default_model?: string | null;
+  models: string[];
+  message?: string | null;
+}
+
+export interface LlmProvidersResponse {
+  providers: LlmProviderInfo[];
+  default_provider: string;
+}
+
+export interface LlmDiscoverResponse {
+  detected: boolean;
+  base_url: string;
+  models: string[];
+  message?: string | null;
+}
+
+export interface LlmOnboardingResponse {
+  facts: string[];
+  recommended_path: string[];
+  llm_ready: boolean;
+  llm_base_url: string;
+  ring_credentials_set: boolean;
+}
+
 export const api = {
   getBaseUrl: baseUrl,
 
@@ -240,5 +294,80 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     });
+  },
+
+  /** Streaming chat: yields reply chunks (SSE `data:` lines) then done. */
+  async llmChatStream(
+    body: { messages: { role: string; content: string }[]; model?: string },
+    onToken: (token: string) => void,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const res = await fetch(`${baseUrl()}/api/v1/llm/chat/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    });
+    if (!res.ok || !res.body) {
+      throw new Error(`LLM stream HTTP ${res.status}`);
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const parts = buf.split("\n");
+      buf = parts.pop() ?? "";
+      for (const rawLine of parts) {
+        const line = rawLine.trim();
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (payload === "[DONE]") return;
+        try {
+          const obj = JSON.parse(payload) as { token?: string; error?: string };
+          if (obj.error) throw new Error(obj.error);
+          if (obj.token) onToken(obj.token);
+        } catch (e) {
+          if (e instanceof Error && e.message !== payload) throw e;
+          // Non-JSON data line: treat as raw token.
+          onToken(payload);
+        }
+      }
+    }
+  },
+
+  async getEventsRecent(limit = 50): Promise<EventsRecentResponse> {
+    const lim = Math.min(200, Math.max(1, limit));
+    return request<EventsRecentResponse>(
+      `/api/v1/events/recent?limit=${encodeURIComponent(String(lim))}`,
+    );
+  },
+
+  async getSkills(): Promise<{ skills: SkillInfo[] }> {
+    return request<{ skills: SkillInfo[] }>("/api/skills");
+  },
+
+  async llmProviders(): Promise<LlmProvidersResponse> {
+    return request<LlmProvidersResponse>("/api/v1/llm/providers");
+  },
+
+  async llmDiscover(): Promise<LlmDiscoverResponse> {
+    return request<LlmDiscoverResponse>("/api/v1/llm/discover");
+  },
+
+  async llmOnboarding(): Promise<LlmOnboardingResponse> {
+    return request<LlmOnboardingResponse>("/api/v1/llm/onboarding");
+  },
+
+  async getCapabilities(): Promise<{
+    name: string;
+    version: string;
+    transports: string[];
+    features: Record<string, boolean>;
+    health_path: string;
+  }> {
+    return request("/api/capabilities");
   },
 };
