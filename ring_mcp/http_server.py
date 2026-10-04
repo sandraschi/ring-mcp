@@ -897,6 +897,41 @@ async def trigger_doorbell_chime(device_id: str):
         raise
 
 
+@app.get("/api/v1/events/recent")
+async def get_recent_events(limit: int = Query(50, ge=1, le=200)):
+    """Recent events across all devices, newest first (Inbox page feed)."""
+    try:
+        client = get_ring_client()
+        devices = await client.get_devices(force_refresh=False)
+        name_by_id = {d.get("id"): d.get("name", "Unknown") for d in devices}
+        all_events: list[dict[str, Any]] = []
+        for device in devices:
+            try:
+                events = await client.get_device_events(device["id"], limit=10)
+            except Exception as e:
+                logger.debug("events/recent: skipping %s: %s", device.get("id"), e)
+                continue
+            for event in events:
+                all_events.append(
+                    {
+                        "id": event.get("id"),
+                        "device_id": device["id"],
+                        "device_name": name_by_id.get(device["id"], "Unknown"),
+                        "kind": event.get("kind", "unknown"),
+                        "created_at": event.get("created_at"),
+                        "answered": event.get("answered", False),
+                        "recording_status": event.get("recording_status"),
+                    }
+                )
+        all_events.sort(key=lambda e: e.get("created_at") or "", reverse=True)
+        return {"success": True, "events": all_events[:limit], "count": min(len(all_events), limit)}
+    except AuthenticationError:
+        raise
+    except Exception as e:
+        logger.error("Failed to get recent events", error=str(e))
+        raise
+
+
 @app.get("/api/v1/status")
 async def get_system_status():
     """Get overall system status."""

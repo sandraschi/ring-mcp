@@ -134,8 +134,20 @@ def _unstack(patches):
 async def _call(name, args=None):
     async with Client(APP) as client:
         result = await client.call_tool(name, args or {})
-    if result.data is not None:
-        return result.data
+    data = result.data
+    if data is not None:
+        # Tools with output_schema come back as a fastmcp Root object carrying
+        # the validated payload as plain instance attributes.
+        if isinstance(data, dict):
+            return data
+        dd = getattr(data, "__dict__", None)
+        if isinstance(dd, dict) and dd:
+            return dict(dd)
+        dump = getattr(data, "model_dump", None)
+        if callable(dump):
+            return dump()
+        root = getattr(data, "root", None)
+        return root if root is not None else data
     return json.loads(result.content[0].text)
 
 

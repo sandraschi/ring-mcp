@@ -20,7 +20,6 @@ from prometheus_client import Counter, Gauge, Histogram, start_http_server
 from pydantic import BaseModel, Field
 
 from .core.ring_client_modern import RingClient
-from .ring_mqtt_bridge import get_ring_mqtt_bridge
 
 
 def create_fastapi_app_with_docs() -> FastAPI:
@@ -42,8 +41,6 @@ from pathlib import Path
 from .core.exceptions import (
     AuthenticationError,
     DeviceNotFoundError,
-    RateLimitError,
-    RingError,
     StreamingError,
 )
 
@@ -258,757 +255,21 @@ def get_ring_client() -> RingClient:
     return _ring_client
 
 
-def register_ring_tools(app: FastMCP, ring_client: RingClient) -> None:
-    """Register Ring MCP tools with the FastMCP application (FastMCP 3.4+).
+def register_ring_tools(app: FastMCP, ring_client: RingClient | None = None) -> None:
+    """Register Ring MCP tools (composition/legacy entry point).
 
-    Args:
-        app: FastMCP application instance
-        ring_client: Initialized RingClient instance
+    Single-surface rule: this delegates to register_all_tools_on_app() so every
+    transport serves the same tools. Legacy names previously defined here map to:
+    get_devices -> list_devices; get_device_details/get_device_events ->
+    get_security_system_status and device tools; get_live_stream_url ->
+    get_doorbell_live_stream (WebRTC handoff); set_arm_status ->
+    arm_security_system/disarm_security_system; trigger_chime -> device chime
+    via REST; health_check -> get_service_health/monitor_system_health.
+    See docs/TOOLS.md for the served surface.
     """
-    get_ring_mqtt_bridge().start()
+    register_all_tools_on_app(app, ring_client)
 
-    # Request/Response models for FastMCP 3.4+
-    class DeviceID(BaseModel):
-        """Device identifier model."""
 
-        device_id: str = Field(..., description="The ID of the device")
-
-    class DeviceListResponse(BaseModel):
-        """Response model for device listing."""
-
-        devices: list[dict[str, Any]] = Field(..., description="List of devices")
-
-    class DeviceResponse(BaseModel):
-        """Response model for device details."""
-
-        device: dict[str, Any] = Field(..., description="Device details")
-
-    class EventListResponse(BaseModel):
-        """Response model for event listing."""
-
-        events: list[dict[str, Any]] = Field(..., description="List of events")
-
-    class StreamURLResponse(BaseModel):
-        """Response model for stream URLs."""
-
-        url: str = Field(..., description="Stream URL")
-
-    class StatusResponse(BaseModel):
-        """Response model for status updates."""
-
-        success: bool = Field(..., description="Whether the operation was successful")
-        message: str = Field(..., description="Status message")
-
-    def handle_ring_errors(func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
-        """Decorator to handle Ring API errors consistently."""
-
-        async def wrapper(*args, **kwargs):
-            try:
-                return await func(*args, **kwargs)
-            except AuthenticationError as e:
-                raise ValueError(f"Authentication failed: {e!s}") from e
-            except DeviceNotFoundError as e:
-                raise ValueError(f"Device not found: {e!s}") from e
-            except RateLimitError as e:
-                raise ValueError(f"Rate limit exceeded: {e!s}") from e
-            except StreamingError as e:
-                raise ValueError(f"Streaming error: {e!s}") from e
-            except RingError as e:
-                raise ValueError(f"Ring API error: {e!s}") from e
-            except Exception as e:
-                logger.error("Unexpected error: %s", str(e), exc_info=True)
-                raise ValueError(f"Internal server error: {e!s}") from e
-
-        return wrapper
-
-    @app.tool(name="get_devices", description="Get a list of all Ring devices")
-    @track_tool_call("get_devices")
-    @handle_ring_errors
-    async def get_devices(force_refresh: bool = False) -> DeviceListResponse:
-        """Get a comprehensive list of all Ring devices with real-time status.
-
-        PORTMANTEAU PATTERN RATIONALE:
-        Instead of creating separate tools for device listing, status checking, and
-        connectivity verification, this single tool provides complete device inventory
-        with status information. Prevents tool explosion while maintaining full functionality.
-
-        Supported Operations:
-        - Retrieve all Ring devices (cameras, doorbells, sensors, security systems)
-        - Get real-time device status, battery levels, and connectivity
-        - Force refresh device data from Ring API
-        - Track device metrics for monitoring
-
-        Operations Detail:
-        **Device Discovery:**
-        - "list": Enumerate all devices with comprehensive metadata
-        - "status": Include real-time connectivity and battery information
-        - "refresh": Force API refresh for latest device data
-
-        Args:
-            force_refresh (bool, optional): Whether to force refresh device data from Ring API.
-                Used by: list operation. Default: False. Forces API call instead of using cache.
-
-        Returns:
-            **FastMCP 3.4+ conversational response (sampling/agentic):**
-
-            ```json
-            {
-              "devices": [
-                {
-                  "id": "device_id",
-                  "name": "Front Door",
-                  "type": "doorbell",
-                  "model": "Ring Video Doorbell Pro",
-                  "online": true,
-                  "battery_life": 85,
-                  "firmware": "1.2.3",
-                  "address": "123 Test St",
-                  "timezone": "Europe/Vienna",
-                  "has_subscription": true,
-                  "last_update": "2025-01-01T12:00:00Z"
-                }
-              ]
-            }
-            ```
-
-            **Success Response Structure (Conversational):**
-            - devices (list[dict]): Array of device objects with complete metadata
-            - Each device includes: id, name, type, model, online status, battery level, firmware, location, timezone, subscription status, last update timestamp
-
-        Examples:
-            # Basic device listing
-            result = await get_devices()
-            # Returns: {"devices": [{"id": "123", "name": "Front Door", "type": "doorbell", ...}]}
-
-            # Force refresh from API
-            result = await get_devices(force_refresh=True)
-            # Returns: Fresh device data from Ring API
-
-        Errors:
-            **Common Errors:**
-            - "Authentication failed": Invalid Ring API credentials
-            - "API rate limited": Too many requests to Ring API
-            - "Network error": Unable to connect to Ring services
-
-            **Recovery Options:**
-            - Verify Ring account credentials and 2FA status
-            - Wait and retry for rate limit errors
-            - Check internet connectivity and Ring service status
-        """
-        try:
-            devices = await ring_client.get_devices(force_refresh=force_refresh)
-            bridge = get_ring_mqtt_bridge()
-            if bridge.enabled:
-                devices = [*devices, *bridge.list_alarm_devices()]
-
-            # Track device metrics
-            for device in devices:
-                device_id = device.get("id", "unknown")
-                device_type = device.get("type", "unknown")
-                battery = device.get("battery_life")
-
-                ring_device_online.labels(device_id=device_id, device_type=device_type).set(
-                    1 if device.get("online", False) else 0
-                )
-
-                if battery is not None:
-                    ring_device_battery.labels(device_id=device_id, device_type=device_type).set(battery)
-
-            return DeviceListResponse(devices=devices)
-        except Exception:
-            track_ring_api_call("get_devices", success=False)
-            raise
-
-    @app.tool(name="get_device_details", description="Get detailed information about a specific device")
-    @track_tool_call("get_device_details")
-    @handle_ring_errors
-    async def get_device_details(device_id: str) -> DeviceResponse:
-        """Get comprehensive details and real-time status for a specific Ring device.
-
-        PORTMANTEAU PATTERN RATIONALE:
-        Instead of creating separate tools for device info, status, and configuration,
-        this single tool provides complete device details with real-time status.
-        Prevents tool explosion while enabling detailed device inspection and monitoring.
-
-        Supported Operations:
-        - Retrieve complete device metadata and specifications
-        - Get real-time connectivity, battery, and firmware status
-        - Access device configuration and subscription information
-        - Enable device health monitoring and diagnostics
-
-        Operations Detail:
-        **Device Information:**
-        - "details": Complete device metadata (model, firmware, location)
-        - "status": Real-time connectivity and battery information
-        - "config": Device configuration and subscription status
-
-        Args:
-            device_id (str, required): The unique identifier of the device.
-                Required for: details, status, config operations.
-                Must be a valid Ring device ID from get_devices().
-
-        Returns:
-            **FastMCP 3.4+ conversational response (sampling/agentic):**
-
-            ```json
-            {
-              "device": {
-                "id": "device_id",
-                "name": "Front Door",
-                "type": "doorbell",
-                "model": "Ring Video Doorbell Pro",
-                "firmware": "1.2.3",
-                "battery_life": 85,
-                "online": true,
-                "address": "123 Test St",
-                "timezone": "Europe/Vienna",
-                "has_subscription": true,
-                "last_update": "2025-01-01T12:00:00Z"
-              }
-            }
-            ```
-
-            **Success Response Structure (Conversational):**
-            - device (dict): Complete device information object
-            - Includes all device metadata: identification, specifications, status, location, and configuration
-
-        Examples:
-            # Get device details
-            result = await get_device_details("device-123")
-            # Returns: {"device": {"id": "device-123", "name": "Front Door", "online": true, ...}}
-
-        Errors:
-            **Common Errors:**
-            - "Device not found": Specified device_id doesn't exist
-            - "Authentication failed": Invalid Ring API credentials
-            - "Permission denied": Device not accessible to current account
-
-            **Recovery Options:**
-            - Verify device_id from get_devices() output
-            - Check Ring account has access to the device
-            - Ensure Ring API credentials are valid and current
-        """
-        try:
-            device = await ring_client.get_device(device_id)
-            if not device:
-                bridge = get_ring_mqtt_bridge()
-                if bridge.enabled:
-                    device = bridge.get_device_dict(device_id)
-            if not device:
-                raise DeviceNotFoundError(f"Device {device_id} not found")
-
-            # Track device status
-            device_type = device.get("type", "unknown")
-            battery = device.get("battery_life")
-            ring_device_online.labels(device_id=device_id, device_type=device_type).set(
-                1 if device.get("online", False) else 0
-            )
-
-            if battery is not None:
-                ring_device_battery.labels(device_id=device_id, device_type=device_type).set(battery)
-
-            return DeviceResponse(device=device)
-        except Exception:
-            track_ring_api_call("get_device_details", success=False)
-            raise
-
-    @app.tool(name="get_device_events", description="Get recent events for a specific device")
-    @handle_ring_errors
-    async def get_device_events(device_id: str, limit: int = 10) -> EventListResponse:
-        """Retrieve recent activity events and motion history for a Ring device.
-
-        PORTMANTEAU PATTERN RATIONALE:
-        Instead of creating separate tools for motion events, doorbell rings, and
-        security alerts, this single tool provides comprehensive event history.
-        Prevents tool explosion while enabling complete activity monitoring and review.
-
-        Supported Operations:
-        - Retrieve motion detection events and timestamps
-        - Access doorbell press history with timestamps
-        - Get security alert and alarm activation records
-        - Review device activity with configurable limits
-
-        Operations Detail:
-        **Event Retrieval:**
-        - "motion": Motion detection events with timestamps
-        - "doorbell": Doorbell press and visitor events
-        - "security": Alarm and security system events
-        - "activity": All device activity with pagination
-
-        Args:
-            device_id (str, required): The unique identifier of the device.
-                Required for: motion, doorbell, security, activity operations.
-                Must be a valid Ring device ID from get_devices().
-
-            limit (int, optional): Maximum number of events to retrieve.
-                Used by: activity operation. Default: 10. Valid range: 1-50.
-                Limits API calls and response size for performance.
-
-        Returns:
-            **FastMCP 3.4+ conversational response (sampling/agentic):**
-
-            ```json
-            {
-              "events": [
-                {
-                  "id": "event-123",
-                  "created_at": "2025-01-01T12:00:00Z",
-                  "answered": false,
-                  "kind": "motion",
-                  "recording_status": "ready"
-                },
-                {
-                  "id": "event-124",
-                  "created_at": "2025-01-01T11:45:00Z",
-                  "answered": true,
-                  "kind": "doorbell",
-                  "recording_status": "ready"
-                }
-              ]
-            }
-            ```
-
-            **Success Response Structure (Conversational):**
-            - events (list[dict]): Array of event objects chronologically ordered (newest first)
-            - Each event includes: id, timestamp, answered status, event type, recording status
-
-        Examples:
-            # Get recent events (default 10)
-            result = await get_device_events("device-123")
-            # Returns: {"events": [{"id": "123", "kind": "motion", "created_at": "..."}, ...]}
-
-            # Get last 5 events
-            result = await get_device_events("device-123", limit=5)
-            # Returns: {"events": [...] limited to 5 most recent events
-
-        Errors:
-            **Common Errors:**
-            - "Device not found": Specified device_id doesn't exist
-            - "No events available": Device has no recorded activity
-            - "Authentication failed": Invalid Ring API credentials
-
-            **Recovery Options:**
-            - Verify device_id from get_devices() output
-            - Check device has been active and recording events
-            - Ensure Ring account has event history access
-            - Try with a smaller limit if timeout occurs
-        """
-        events = await ring_client.get_device_events(device_id, limit=limit)
-        return EventListResponse(events=events)
-
-    @app.tool(name="get_live_stream_url", description="Get a live stream URL for a camera device")
-    @handle_ring_errors
-    async def get_live_stream_url(device_id: str) -> StreamURLResponse:
-        """Generate a temporary live stream URL for Ring camera viewing.
-
-        PORTMANTEAU PATTERN RATIONALE:
-        Instead of creating separate tools for different stream formats or camera types,
-        this single tool provides unified streaming access for all Ring cameras.
-        Prevents tool explosion while enabling immediate live viewing capabilities.
-
-        Supported Operations:
-        - Generate temporary streaming URLs for Ring cameras
-        - Enable real-time video feed access and monitoring
-        - Support live viewing for security and surveillance
-        - Provide immediate access to camera feeds
-
-        Operations Detail:
-        **Streaming Access:**
-        - "generate_url": Create temporary stream URL for camera
-        - "live_view": Enable real-time video streaming access
-        - "monitoring": Support security monitoring and surveillance
-
-        Prerequisites:
-        - Device must be a Ring camera (Spotlight Cam, Floodlight Cam, Indoor Cam)
-        - Camera must be online and accessible
-        - Ring account must have camera viewing permissions
-        - Stream URLs are temporary (typically 5-10 minutes validity)
-
-        Args:
-            device_id (str, required): The unique identifier of the camera device.
-                Required for: generate_url, live_view, monitoring operations.
-                Must be a valid Ring camera device ID from get_devices().
-
-        Returns:
-            **FastMCP 3.4+ conversational response (sampling/agentic):**
-
-            ```json
-            {
-              "url": "rtsp://stream.ring.com/live/camera-123?token=abc123&expires=1735689600"
-            }
-            ```
-
-            **Success Response Structure (Conversational):**
-            - url (str): Temporary RTSP stream URL for live camera viewing
-            - URL includes authentication token and expiration timestamp
-            - Valid for limited time (typically 5-10 minutes)
-
-        Examples:
-            # Get live stream URL
-            result = await get_live_stream_url("camera-123")
-            # Returns: {"url": "rtsp://stream.ring.com/live/camera-123?token=...&expires=..."}
-
-            # Open stream in media player
-            stream_url = result["url"]
-            # Use with VLC, FFmpeg, or compatible RTSP player
-
-        Errors:
-            **Common Errors:**
-            - "Device not found": Specified device_id is not a valid camera
-            - "Device offline": Camera is currently not connected/online
-            - "Permission denied": Account lacks camera viewing permissions
-            - "Subscription required": Camera requires active Ring subscription
-            - "Stream unavailable": Camera temporarily unable to stream
-
-            **Recovery Options:**
-            - Verify device_id is a camera from get_devices() output
-            - Check camera is online using get_device_details()
-            - Ensure Ring account has Protect Plan or camera subscription
-            - Wait and retry if camera was temporarily unavailable
-            - Check Ring app for camera connectivity issues
-        """
-        url = await ring_client.get_live_stream_url(device_id)
-        return StreamURLResponse(url=url)
-
-    @app.tool(name="set_arm_status", description="Arm or disarm a security device")
-    @track_tool_call("set_arm_status")
-    @handle_ring_errors
-    async def set_arm_status(device_id: str, status: bool) -> StatusResponse:
-        """Arm or disarm Ring security systems and alarm devices (CRITICAL SECURITY OPERATION).
-
-        PORTMANTEAU PATTERN RATIONALE:
-        Instead of creating separate tools for arming/disarming different security device types,
-        this single tool provides unified security control for all Ring alarm systems.
-        Prevents tool explosion while maintaining critical security operation integrity.
-
-        Supported Operations:
-        - Arm security systems for property protection
-        - Disarm systems for authorized access and maintenance
-        - Control alarm activation and deactivation
-        - Manage security system status and monitoring
-
-        Operations Detail:
-        **Security Control:**
-        - "arm": Activate security system and alarm monitoring
-        - "disarm": Deactivate security system for authorized access
-        - "status_change": Modify armed/disarmed state with confirmation
-
-        Prerequisites:
-        - Device must be a Ring security system or alarm device
-        - Ring account must have security system control permissions
-        - Two-factor authentication should be enabled for security
-        - Emergency contacts should be configured in Ring app
-
-        Args:
-            device_id (str, required): The unique identifier of the security device.
-                Required for: arm, disarm, status_change operations.
-                Must be a valid Ring security system from get_devices().
-
-            status (bool, required): Security system state to set.
-                Required for: status_change operation. Valid values: True (arm), False (disarm).
-                True = activate security monitoring and alarms
-                False = deactivate security monitoring for authorized access
-
-        Returns:
-            **FastMCP 3.4+ conversational response (sampling/agentic):**
-
-            ```json
-            {
-              "success": true,
-              "message": "Device alarm-system-123 armed successfully",
-              "operation": "arm",
-              "timestamp": "2025-01-01T12:00:00Z",
-              "device_id": "alarm-system-123"
-            }
-            ```
-
-            **Success Response Structure (Conversational):**
-            - success (bool): Whether the security operation completed successfully
-            - message (str): Human-readable confirmation of the security state change
-            - operation (str): The operation performed ("arm" or "disarm")
-            - timestamp (str): ISO timestamp when the operation completed
-            - device_id (str): Device that was modified for verification
-
-        Examples:
-            # Arm security system
-            result = await set_arm_status("alarm-system-123", True)
-            # Returns: {"success": true, "message": "Device alarm-system-123 armed successfully", ...}
-
-            # Disarm security system
-            result = await set_arm_status("alarm-system-123", False)
-            # Returns: {"success": true, "message": "Device alarm-system-123 disarmed successfully", ...}
-
-        Errors:
-            **Critical Security Errors (Handle Immediately):**
-            - "Authentication failed": Invalid credentials - security system remains in current state
-            - "Device not found": Security device doesn't exist - verify device_id
-            - "Permission denied": Account lacks security control permissions
-            - "Device offline": Security system unreachable - check connectivity
-            - "Already armed/disarmed": System already in requested state
-
-            **Recovery Options:**
-            - **IMMEDIATELY** verify security system status in Ring app or via get_device_details()
-            - Check Ring account has security system control permissions
-            - Ensure device is online and connected to Ring network
-            - If authentication fails, re-authenticate and retry immediately
-            - For critical failures, contact Ring support and verify property security
-            - Document all security operations for audit trail
-
-            **Emergency Contacts:**
-            - Ring App: Check security system status manually
-            - Local Authorities: Contact if unable to verify security status
-            - Ring Support: Professional assistance for security system issues
-        """
-        try:
-            bridge = get_ring_mqtt_bridge()
-            if bridge.enabled and bridge.is_alarm_panel(device_id):
-                mode = "arm_away" if status else "disarm"
-                success = await bridge.publish_alarm_mode(device_id, mode)
-                location = "ring_mqtt"
-                ring_security_armed.labels(location=location).set(1 if status else 0)
-                action = "armed" if status else "disarmed"
-                return StatusResponse(
-                    success=success,
-                    message=f"Device {device_id} {action} via ring-mqtt ({mode})",
-                )
-
-            success = await ring_client.set_arm_status(device_id, status)
-
-            # Track security system status
-            location = "default"  # Could be enhanced to track by location
-            ring_security_armed.labels(location=location).set(1 if status else 0)
-
-            action = "armed" if status else "disarmed"
-            return StatusResponse(
-                success=success, message=f"Device {device_id} {action} {'successfully' if success else 'failed'}"
-            )
-        except Exception:
-            track_ring_api_call("set_arm_status", success=False)
-            raise
-
-    @app.tool(name="trigger_chime", description="Trigger a doorbell chime")
-    @handle_ring_errors
-    async def trigger_chime(device_id: str) -> StatusResponse:
-        """Manually trigger doorbell chime for testing and signaling purposes.
-
-        PORTMANTEAU PATTERN RATIONALE:
-        Instead of creating separate tools for doorbell testing, visitor signaling,
-        and audio verification, this single tool provides unified chime control.
-        Prevents tool explosion while enabling comprehensive doorbell functionality testing.
-
-        Supported Operations:
-        - Manually trigger doorbell chime for testing
-        - Signal visitors or household members
-        - Verify doorbell audio and connectivity
-        - Test integration with home automation systems
-
-        Operations Detail:
-        **Doorbell Control:**
-        - "trigger": Activate doorbell chime manually
-        - "test": Verify doorbell functionality and audio
-        - "signal": Alert household members or visitors
-
-        Prerequisites:
-        - Device must be a Ring doorbell (Video Doorbell, Doorbell Pro, etc.)
-        - Doorbell must be online and powered
-        - Ring account must have doorbell control permissions
-
-        Args:
-            device_id (str, required): The unique identifier of the doorbell device.
-                Required for: trigger, test, signal operations.
-                Must be a valid Ring doorbell device from get_devices().
-
-        Returns:
-            **FastMCP 3.4+ conversational response (sampling/agentic):**
-
-            ```json
-            {
-              "success": true,
-              "message": "Chime triggered successfully",
-              "operation": "trigger",
-              "timestamp": "2025-01-01T12:00:00Z",
-              "device_id": "doorbell-123"
-            }
-            ```
-
-            **Success Response Structure (Conversational):**
-            - success (bool): Whether the chime was triggered successfully
-            - message (str): Human-readable confirmation of chime activation
-            - operation (str): Operation performed ("trigger")
-            - timestamp (str): ISO timestamp when chime was triggered
-            - device_id (str): Doorbell device that was activated
-
-        Examples:
-            # Trigger doorbell chime
-            result = await trigger_chime("doorbell-123")
-            # Returns: {"success": true, "message": "Chime triggered successfully", ...}
-
-            # Test doorbell functionality
-            result = await trigger_chime("doorbell-123")
-            # Listen for chime sound to verify audio works
-
-        Errors:
-            **Common Errors:**
-            - "Device not found": Specified device_id is not a valid doorbell
-            - "Device offline": Doorbell is currently not connected/online
-            - "Permission denied": Account lacks doorbell control permissions
-            - "Rate limited": Too many chime triggers in short time period
-            - "Device busy": Doorbell currently handling another operation
-
-            **Recovery Options:**
-            - Verify device_id is a doorbell from get_devices() output
-            - Check doorbell is online using get_device_details()
-            - Wait 30 seconds between chime triggers to avoid rate limiting
-            - Ensure doorbell has sufficient battery power or is plugged in
-            - Test manually via Ring app first to verify functionality
-        """
-        success = await ring_client.trigger_chime(device_id)
-        return StatusResponse(
-            success=success, message=f"Chime {'triggered successfully' if success else 'failed to trigger'}"
-        )
-
-    @app.tool(name="health_check", description="Check the health of the Ring MCP service")
-    @handle_ring_errors
-    async def health_check() -> StatusResponse:
-        """Perform comprehensive health check of Ring MCP service and Ring connectivity.
-
-        PORTMANTEAU PATTERN RATIONALE:
-        Instead of creating separate tools for API connectivity, authentication verification,
-        device accessibility, and service monitoring, this single tool provides complete
-        system health assessment. Prevents tool explosion while ensuring service reliability.
-
-        Supported Operations:
-        - Verify Ring API connectivity and authentication
-        - Test device accessibility and communication
-        - Check system resource availability and performance
-        - Validate all MCP tool functionality and responses
-        - Monitor service health and operational status
-
-        Operations Detail:
-        **Health Assessment:**
-        - "connectivity": Test Ring API and authentication
-        - "devices": Verify device accessibility and status
-        - "resources": Check system resource availability
-        - "tools": Validate MCP tool functionality
-        - "comprehensive": Full system health evaluation
-
-        Prerequisites:
-        - Ring account credentials must be configured
-        - Internet connectivity to Ring services
-        - At least one Ring device should be accessible
-        - MCP service should be running and initialized
-
-        Args:
-            None required - comprehensive health check is automatic.
-
-        Returns:
-            **FastMCP 3.4+ conversational response (sampling/agentic):**
-
-            ```json
-            {
-              "success": true,
-              "message": "Ring MCP service is healthy - API connected, 5 devices accessible",
-              "operation": "comprehensive",
-              "timestamp": "2025-01-01T12:00:00Z",
-              "health_status": {
-                "api_connected": true,
-                "devices_accessible": 5,
-                "authentication_valid": true,
-                "last_check": "2025-01-01T12:00:00Z"
-              }
-            }
-            ```
-
-            **Success Response Structure (Conversational):**
-            - success (bool): Whether the health check passed
-            - message (str): Human-readable health status summary
-            - operation (str): Health check operation performed ("comprehensive")
-            - timestamp (str): ISO timestamp when health check was performed
-            - health_status (dict): Detailed health metrics and status information
-
-        Examples:
-            # Perform comprehensive health check
-            result = await health_check()
-            # Returns: {"success": true, "message": "Ring MCP service is healthy", ...}
-
-            # Check result details
-            if result["success"]:
-                print(f"Devices accessible: {result['health_status']['devices_accessible']}")
-            # Output: "Devices accessible: 5"
-
-        Errors:
-            **Common Errors:**
-            - "Authentication failed": Invalid or expired Ring credentials
-            - "API unreachable": Cannot connect to Ring services
-            - "No devices found": Account has no accessible Ring devices
-            - "Service unavailable": MCP service experiencing internal errors
-
-            **Recovery Options:**
-            - Verify Ring username/password and 2FA status
-            - Check internet connectivity to Ring services
-            - Ensure Ring account has active devices
-            - Restart MCP service if experiencing internal errors
-            - Check Ring app for account status and device connectivity
-            - Contact Ring support if API access issues persist
-        """
-        try:
-            # Try to get devices as a health check
-            await ring_client.get_devices(force_refresh=False)
-            return StatusResponse(success=True, message="Ring MCP service is healthy")
-        except Exception as e:
-            logger.error("Health check failed: %s", str(e))
-            return StatusResponse(success=False, message=f"Health check failed: {e!s}")
-
-    @app.tool(app=True, name="show_devices_card", description="Show all Ring devices as a rich card")
-    async def show_devices_card() -> dict:
-        """Show all Ring devices as a rich in-chat Prefab card.
-
-        ## Return Format
-        {"content": "...", "structured_content": {"prefab": true, "title": "...", "sections": [...]}}
-        """
-        try:
-            from prefab_ui import PrefabApp
-            from prefab_ui.components import Div, Heading, Row
-
-            devices = await ring_client.get_devices(force_refresh=False)
-            with PrefabApp(title="Ring Devices") as app_card:
-                Heading(f"{len(devices)} Devices")
-                for d in devices:
-                    online = d.get("online", False)
-                    bat = d.get("battery_life")
-                    status = f"{'Online' if online else 'Offline'}"
-                    if bat is not None:
-                        status += f" | Battery: {bat}%"
-                    Div(Row(label=d.get("name", "?"), value=status))
-            return {"content": f"Found {len(devices)} devices", "structured_content": app_card}
-        except Exception as e:
-            return {"content": f"Error: {e!s}"}
-
-    @app.tool(app=True, name="show_health_card", description="Show Ring MCP health as a rich card")
-    async def show_health_card() -> dict:
-        """Show Ring MCP service health as a rich in-chat Prefab card.
-
-        ## Return Format
-        {"content": "...", "structured_content": {"prefab": true, "title": "...", "sections": [...]}}
-        """
-        try:
-            from prefab_ui import PrefabApp
-            from prefab_ui.components import Div, Heading, Row
-
-            with PrefabApp(title="Ring MCP Health") as app_card:
-                Heading("System Health")
-                Div(Row(label="API Status", value="Checking..."))
-                try:
-                    await ring_client.get_devices(force_refresh=False)
-                    Div(Row(label="API Connectivity", value="Connected"))
-                except Exception:
-                    Div(Row(label="API Connectivity", value="Disconnected"))
-            return {"content": "Ring MCP health check", "structured_content": app_card}
-        except Exception as e:
-            return {"content": f"Error: {e!s}"}
-
-
-# Register all tools on the global app instance
 def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = None):
     """Register all Ring MCP tools on a specific app instance."""
     try:
@@ -1038,6 +299,11 @@ def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = Non
             name="ring_shutdown",
             description="Gracefully shut down the Ring MCP server",
             annotations={"readOnlyHint": False, "idempotentHint": False, "destructiveHint": True},
+            output_schema={
+                "type": "object",
+                "required": ["success"],
+                "properties": {"success": {"type": "boolean"}, "message": {"type": "string"}},
+            },
         )
         async def ring_shutdown() -> dict:
             """Gracefully shut down the Ring MCP server.
@@ -1062,6 +328,17 @@ def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = Non
             name="list_devices",
             description="List all Ring devices with online status and battery",
             annotations={"readOnlyHint": True, "idempotentHint": True},
+            output_schema={
+                "type": "object",
+                "required": ["success"],
+                "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "error": {"type": "string"},
+                    "count": {"type": "integer"},
+                    "devices": {"type": "array"},
+                },
+            },
         )
         async def list_devices(device_type: str = "all") -> dict[str, Any]:
             """List all Ring devices with online status and battery.
@@ -1094,6 +371,11 @@ def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = Non
             name="show_devices_card",
             description="Show all Ring devices as a rich card",
             annotations={"readOnlyHint": True, "idempotentHint": True},
+            output_schema={
+                "type": "object",
+                "required": ["content"],
+                "properties": {"content": {"type": "string"}},
+            },
         )
         async def show_devices_card() -> dict:
             """Show all Ring devices as a rich in-chat Prefab card.
@@ -1131,6 +413,11 @@ def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = Non
             name="show_health_card",
             description="Show Ring MCP health as a rich card",
             annotations={"readOnlyHint": True, "idempotentHint": True},
+            output_schema={
+                "type": "object",
+                "required": ["content"],
+                "properties": {"content": {"type": "string"}},
+            },
         )
         async def show_health_card() -> dict:
             """Show Ring MCP service health as a rich in-chat Prefab card.
