@@ -70,7 +70,7 @@ export function Status() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Security Status
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-300">
             Ring devices and system status from API
           </p>
         </div>
@@ -180,16 +180,16 @@ export function Status() {
         <CardHeader>
           <CardTitle className="text-white">Devices</CardTitle>
           {devices.length === 0 && !isLoading && (
-            <p className="text-slate-400 text-sm">
+            <p className="text-slate-300 text-sm">
               No devices. Configure Ring in Settings and refresh.
             </p>
           )}
         </CardHeader>
         <CardContent>
           {isLoading && (
-            <div className="flex items-center gap-2 text-slate-400">
+            <div className="flex items-center gap-2 text-slate-300">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading devices…
+              Loading devicesâ€¦
             </div>
           )}
           {!isLoading && devices.length > 0 && (
@@ -238,13 +238,13 @@ function DeviceRow({
         <span className="font-medium text-white">{device.name}</span>
         <span
           className={
-            online ? "text-emerald-500 text-sm" : "text-slate-500 text-sm"
+            online ? "text-emerald-500 text-sm" : "text-slate-300 text-sm"
           }
         >
           {online ? "ONLINE" : "OFFLINE"}
         </span>
         {device.battery_life != null && (
-          <span className="flex items-center gap-1 text-slate-400 text-sm">
+          <span className="flex items-center gap-1 text-slate-300 text-sm">
             <Battery className="h-3 w-3" />
             {device.battery_life}%
           </span>
