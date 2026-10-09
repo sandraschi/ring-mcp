@@ -45,9 +45,10 @@ from .core.exceptions import (
     StreamingError,
 )
 
-# Create log directory
-log_dir = Path("logs")
-log_dir.mkdir(exist_ok=True)
+# Create log directory. Absolute, never cwd-relative: Claude Desktop spawns stdio
+# servers with cwd=C:\Windows\System32, where dictConfig's file handlers fail (BUG-063).
+log_dir = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "ring-mcp" / "logs"
+log_dir.mkdir(parents=True, exist_ok=True)
 
 # Logging configuration for file output
 LOGGING_CONFIG = {
