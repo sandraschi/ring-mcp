@@ -1,4 +1,5 @@
 {
+  "manifest_version": "0.2",
   "name": "ring-mcp",
   "version": "1.0.4",
   "description": "Universal Ring Security Ecosystem Control - Comprehensive MCP server for Ring doorbells, security cameras, and alarm systems with Austrian precision",
