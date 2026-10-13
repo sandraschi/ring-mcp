@@ -508,8 +508,12 @@ def register_all_tools_on_app(app: FastMCP, ring_client: RingClient | None = Non
         try:
             from pathlib import Path
 
-            skills_dir = Path(__file__).resolve().parent.parent / "skills"
-            if skills_dir.is_dir():
+            here = Path(__file__).resolve()
+            skills_dir = next(
+                (p / "skills" for p in (here.parents[2], here.parents[1]) if (p / "skills").is_dir()),
+                None,
+            )
+            if skills_dir is not None:
                 app.add_provider(SkillsDirectoryProvider(roots=[skills_dir]))
                 logger.info("Skills provider mounted: %s", skills_dir)
         except Exception as e:

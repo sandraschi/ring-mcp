@@ -1087,6 +1087,7 @@ def _scan_skill_dir(base: Path) -> list[dict[str, str]]:
     for skill_md in sorted(base.glob("*/SKILL.md")):
         name = skill_md.parent.name
         description = ""
+        content = ""
         try:
             text = skill_md.read_text(encoding="utf-8", errors="replace")
         except OSError:
@@ -1102,14 +1103,28 @@ def _scan_skill_dir(base: Path) -> list[dict[str, str]]:
                     name = val.strip().strip("\"'")
                 elif key.strip() == "description" and val.strip():
                     description = val.strip().strip("\"'")
-        found.append({"name": name, "description": description, "path": skill_md.as_posix()})
+            content = text[end + 4 :] if end != -1 else text
+        else:
+            content = text
+        found.append(
+            {
+                "name": name,
+                "description": description,
+                "path": skill_md.as_posix(),
+                "content": content[:8000],
+            }
+        )
     return found
 
 
 @app.get("/api/skills")
 async def list_skills():
     """Skill listing for skill-first chat (reads packaged SKILL.md frontmatter)."""
-    root = Path(__file__).resolve().parent.parent
+    here = Path(__file__).resolve()
+    root = next(
+        (p for p in (here.parents[2], here.parents[1]) if (p / ".opencode" / "skills").is_dir()),
+        here.parents[2],
+    )
     skills = _scan_skill_dir(root / ".opencode" / "skills") + _scan_skill_dir(root / "skills")
     return {"skills": skills}
 
