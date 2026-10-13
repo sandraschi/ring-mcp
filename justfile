@@ -94,19 +94,13 @@ docker-down:
 
 # --- Packaging ---
 
-# MCPB bundle: wipe + fresh stage + pack + verify (see mcpb/pack.ps1)
-mcpb-pack:
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File '{{justfile_directory()}}\mcpb\pack.ps1'
+# MCPB bundle via fleet template (scripts/just/fleet.just): wipe + fresh stage + pack + verify.
+# See mcpb/pack.ps1. Local override removed (duplicate recipe = justfile load error).
 
-# --- CUA smoke tests ---
-
-# Pre-Tauri browser walk: stack start + title-matching nav walk (see cua_webapp_testing.md)
-cua-webapp-test:
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File '{{justfile_directory()}}\scripts\just\cua-webapp-test.ps1'
-
-# NSIS installer: install -> launch -> health -> nav walk -> uninstall (see cua_nsis_smoke_testing.md)
-cua-nsis-test:
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File '{{justfile_directory()}}\scripts\just\cua-nsis-test.ps1'
+# --- CUA smoke tests (fleet template: scripts/just/fleet.just) ---
+# cua-webapp-test (stack start + title-matching nav walk) and cua-nsis-test
+# (install -> launch -> nav walk -> uninstall) come from the fleet import above,
+# which also syncs reports/cua-*.md to mcp-central-docs. No local overrides.
 
 # --- Hardening ---
 
