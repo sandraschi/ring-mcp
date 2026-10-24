@@ -1,49 +1,49 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "files": {
-    "ignoreUnknown": false,
-    "includes": ["**", "!dist", "!node_modules"]
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space"
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "preset": "recommended",
-      "suspicious": {
-        "noUnknownAtRules": "off",
-        "useIterableCallbackReturn": "warn",
-        "noArrayIndexKey": "warn",
-        "noExplicitAny": "warn"
-      },
-      "a11y": {
-        "useButtonType": "warn",
-        "useMediaCaption": "warn"
-      },
-      "style": {
-        "noNonNullAssertion": "warn"
-      },
-      "correctness": {
-        "noUnusedVariables": "warn",
-        "useExhaustiveDependencies": "warn"
-      }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double"
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
-  }
+	"$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"includes": ["**", "!dist", "!node_modules"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "space"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noUnknownAtRules": "off",
+				"useIterableCallbackReturn": "warn",
+				"noArrayIndexKey": "warn",
+				"noExplicitAny": "warn"
+			},
+			"a11y": {
+				"useButtonType": "warn",
+				"useMediaCaption": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "warn"
+			},
+			"correctness": {
+				"noUnusedVariables": "warn",
+				"useExhaustiveDependencies": "warn"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	}
 }
